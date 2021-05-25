@@ -1,7 +1,6 @@
 package com.mapbox.maps.plugin.annotation
 
 import com.mapbox.geojson.Geometry
-import com.mapbox.maps.extension.style.StyleInterface
 import com.mapbox.maps.plugin.delegates.MapDelegateProvider
 
 /**

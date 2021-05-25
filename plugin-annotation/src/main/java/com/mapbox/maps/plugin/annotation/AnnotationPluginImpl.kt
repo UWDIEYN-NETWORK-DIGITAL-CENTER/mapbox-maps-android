@@ -2,7 +2,6 @@ package com.mapbox.maps.plugin.annotation
 
 import android.view.View
 import androidx.annotation.VisibleForTesting
-import com.mapbox.maps.extension.style.StyleInterface
 import com.mapbox.maps.plugin.annotation.generated.*
 import com.mapbox.maps.plugin.delegates.MapDelegateProvider
 import com.mapbox.maps.plugin.delegates.MapPluginProviderDelegate
