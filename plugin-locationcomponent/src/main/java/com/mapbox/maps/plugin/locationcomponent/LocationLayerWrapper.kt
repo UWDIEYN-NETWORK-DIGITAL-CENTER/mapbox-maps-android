@@ -16,6 +16,7 @@ internal open class LocationLayerWrapper(val layerId: String) {
     expected.error?.let {
       throw RuntimeException("Add layer failed: $it")
     }
+    mapStyleDelegate.setStyleLayerProperty(layerId, "persistent", Value(true))
   }
 
   protected fun updateProperty(propertyName: String, value: Value) {
