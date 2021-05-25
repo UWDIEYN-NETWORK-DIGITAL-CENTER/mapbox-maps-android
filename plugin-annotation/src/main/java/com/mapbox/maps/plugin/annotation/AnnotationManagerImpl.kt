@@ -27,6 +27,7 @@ import com.mapbox.maps.extension.style.layers.addLayerBelow
 import com.mapbox.maps.extension.style.layers.generated.SymbolLayer
 import com.mapbox.maps.extension.style.layers.generated.circleLayer
 import com.mapbox.maps.extension.style.layers.generated.symbolLayer
+import com.mapbox.maps.extension.style.layers.persistent
 import com.mapbox.maps.extension.style.sources.addSource
 import com.mapbox.maps.extension.style.sources.generated.GeoJsonSource
 import com.mapbox.maps.extension.style.sources.generated.geoJsonSource
@@ -200,6 +201,7 @@ abstract class AnnotationManagerImpl<G : Geometry, T : Annotation<G>, S : Annota
         if (!layerAdded) {
           style.addLayer(it)
         }
+        it.persistent(true)
       }
     }
     if (layer is SymbolLayer) {
@@ -270,7 +272,7 @@ abstract class AnnotationManagerImpl<G : Geometry, T : Annotation<G>, S : Annota
    */
   override fun onStyleLoaded(styleDelegate: StyleInterface) {
     style = styleDelegate
-    initLayerAndSource()
+//    initLayerAndSource()
   }
 
   /**
