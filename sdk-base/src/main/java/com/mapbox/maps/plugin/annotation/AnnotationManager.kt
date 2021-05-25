@@ -72,11 +72,6 @@ interface AnnotationManager<
   fun onSizeChanged(width: Int, height: Int)
 
   /**
-   * Invoked when the style is loaded
-   */
-  fun onStyleLoaded(styleDelegate: StyleInterface)
-
-  /**
    * The delegateProvider
    */
   val delegateProvider: MapDelegateProvider

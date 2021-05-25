@@ -8,7 +8,7 @@ import com.mapbox.maps.plugin.MapStyleObserverPlugin
 /**
  * Plugin interface for the annotation.
  */
-interface AnnotationPlugin : MapPlugin, MapSizePlugin, MapStyleObserverPlugin {
+interface AnnotationPlugin : MapPlugin, MapSizePlugin {
   /**
    * Get an annotation manger
    *

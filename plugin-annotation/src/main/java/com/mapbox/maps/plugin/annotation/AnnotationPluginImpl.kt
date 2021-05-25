@@ -88,13 +88,6 @@ class AnnotationPluginImpl : AnnotationPlugin {
   }
 
   /**
-   * Called when a new Style is loaded.
-   */
-  override fun onStyleChanged(styleDelegate: StyleInterface) {
-    managerList.forEach { it.get()?.onStyleLoaded(styleDelegate) }
-  }
-
-  /**
    * Provides all map delegate instances.
    */
   override fun onDelegateProvider(delegateProvider: MapDelegateProvider) {
