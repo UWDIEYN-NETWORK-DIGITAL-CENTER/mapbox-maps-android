@@ -12,6 +12,8 @@ import com.mapbox.geojson.Feature
 import com.mapbox.geojson.Geometry
 import com.mapbox.geojson.Point
 import com.mapbox.maps.extension.style.StyleContract
+import com.mapbox.maps.extension.style.sources.OnGeoJsonParsed
+import com.mapbox.maps.extension.style.sources.generated.GeoJsonSource
 import com.mapbox.maps.plugin.PLUGIN_CAMERA_ANIMATIONS_CLASS_NAME
 import com.mapbox.maps.plugin.PLUGIN_GESTURE_CLASS_NAME
 import com.mapbox.maps.plugin.animation.CameraAnimationsPlugin
@@ -114,24 +116,24 @@ class MapboxMap internal constructor(
   /**
    * Load style JSON
    */
-  fun loadStyleJSON(
-    json: String,
+  fun loadStyleJson(
+    styleJson: String,
     onStyleLoaded: Style.OnStyleLoaded? = null,
     onMapLoadErrorListener: OnMapLoadErrorListener? = null
   ) {
     initializeStyleLoad(onStyleLoaded, onMapLoadErrorListener)
     nativeMapWeakRef.call {
-      (this as StyleManagerInterface).styleJSON = json
+      (this as StyleManagerInterface).styleJSON = styleJson
     }
   }
 
   /**
    * Load style JSON.
    */
-  fun loadStyleJSON(
-    json: String,
+  fun loadStyleJson(
+    styleJson: String,
     onStyleLoaded: Style.OnStyleLoaded
-  ) = loadStyleJSON(json, onStyleLoaded, null)
+  ) = loadStyleJson(styleJson, onStyleLoaded, null)
 
   /**
    * Load the style from Style Extension.
@@ -165,18 +167,43 @@ class MapboxMap internal constructor(
     onStyleLoaded: Style.OnStyleLoaded? = null
   ) {
     this.style = style
+    var resourceCount = styleExtension.resourceCount
+    styleExtension.sources.forEach {
+      if (it is GeoJsonSource) {
+        it.bindTo(style)
+        it.addOnGeoJsonParsedListener(object : OnGeoJsonParsed {
+          override fun onGeoJsonParsed(source: GeoJsonSource) {
+            resourceCount--
+            if (resourceCount == 0) {
+              onStyleLoaded?.onStyleLoaded(style)
+            }
+            it.removeOnGeoJsonParsedListener(this)
+          }
+        })
+      } else {
+        it.bindTo(style)
+        resourceCount--
+      }
+    }
     styleExtension.images.forEach {
       it.bindTo(style)
-    }
-    styleExtension.sources.forEach {
-      it.bindTo(style)
+      resourceCount--
     }
     styleExtension.layers.forEach {
       it.first.bindTo(style, it.second)
+      resourceCount--
     }
-    styleExtension.light?.bindTo(style)
-    styleExtension.terrain?.bindTo(style)
-    onStyleLoaded?.onStyleLoaded(style)
+    styleExtension.light?.let {
+      it.bindTo(style)
+      resourceCount--
+    }
+    styleExtension.terrain?.let {
+      it.bindTo(style)
+      resourceCount--
+    }
+    if (resourceCount == 0) {
+      onStyleLoaded?.onStyleLoaded(style)
+    }
   }
 
   private fun initializeStyleLoad(
