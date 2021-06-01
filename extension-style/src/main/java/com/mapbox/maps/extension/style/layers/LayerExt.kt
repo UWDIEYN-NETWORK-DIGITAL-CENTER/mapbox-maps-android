@@ -15,6 +15,9 @@ import com.mapbox.maps.extension.style.layers.properties.PropertyValue
  */
 @MapboxExperimental
 fun Layer.persistent(persistent: Boolean) {
+  if (this.delegate == null) {
+    throw RuntimeException("Persistent property must be set after the layer is added to the style.")
+  }
   val propertyValue = PropertyValue("persistent", persistent)
   setProperty(propertyValue)
 }
