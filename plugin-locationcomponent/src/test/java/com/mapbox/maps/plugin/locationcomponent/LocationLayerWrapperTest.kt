@@ -33,6 +33,7 @@ class LocationLayerWrapperTest {
     val position = LayerPosition("above", "below", 0)
     locationLayerWrapper.bindTo(mapStyleDelegate, position)
     verify { mapStyleDelegate.addStyleLayer(any(), position) }
+    verify { mapStyleDelegate.setStyleLayerPersistent(layerId, true) }
   }
 
   @Test(expected = RuntimeException::class)
