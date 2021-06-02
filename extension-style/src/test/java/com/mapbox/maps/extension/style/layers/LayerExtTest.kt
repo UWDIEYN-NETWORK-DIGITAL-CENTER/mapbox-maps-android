@@ -12,7 +12,6 @@ import com.mapbox.maps.extension.style.layers.generated.symbolLayer
 import io.mockk.*
 import org.junit.After
 import org.junit.Assert
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -26,22 +25,19 @@ import java.lang.RuntimeException
 class LayerExtTest {
   private val style = mockk<StyleInterface>(relaxUnitFun = true, relaxed = true)
   private val expected = mockk<Expected<String, None>>(relaxUnitFun = true, relaxed = true)
-  private val valueExpected = mockk<Expected<String, Value>>(relaxUnitFun = true, relaxed = true)
+  private val booleanExpected = mockk<Expected<String, Boolean>>(relaxUnitFun = true, relaxed = true)
   private val styleProperty = mockk<StylePropertyValue>()
-  private val valueSlot = slot<Value>()
+  private val booleanSlot = slot<Boolean>()
 
   @Before
   fun prepareTest() {
-    every { style.getStyleLayerProperty(any(), any()) } returns styleProperty
-    every { styleProperty.kind } returns StylePropertyValueKind.CONSTANT
-    every { style.setStyleLayerProperty(any(), any(), any()) } returns expected
+    every { style.isStyleLayerPersistent(any()) } returns booleanExpected
     every { style.addStyleLayer(any(), any()) } returns expected
     every { style.setStyleLayerProperties(any(), any()) } returns expected
     every { expected.error } returns null
 
     // For default property getters
     mockkStatic(StyleManager::class)
-    every { StyleManager.getStyleLayerPropertyDefaultValue(any(), any()) } returns styleProperty
   }
 
   @After
@@ -54,8 +50,8 @@ class LayerExtTest {
     val layer = symbolLayer("id", "source") {}
     layer.bindTo(style)
     layer.persistent(true)
-    verify { style.setStyleLayerProperty("id", "persistent", capture(valueSlot)) }
-    Assert.assertEquals(true, valueSlot.captured.contents)
+    verify { style.setStyleLayerPersistent("id", capture(booleanSlot)) }
+    Assert.assertEquals(true, booleanSlot.captured)
   }
 
   @Test(expected = RuntimeException::class)
@@ -67,10 +63,11 @@ class LayerExtTest {
 
   @Test
   fun testPersistentGet(){
-    every { style.getStyleLayerProperty(any(), any()) } returns StylePropertyValue(Value(true), StylePropertyValueKind.CONSTANT)
+    every { style.isStyleLayerPersistent(any()) } returns booleanExpected
+    every { booleanExpected.value } returns true
     val layer = symbolLayer("id", "source") {}
     layer.bindTo(style)
     assertTrue(layer.persistent!!)
-    verify { style.getStyleLayerProperty("id", "persistent") }
+    verify { style.isStyleLayerPersistent("id") }
   }
 }

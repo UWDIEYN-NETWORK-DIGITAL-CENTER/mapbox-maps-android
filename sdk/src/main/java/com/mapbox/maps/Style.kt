@@ -100,6 +100,43 @@ class Style internal constructor(
     styleManagerRef.call { this.styleTransition = transitionOptions }
 
   /**
+   * Changes layer's persistent flag. The flag could be set only to a layer that was added at runtime using
+   * addStyleLayer or addStyleCustomLayer methods.
+   *
+   * Note: This is an experimental API and intended for internal use only.
+   *
+   * Whenever a new style is being parsed and Map has persistent layers, engine will try to do following:
+   *   - keep persisent layer at it's relative position
+   *   - keep source used by a persistent layer
+   *   - keep images added through addStyleImage method
+   *
+   * In cases when a new style has the same layer, source or image resource, style's resources would be
+   * used instead and 'MapLoadingError' event will be emitted.
+   *
+   * @param layerId Style layer id.
+   * @param persistent flag indicating whether layer should be persistent.
+   * @return A string describing an error if the operation was not successful, empty otherwise.
+   */
+  @MapboxExperimental
+  override fun setStyleLayerPersistent(
+    layerId: String,
+    persistent: Boolean
+  ): Expected<String, None> =
+    styleManagerRef.call { this.setStyleLayerPersistent(layerId, persistent) }
+
+  /**
+   * Checks if style layer is persistent.
+   *
+   * Note: This is an experimental API and intended for internal use only.
+   *
+   * @param layerId Style layer id.
+   * @return A string describing an error if the operation was not successful, boolean representing state otherwise.
+   */
+  @MapboxExperimental
+  override fun isStyleLayerPersistent(layerId: String): Expected<String, Boolean> =
+    styleManagerRef.call { this.isStyleLayerPersistent(layerId) }
+
+  /**
    * Get the URI of the current Mapbox Style in use.
    *
    * @return A string containing a Mapbox style URI.

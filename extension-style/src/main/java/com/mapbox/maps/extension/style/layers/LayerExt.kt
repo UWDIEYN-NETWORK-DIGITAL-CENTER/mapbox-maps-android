@@ -1,25 +1,30 @@
 package com.mapbox.maps.extension.style.layers
 
 import com.mapbox.maps.MapboxExperimental
-import com.mapbox.maps.extension.style.layers.properties.PropertyValue
 
 /**
- * The persistent property allows to 'tag' layers that have to persist when style is reloaded.
- * Sources required by the persistent layers would be also kept whenever style is reloaded. This
- * feature allows to avoid unnecessary layer / source re-creation that might be rather expensive for
- * large geojson sources or layers that use distance or within expressions with complex geometries.
+ * Changes layer's persistent flag. The flag could be set only to a layer that was added at runtime using
+ * addStyleLayer or addStyleCustomLayer methods.
  *
- * Persistent layers and sources would be merged with reloaded style, in case of merge conflicts,
- * MapLoadingError would be emitted and style's sources, layers and images would be prioritized when
- * added to the style.
+ * Note: This is an experimental API and intended for internal use only.
+ *
+ * Whenever a new style is being parsed and Map has persistent layers, engine will try to do following:
+ *   - keep persisent layer at it's relative position
+ *   - keep source used by a persistent layer
+ *   - keep images added through addStyleImage method
+ *
+ * In cases when a new style has the same layer, source or image resource, style's resources would be
+ * used instead and 'MapLoadingError' event will be emitted.
+ *
+ * @param persistent flag indicating whether layer should be persistent.
+ * @return A string describing an error if the operation was not successful, empty otherwise.
  */
 @MapboxExperimental
 fun Layer.persistent(persistent: Boolean) {
   if (this.delegate == null) {
     throw RuntimeException("Persistent property must be set after the layer is added to the style.")
   }
-  val propertyValue = PropertyValue("persistent", persistent)
-  setProperty(propertyValue)
+  this.delegate?.setStyleLayerPersistent(layerId, persistent)
 }
 
 /**
@@ -34,5 +39,5 @@ val Layer.persistent: Boolean?
    * @return Boolean
    */
   get() {
-    return getPropertyValue("persistent")
+    return delegate?.isStyleLayerPersistent(layerId)?.value
   }

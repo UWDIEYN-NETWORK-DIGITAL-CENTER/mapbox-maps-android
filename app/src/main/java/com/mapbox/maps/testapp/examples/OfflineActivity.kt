@@ -42,6 +42,9 @@ class OfflineActivity : AppCompatActivity() {
   private val offlineLogsAdapter: OfflineLogsAdapter by lazy {
     OfflineLogsAdapter()
   }
+  private val tileStore: TileStore by lazy {
+    TileStore.create()
+  }
   private var mapView: MapView? = null
   private lateinit var handler: Handler
 
@@ -207,7 +210,7 @@ class OfflineActivity : AppCompatActivity() {
     // unique for a particular file path, i.e. there is only ever one TileStore per unique path.
 
     // Note that the TileStore path must be the same with the TileStore used when initialise the MapView.
-    val tilePackCancelable = TileStore.getInstance().loadTileRegion(
+    val tilePackCancelable = tileStore.loadTileRegion(
       TILE_REGION_ID,
       TileRegionLoadOptions.Builder()
         .geometry(TOKYO)
@@ -245,7 +248,7 @@ class OfflineActivity : AppCompatActivity() {
 
   private fun showDownloadedRegions() {
     // Get a list of tile regions that are currently available.
-    TileStore.getInstance().getAllTileRegions { expected ->
+    tileStore.getAllTileRegions { expected ->
       if (expected.isValue) {
         expected.value?.let { tileRegionList ->
           logInfoMessage("Existing tile regions: $tileRegionList")
@@ -272,13 +275,13 @@ class OfflineActivity : AppCompatActivity() {
     // Remove the tile region with the tile region ID.
     // Note this will not remove the downloaded tile packs, instead, it will just mark the tileset
     // not a part of a tile region. The tiles still exists as a predictive cache in TileStore.
-    TileStore.getInstance().removeTileRegion(TILE_REGION_ID)
+    tileStore.removeTileRegion(TILE_REGION_ID)
 
     // Set the disk quota to zero, so that tile regions are fully evicted
     // when removed. The TileStore is also used when `ResourceOptions.isLoadTilePacksFromNetwork`
     // is `true`, and also by the Navigation SDK.
     // This removes the tiles that do not belong to any tile regions.
-    TileStore.getInstance().setOption(TileStoreOptions.DISK_QUOTA, Value(0))
+    tileStore.setOption(TileStoreOptions.DISK_QUOTA, Value(0))
 
     // Remove the style pack with the style url.
     // Note this will not remove the downloaded style pack, instead, it will just mark the resources

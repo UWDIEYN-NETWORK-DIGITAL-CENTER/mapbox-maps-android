@@ -247,6 +247,17 @@ internal class NativeMapImpl(private val map: MapInterface) :
     map.styleTransition = transitionOptions
   }
 
+  override fun setStyleLayerPersistent(
+    layerId: String,
+    persistent: Boolean
+  ): Expected<String, None> {
+    return map.setStyleLayerPersistent(layerId, persistent)
+  }
+
+  override fun isStyleLayerPersistent(layerId: String): Expected<String, Boolean> {
+    return map.isStyleLayerPersistent(layerId)
+  }
+
   override fun removeStyleLayer(layerId: String): Expected<String, None> {
     return map.removeStyleLayer(layerId)
   }

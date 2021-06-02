@@ -18,6 +18,9 @@ import kotlinx.android.synthetic.main.activity_map_view_customization.*
 class MapViewCustomizationActivity : AppCompatActivity() {
 
   private lateinit var customMapView: MapView
+  private val tileStore: TileStore by lazy {
+    TileStore.create()
+  }
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -25,7 +28,7 @@ class MapViewCustomizationActivity : AppCompatActivity() {
     // Set the application-scoped ResourceOptionsManager with customised token, tile store and tile size
     // so that all MapViews created with default config will apply these settings.
     ResourceOptionsManager.getDefault(this, getString(R.string.mapbox_access_token)).update {
-      tileStore(TileStore.getInstance())
+      tileStore(tileStore)
       tileStoreUsageMode(TileStoreUsageMode.READ_ONLY)
       cacheSize(75_000L)
     }
