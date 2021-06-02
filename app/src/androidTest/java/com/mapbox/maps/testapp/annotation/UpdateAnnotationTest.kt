@@ -46,12 +46,43 @@ class UpdateAnnotationTest : BaseMapTest() {
   fun testUpdateAnnotation() {
     rule.scenario.onActivity {
       it.runOnUiThread {
-        handler = Handler(it.mainLooper)
-        // Move the position of annotation and update it.
-        pointAnnotation.geometry = Point.fromLngLat(pointAnnotation.geometry.longitude() + 0.1, pointAnnotation.geometry.latitude())
-        pointAnnotationManager.update(pointAnnotation)
-        // Change to the next style
-        handler.post(runnable)
+        mapboxMap.loadStyleUri(AnnotationUtils.STYLES[index++ % AnnotationUtils.STYLES.size]) {
+          pointAnnotationManager = mapView.annotations.createPointAnnotationManager(mapView)
+          pointAnnotationManager.textFont = listOf("Open Sans Regular")
+
+          pointAnnotation = pointAnnotationManager.create(
+            PointAnnotationOptions()
+              .withIconColor(ColorUtils.colorToRgbaString(Color.RED))
+              .withIconImage("car-15")
+              .withDraggable(true)
+              .withIconAnchor(IconAnchor.CENTER)
+              .withIconHaloBlur(1.0)
+              .withIconHaloColor(ColorUtils.colorToRgbaString(Color.YELLOW))
+              .withIconHaloWidth(2.0)
+              .withIconOffset(listOf(1.0, 2.0))
+              .withIconOpacity(0.8)
+              .withIconRotate(0.5)
+              .withIconSize(5.0)
+              .withIconHaloColor(ColorUtils.colorToRgbaString(Color.WHITE))
+              .withSymbolSortKey(1.0)
+              .withTextAnchor(TextAnchor.TOP)
+              .withTextColor(ColorUtils.colorToRgbaString(Color.YELLOW))
+              .withTextField("Car")
+              .withTextHaloBlur(1.0)
+              .withTextHaloWidth(5.0)
+              .withTextJustify(TextJustify.CENTER)
+              .withTextLetterSpacing(2.0)
+              .withTextRotate(5.0)
+              .withTextTransform(TextTransform.UPPERCASE)
+              .withTextSize(15.0)
+              .withTextRadialOffset(1.0)
+              .withTextOpacity(0.8)
+              .withTextOffset(listOf(1.0, 2.0))
+              .withTextMaxWidth(10.0)
+              .withPoint(Point.fromLngLat(0.0, 0.0))
+          )
+          Assert.assertEquals(pointAnnotation, pointAnnotationManager.annotations[0])
+        }
       }
     }
     if (!latch.await(30000, TimeUnit.MILLISECONDS)) {

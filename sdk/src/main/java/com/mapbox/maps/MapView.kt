@@ -39,6 +39,7 @@ open class MapView : FrameLayout, MapPluginProviderDelegate, MapControllable {
   /**
    * Build a [MapView] with [Context] and [MapInitOptions] objects.
    */
+  @JvmOverloads
   constructor(context: Context, mapInitOptions: MapInitOptions = MapInitOptions(context)) : this(
     context,
     null,
@@ -110,8 +111,7 @@ open class MapView : FrameLayout, MapPluginProviderDelegate, MapControllable {
       val resourceOptions =
         ResourcesAttributeParser.parseResourcesOptions(
           context,
-          typedArray,
-          CredentialsManager.default
+          typedArray
         )
       val mapOptions =
         MapAttributeParser.parseMapOptions(typedArray, context.resources.displayMetrics.density)
