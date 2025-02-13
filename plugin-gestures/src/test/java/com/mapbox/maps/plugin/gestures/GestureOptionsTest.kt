@@ -41,14 +41,12 @@ class GestureOptionsTest {
 
   private val pack = "com.mapbox.maps"
 
-  private val mainHandler = mockk<Handler>()
-
   private val animationsTimeoutHandler = mockk<Handler>()
 
   private val runnableSlot = slot<Runnable>()
 
   private val gesturePlugin =
-    GesturesPluginImpl(context, mockk(relaxed = true), mockk(relaxed = true), mainHandler, animationsTimeoutHandler)
+    GesturesPluginImpl(context, mockk(relaxed = true), mockk(relaxed = true), animationsTimeoutHandler)
 
   @Before
   fun setUp() {
@@ -65,10 +63,12 @@ class GestureOptionsTest {
     every { mapPluginProviderDelegate.camera } returns cameraAnimationsPlugin
     every { mapDelegateProvider.mapTransformDelegate } returns mapTransformDelegate
     every { mapDelegateProvider.mapProjectionDelegate } returns mapProjectionDelegate
-    every { mainHandler.post(capture(runnableSlot)) } answers {
-      runnableSlot.captured.run()
-      true
-    }
+    gesturePlugin.mapInteractionDelegate = mockk(relaxed = true)
+  }
+
+  private fun setupGesturePlugin() {
+    gesturePlugin.bind(context, gestureManager, attrs, 1f)
+    gesturePlugin.initialize()
   }
 
   @After
@@ -78,8 +78,7 @@ class GestureOptionsTest {
 
   @Test
   fun getGestureSettingsPinchToZoomEnabled() {
-    gesturePlugin.bind(context, gestureManager, attrs, 1f)
-    gesturePlugin.initialize()
+    setupGesturePlugin()
     assertTrue(gesturePlugin.getSettings().pinchToZoomEnabled)
   }
 
@@ -91,15 +90,13 @@ class GestureOptionsTest {
         true
       )
     } returns false
-    gesturePlugin.bind(context, gestureManager, attrs, 1f)
-    gesturePlugin.initialize()
+    setupGesturePlugin()
     assertFalse(gesturePlugin.getSettings().pinchToZoomEnabled)
   }
 
   @Test
   fun getGestureSettingsRotateEnabled() {
-    gesturePlugin.bind(context, gestureManager, attrs, 1f)
-    gesturePlugin.initialize()
+    setupGesturePlugin()
     assertTrue(gesturePlugin.getSettings().rotateEnabled)
   }
 
@@ -111,15 +108,13 @@ class GestureOptionsTest {
         true
       )
     } returns false
-    gesturePlugin.bind(context, gestureManager, attrs, 1f)
-    gesturePlugin.initialize()
+    setupGesturePlugin()
     assertFalse(gesturePlugin.getSettings().rotateEnabled)
   }
 
   @Test
   fun getGestureSettingsPitchEnabled() {
-    gesturePlugin.bind(context, gestureManager, attrs, 1f)
-    gesturePlugin.initialize()
+    setupGesturePlugin()
     assertTrue(gesturePlugin.getSettings().pitchEnabled)
   }
 
@@ -131,15 +126,13 @@ class GestureOptionsTest {
         true
       )
     } returns false
-    gesturePlugin.bind(context, gestureManager, attrs, 1f)
-    gesturePlugin.initialize()
+    setupGesturePlugin()
     assertFalse(gesturePlugin.getSettings().pitchEnabled)
   }
 
   @Test
   fun getGestureSettingsScrollEnabled() {
-    gesturePlugin.bind(context, gestureManager, attrs, 1f)
-    gesturePlugin.initialize()
+    setupGesturePlugin()
     assertTrue(gesturePlugin.getSettings().scrollEnabled)
   }
 
@@ -151,15 +144,13 @@ class GestureOptionsTest {
         true
       )
     } returns false
-    gesturePlugin.bind(context, gestureManager, attrs, 1f)
-    gesturePlugin.initialize()
+    setupGesturePlugin()
     assertFalse(gesturePlugin.getSettings().scrollEnabled)
   }
 
   @Test
   fun getGestureSettingsQuickZoomEnabled() {
-    gesturePlugin.bind(context, gestureManager, attrs, 1f)
-    gesturePlugin.initialize()
+    setupGesturePlugin()
     assertTrue(gesturePlugin.getSettings().quickZoomEnabled)
   }
 
@@ -171,15 +162,13 @@ class GestureOptionsTest {
         true
       )
     } returns false
-    gesturePlugin.bind(context, gestureManager, attrs, 1f)
-    gesturePlugin.initialize()
+    setupGesturePlugin()
     assertFalse(gesturePlugin.getSettings().quickZoomEnabled)
   }
 
   @Test
   fun getGestureSettingsDoubleTapToZoomInEnabled() {
-    gesturePlugin.bind(context, gestureManager, attrs, 1f)
-    gesturePlugin.initialize()
+    setupGesturePlugin()
     assertTrue(gesturePlugin.getSettings().doubleTapToZoomInEnabled)
   }
 
@@ -191,15 +180,13 @@ class GestureOptionsTest {
         true
       )
     } returns false
-    gesturePlugin.bind(context, gestureManager, attrs, 1f)
-    gesturePlugin.initialize()
+    setupGesturePlugin()
     assertFalse(gesturePlugin.getSettings().doubleTapToZoomInEnabled)
   }
 
   @Test
   fun getGestureSettingsDoubleTouchToZoomOutEnabled() {
-    gesturePlugin.bind(context, gestureManager, attrs, 1f)
-    gesturePlugin.initialize()
+    setupGesturePlugin()
     assertTrue(gesturePlugin.getSettings().doubleTouchToZoomOutEnabled)
   }
 
@@ -211,8 +198,7 @@ class GestureOptionsTest {
         true
       )
     } returns false
-    gesturePlugin.bind(context, gestureManager, attrs, 1f)
-    gesturePlugin.initialize()
+    setupGesturePlugin()
     assertFalse(gesturePlugin.getSettings().doubleTouchToZoomOutEnabled)
   }
 
@@ -224,8 +210,7 @@ class GestureOptionsTest {
         any()
       )
     } returns ScrollMode.HORIZONTAL_AND_VERTICAL.ordinal
-    gesturePlugin.bind(context, gestureManager, attrs, 1f)
-    gesturePlugin.initialize()
+    setupGesturePlugin()
     assertEquals(gesturePlugin.getSettings().scrollMode, ScrollMode.HORIZONTAL_AND_VERTICAL)
   }
 
@@ -237,8 +222,7 @@ class GestureOptionsTest {
         any()
       )
     } returns ScrollMode.HORIZONTAL.ordinal
-    gesturePlugin.bind(context, gestureManager, attrs, 1f)
-    gesturePlugin.initialize()
+    setupGesturePlugin()
     assertEquals(gesturePlugin.getSettings().scrollMode, ScrollMode.HORIZONTAL)
   }
 
@@ -250,8 +234,7 @@ class GestureOptionsTest {
         any()
       )
     } returns ScrollMode.VERTICAL.ordinal
-    gesturePlugin.bind(context, gestureManager, attrs, 1f)
-    gesturePlugin.initialize()
+    setupGesturePlugin()
     assertEquals(gesturePlugin.getSettings().scrollMode, ScrollMode.VERTICAL)
   }
 }

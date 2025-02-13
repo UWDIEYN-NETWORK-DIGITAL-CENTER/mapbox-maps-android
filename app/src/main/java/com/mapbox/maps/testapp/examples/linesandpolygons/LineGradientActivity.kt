@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.mapbox.geojson.Feature
 import com.mapbox.geojson.LineString
 import com.mapbox.geojson.Point
+import com.mapbox.maps.MapboxExperimental
 import com.mapbox.maps.Style
 import com.mapbox.maps.extension.style.expressions.dsl.generated.interpolate
 import com.mapbox.maps.extension.style.layers.generated.LineLayer
@@ -19,22 +20,27 @@ import com.mapbox.maps.testapp.databinding.ActivityLineGradientBinding
 
 class LineGradientActivity : AppCompatActivity() {
 
+  @OptIn(MapboxExperimental::class)
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     val binding = ActivityLineGradientBinding.inflate(layoutInflater)
     setContentView(binding.root)
-    binding.mapView.getMapboxMap().loadStyle(createStyle()) { style ->
+    binding.mapView.mapboxMap.loadStyle(createStyle()) { style ->
       logI(TAG, "Style loaded: ${style.styleURI}")
       // Increase trim offset when user click the increase trim offset button.
       binding.trimOffsetButton.setOnClickListener {
-        val linelayer = style.getLayerAs<LineLayer>(LAYER_ID)
-        val lastTrimPosition = linelayer?.lineTrimOffset?.last() ?: 0.0
-        linelayer?.lineTrimOffset(listOf(0.0, (lastTrimPosition + 0.05).coerceAtMost(1.0)))
+        val lineLayer = style.getLayerAs<LineLayer>(LAYER_ID)
+        val lastTrimPosition = lineLayer?.lineTrimOffset?.last() ?: 0.0
+        lineLayer?.let { layer ->
+          layer.lineTrimOffset(listOf(0.0, (lastTrimPosition + 0.05).coerceAtMost(1.0)))
+          layer.lineTrimColor("rgba(6, 1, 255, 0.2)")
+          layer.lineTrimFadeRange(listOf(0.0, 0.0001))
+        }
       }
     }
   }
 
-  private fun createStyle() = style(styleUri = Style.TRAFFIC_DAY) {
+  private fun createStyle() = style(style = Style.TRAFFIC_DAY) {
     +geoJsonSource(id = SOURCE_ID) {
       feature(Feature.fromGeometry(LineString.fromLngLats(POINTS)))
       lineMetrics(true)

@@ -8,6 +8,11 @@ import com.mapbox.maps.plugin.animation.CameraAnimatorChangeListener
 /**
  * Definition for listener invoked whenever the camera position changes.
  */
+@Deprecated(
+  message = "This listener is deprecated, and will be removed in next major release. use CameraChangedCallback instead.",
+  replaceWith = ReplaceWith("CameraChangedCallback"),
+  level = DeprecationLevel.WARNING
+)
 fun interface OnCameraChangeListener {
 
   /**
@@ -17,6 +22,7 @@ fun interface OnCameraChangeListener {
    * please check [CameraAnimationsPlugin], [CameraAnimationsLifecycleListener] and [CameraAnimatorChangeListener]
    *
    * @param eventData CameraChangedEventData
+   *
    */
   fun onCameraChanged(eventData: CameraChangedEventData)
 }

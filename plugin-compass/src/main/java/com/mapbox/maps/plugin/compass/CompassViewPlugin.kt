@@ -3,17 +3,19 @@ package com.mapbox.maps.plugin.compass
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.Context
-import android.os.Handler
-import android.os.Looper
+import android.graphics.drawable.BitmapDrawable
 import android.util.AttributeSet
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import androidx.annotation.RestrictTo
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.animation.doOnEnd
+import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
+import com.mapbox.maps.EdgeInsets
 import com.mapbox.maps.plugin.InvalidPluginConfigurationException
 import com.mapbox.maps.plugin.Plugin.Companion.MAPBOX_CAMERA_PLUGIN_ID
-import com.mapbox.maps.plugin.Plugin.Companion.MAPBOX_COMPASS_PLUGIN_ID
 import com.mapbox.maps.plugin.animation.CameraAnimationsPlugin
 import com.mapbox.maps.plugin.animation.MapAnimationOptions.Companion.mapAnimationOptions
 import com.mapbox.maps.plugin.animation.MapAnimationOwnerRegistry
@@ -22,18 +24,17 @@ import com.mapbox.maps.plugin.compass.generated.CompassSettings
 import com.mapbox.maps.plugin.compass.generated.CompassSettingsBase
 import com.mapbox.maps.plugin.delegates.MapCameraManagerDelegate
 import com.mapbox.maps.plugin.delegates.MapDelegateProvider
-import com.mapbox.maps.plugin.delegates.MapPluginProviderDelegate
 import java.util.concurrent.CopyOnWriteArraySet
 import kotlin.math.abs
 
 /**
  * Concrete implementation of CompassPlugin.
  */
-open class CompassViewPlugin(
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+internal class CompassViewPlugin(
   private val viewImplProvider: (Context) -> CompassViewImpl = { CompassViewImpl(it) },
   @SuppressLint("Recycle")
-  private val fadeAnimator: ValueAnimator = ValueAnimator.ofFloat(1f, 0f),
-  @Suppress("unused") private val mainHandler: Handler = Handler(Looper.getMainLooper())
+  private val fadeAnimator: ValueAnimator = ValueAnimator.ofFloat(1f, 0f)
 ) : CompassPlugin, CompassSettingsBase() {
 
   private lateinit var compassView: CompassView
@@ -43,7 +44,7 @@ open class CompassViewPlugin(
 
   private var isHidden = false
 
-  override var internalSettings: CompassSettings = CompassSettings()
+  override var internalSettings: CompassSettings = CompassSettings { }
 
   private val compassClickListeners: CopyOnWriteArraySet<OnCompassClickListener> =
     CopyOnWriteArraySet()
@@ -65,10 +66,19 @@ open class CompassViewPlugin(
   }
 
   override fun applySettings() {
+    enabled = internalSettings.enabled
     compassView.apply {
       compassGravity = internalSettings.position
-      internalSettings.image?.let { drawable ->
-        compassImage = drawable
+      internalSettings.image?.let { imageHolder ->
+        val context = (this as CompassViewImpl).context
+        imageHolder.bitmap?.let {
+          compassImage = BitmapDrawable(context.resources, it)
+        }
+        imageHolder.drawableId?.let { id ->
+          if (id != -1) {
+            compassImage = AppCompatResources.getDrawable(context, id)!!
+          }
+        }
       }
       compassRotation = internalSettings.rotation
       isCompassEnabled = internalSettings.enabled
@@ -88,9 +98,9 @@ open class CompassViewPlugin(
    * Defines whether the plugins is enabled or disabled.
    */
   override var enabled: Boolean
-    get() = compassView.isCompassEnabled
+    get() = internalSettings.enabled
     set(value) {
-      internalSettings.enabled = value
+      internalSettings = internalSettings.toBuilder().setEnabled(value).build()
       compassView.isCompassEnabled = value
       update(bearing)
       if (value && !shouldHideCompass()) {
@@ -178,12 +188,11 @@ open class CompassViewPlugin(
    * Could be invoked from any thread when map starts rendering.
    */
   override fun onCameraMove(
-    lat: Double,
-    lon: Double,
-    zoom: Double,
-    pitch: Double,
-    bearing: Double,
-    padding: Array<Double>
+      center: Point,
+      zoom: Double,
+      pitch: Double,
+      bearing: Double,
+      padding: EdgeInsets
   ) {
     update(bearing)
   }
@@ -264,16 +273,10 @@ open class CompassViewPlugin(
   /**
    * Static variables and methods.
    */
-  companion object {
+  private companion object {
     private const val DEFAULT_BEARING = 0.0
     private const val TIME_WAIT_IDLE = 500L
     private const val TIME_FADE_ANIMATION = TIME_WAIT_IDLE
     private const val BEARING_NORTH_ANIMATION_DURATION = 300L
   }
 }
-
-/**
- * Extension val for MapView to get the Compass View plugin instance.
- */
-val MapPluginProviderDelegate.compass: CompassPlugin
-  get() = this.getPlugin(MAPBOX_COMPASS_PLUGIN_ID)!!

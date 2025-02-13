@@ -29,7 +29,7 @@ class PolygonHolesActivity : AppCompatActivity() {
 
     mapView = MapView(this)
     setContentView(mapView)
-    with(mapView.getMapboxMap()) {
+    with(mapView.mapboxMap) {
       // TODO attributionTintColor(RED_COLOR) missing
       // TODO compassFadesWhenFacingNorth missing
       setCamera(
@@ -38,8 +38,8 @@ class PolygonHolesActivity : AppCompatActivity() {
           .zoom(13.0)
           .build()
       )
-      loadStyleUri(
-        Style.MAPBOX_STREETS
+      loadStyle(
+        Style.STANDARD
       ) { style ->
         val outerLineString: LineString = LineString.fromLngLats(POLYGON_COORDINATES)
         val innerLineString: LineString = LineString.fromLngLats(HOLE_COORDINATES[0])

@@ -9,27 +9,42 @@ import android.view.MenuItem
 import android.view.animation.LinearInterpolator
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.mapbox.geojson.FeatureCollection
 import com.mapbox.geojson.Point
+import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.extension.style.expressions.generated.Expression
 import com.mapbox.maps.extension.style.expressions.generated.Expression.Companion.eq
 import com.mapbox.maps.extension.style.expressions.generated.Expression.Companion.get
 import com.mapbox.maps.extension.style.expressions.generated.Expression.Companion.literal
 import com.mapbox.maps.extension.style.expressions.generated.Expression.Companion.not
-import com.mapbox.maps.extension.style.expressions.generated.Expression.Companion.toNumber
 import com.mapbox.maps.extension.style.layers.properties.generated.IconAnchor
 import com.mapbox.maps.extension.style.layers.properties.generated.SymbolZOrder
 import com.mapbox.maps.extension.style.layers.properties.generated.TextAnchor
 import com.mapbox.maps.plugin.annotation.Annotation
 import com.mapbox.maps.plugin.annotation.AnnotationPlugin
 import com.mapbox.maps.plugin.annotation.annotations
-import com.mapbox.maps.plugin.annotation.generated.*
+import com.mapbox.maps.plugin.annotation.generated.CircleAnnotation
+import com.mapbox.maps.plugin.annotation.generated.CircleAnnotationManager
+import com.mapbox.maps.plugin.annotation.generated.CircleAnnotationOptions
+import com.mapbox.maps.plugin.annotation.generated.OnPointAnnotationClickListener
+import com.mapbox.maps.plugin.annotation.generated.OnPointAnnotationDragListener
+import com.mapbox.maps.plugin.annotation.generated.OnPointAnnotationInteractionListener
+import com.mapbox.maps.plugin.annotation.generated.OnPointAnnotationLongClickListener
+import com.mapbox.maps.plugin.annotation.generated.PointAnnotation
+import com.mapbox.maps.plugin.annotation.generated.PointAnnotationManager
+import com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions
+import com.mapbox.maps.plugin.annotation.generated.createCircleAnnotationManager
+import com.mapbox.maps.plugin.annotation.generated.createPointAnnotationManager
 import com.mapbox.maps.plugin.gestures.addOnMapClickListener
 import com.mapbox.maps.testapp.R
 import com.mapbox.maps.testapp.databinding.ActivityAnnotationBinding
 import com.mapbox.maps.testapp.examples.annotation.AnnotationUtils
+import com.mapbox.maps.testapp.examples.annotation.AnnotationUtils.showShortToast
 import com.mapbox.maps.testapp.utils.BitmapUtils.bitmapFromDrawableRes
-import java.util.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Example showing how to add Symbol annotations
@@ -40,11 +55,16 @@ class PointAnnotationActivity : AppCompatActivity() {
   private var pointAnnotation: PointAnnotation? = null
   private var circleAnnotation: CircleAnnotation? = null
   private val animators: MutableList<ValueAnimator> = mutableListOf()
-  private var index: Int = 0
+  private var styleIndex: Int = 0
+  private var slotIndex: Int = 0
   private var consumeClickEvent = false
   private val nextStyle: String
     get() {
-      return AnnotationUtils.STYLES[index++ % AnnotationUtils.STYLES.size]
+      return AnnotationUtils.STYLES[styleIndex++ % AnnotationUtils.STYLES.size]
+    }
+  private val nextSlot: String
+    get() {
+      return AnnotationUtils.SLOTS[slotIndex++ % AnnotationUtils.SLOTS.size]
     }
   private lateinit var annotationPlugin: AnnotationPlugin
   private lateinit var blueBitmap: Bitmap
@@ -52,7 +72,20 @@ class PointAnnotationActivity : AppCompatActivity() {
     super.onCreate(savedInstanceState)
     val binding = ActivityAnnotationBinding.inflate(layoutInflater)
     setContentView(binding.root)
-    binding.mapView.getMapboxMap().loadStyleUri(nextStyle) {
+    binding.mapView.mapboxMap.setCamera(
+      CameraOptions.Builder()
+        .center(
+          Point.fromLngLat(
+            AIRPORT_LONGITUDE,
+            AIRPORT_LATITUDE
+          )
+        )
+        .pitch(45.0)
+        .zoom(10.5)
+        .bearing(-17.6)
+        .build()
+    )
+    binding.mapView.mapboxMap.loadStyle(nextStyle) {
       annotationPlugin = binding.mapView.annotations
       circleAnnotationManager = annotationPlugin.createCircleAnnotationManager().apply {
         val circleAnnotationOptions: CircleAnnotationOptions = CircleAnnotationOptions()
@@ -127,72 +160,53 @@ class PointAnnotationActivity : AppCompatActivity() {
           }
         })
 
-        bitmapFromDrawableRes(
-          this@PointAnnotationActivity,
-          R.drawable.ic_airplanemode_active_black_24dp
-        )?.let {
-          // create a symbol
-          val pointAnnotationOptions: PointAnnotationOptions = PointAnnotationOptions()
-            .withPoint(Point.fromLngLat(AIRPORT_LONGITUDE, AIRPORT_LATITUDE))
-            .withIconImage(it)
-            .withTextField(ID_ICON_AIRPORT)
-            .withTextOffset(listOf(0.0, -2.0))
-            .withTextColor(Color.RED)
-            .withIconSize(1.3)
-            .withIconOffset(listOf(0.0, -5.0))
-            .withSymbolSortKey(10.0)
-            .withDraggable(true)
-          pointAnnotation = create(pointAnnotationOptions)
+        val airplaneBitmap = bitmapFromDrawableRes(R.drawable.ic_airplanemode_active_black_24dp)
+        // create a symbol
+        val pointAnnotationOptions: PointAnnotationOptions = PointAnnotationOptions()
+          .withPoint(Point.fromLngLat(AIRPORT_LONGITUDE, AIRPORT_LATITUDE))
+          .withIconImage(airplaneBitmap)
+          .withTextField(ID_ICON_AIRPORT)
+          .withTextOffset(listOf(0.0, -2.0))
+          .withTextColor(Color.RED)
+          .withIconSize(1.3)
+          .withIconOffset(listOf(0.0, -5.0))
+          .withSymbolSortKey(10.0)
+          .withDraggable(true)
+        pointAnnotation = create(pointAnnotationOptions)
 
-          // random add symbols across the globe
-          val pointAnnotationOptionsList: MutableList<PointAnnotationOptions> = ArrayList()
-          for (i in 0..5) {
-            pointAnnotationOptionsList.add(
-              PointAnnotationOptions()
-                .withPoint(AnnotationUtils.createRandomPoint())
-                .withIconImage(it)
-                .withDraggable(true)
-            )
-          }
-          create(pointAnnotationOptionsList)
-        }
+        blueBitmap = bitmapFromDrawableRes(R.drawable.mapbox_user_icon)
+        // create nearby symbols
+        val nearbyOptions: PointAnnotationOptions = PointAnnotationOptions()
+          .withPoint(Point.fromLngLat(NEARBY_LONGITUDE, NEARBY_LATITUDE))
+          .withIconImage(blueBitmap)
+          .withIconSize(2.5)
+          .withTextField(ID_ICON_AIRPORT)
+          .withSymbolSortKey(5.0)
+          .withDraggable(true)
+        create(nearbyOptions)
 
-        bitmapFromDrawableRes(
-          this@PointAnnotationActivity,
-          R.drawable.mapbox_user_icon
-        )?.let {
-          blueBitmap = it
-          // create nearby symbols
-          val nearbyOptions: PointAnnotationOptions = PointAnnotationOptions()
-            .withPoint(Point.fromLngLat(NEARBY_LONGITUDE, NEARBY_LATITUDE))
-            .withIconImage(it)
-            .withIconSize(2.5)
-            .withTextField(ID_ICON_AIRPORT)
-            .withSymbolSortKey(5.0)
-            .withDraggable(true)
-          create(nearbyOptions)
-        }
         // random add symbols across the globe
-        val pointAnnotationOptionsList: MutableList<PointAnnotationOptions> = ArrayList()
-        for (i in 0..20) {
-          pointAnnotationOptionsList.add(
-            PointAnnotationOptions()
-              .withPoint(AnnotationUtils.createRandomPoint())
-              .withIconImage(MAKI_ICON_CAR)
-              .withDraggable(true)
-          )
+        val pointAnnotationOptionsList = List(25) {
+          PointAnnotationOptions()
+            .withPoint(AnnotationUtils.createRandomPoint())
+            .withIconImage(airplaneBitmap)
+            .withDraggable(true)
         }
         create(pointAnnotationOptionsList)
-
-        AnnotationUtils.loadStringFromAssets(
-          this@PointAnnotationActivity,
-          "annotations.json"
-        )?.let {
-          create(FeatureCollection.fromJson(it))
+        lifecycleScope.launch {
+          val featureCollection = withContext(Dispatchers.Default) {
+            FeatureCollection.fromJson(
+              AnnotationUtils.loadStringFromAssets(
+                this@PointAnnotationActivity,
+                "annotations.json"
+              )
+            )
+          }
+          create(featureCollection)
         }
       }
 
-      binding.mapView.getMapboxMap().addOnMapClickListener {
+      binding.mapView.mapboxMap.addOnMapClickListener {
         Toast.makeText(this@PointAnnotationActivity, "OnMapClick", Toast.LENGTH_SHORT).show()
         true
       }
@@ -201,10 +215,16 @@ class PointAnnotationActivity : AppCompatActivity() {
     binding.deleteAll.setOnClickListener {
       pointAnnotationManager?.let {
         annotationPlugin.removeAnnotationManager(it)
+        pointAnnotationManager = null
       }
     }
     binding.changeStyle.setOnClickListener {
-      binding.mapView.getMapboxMap().loadStyleUri(nextStyle)
+      binding.mapView.mapboxMap.loadStyle(nextStyle)
+    }
+    binding.changeSlot.setOnClickListener {
+      val slot = nextSlot
+      showShortToast("Switching to $slot slot")
+      pointAnnotationManager?.slot = slot
     }
   }
 
@@ -229,16 +249,22 @@ class PointAnnotationActivity : AppCompatActivity() {
         if (pointAnnotationManager != null && pointAnnotation != null) {
           val idKey = pointAnnotationManager!!.getAnnotationIdKey()
           val expression: Expression =
-            eq(toNumber(get(idKey)), literal(pointAnnotation!!.id.toDouble()))
+            eq(get(idKey), literal(pointAnnotation!!.id))
           val filter = pointAnnotationManager!!.layerFilter
           if (filter != null && filter == expression) {
-            pointAnnotationManager!!.layerFilter = not(eq(toNumber(get(idKey)), literal(-1)))
+            pointAnnotationManager!!.layerFilter = not(eq(get(idKey), literal("")))
           } else {
             pointAnnotationManager!!.layerFilter = expression
           }
+        } else {
+          Toast.makeText(
+            this@PointAnnotationActivity,
+            "pointAnnotationManager or pointAnnotation is null.",
+            Toast.LENGTH_LONG
+          ).show()
         }
       }
-      R.id.menu_action_icon -> pointAnnotation?.iconImage = MAKI_ICON_CAFE
+
       R.id.menu_action_bitmap_blue -> pointAnnotation?.iconImageBitmap = blueBitmap
       R.id.menu_action_rotation -> pointAnnotation?.iconRotate = 45.0
       R.id.menu_action_text -> pointAnnotation?.textField = "Hello world!"
@@ -326,8 +352,6 @@ class PointAnnotationActivity : AppCompatActivity() {
 
   companion object {
     private const val ID_ICON_AIRPORT = "airport"
-    private const val MAKI_ICON_CAR = "car-15"
-    private const val MAKI_ICON_CAFE = "cafe-15"
     private const val AIRPORT_LONGITUDE = 0.381457
     private const val AIRPORT_LATITUDE = 6.687337
     private const val NEARBY_LONGITUDE = 0.367099

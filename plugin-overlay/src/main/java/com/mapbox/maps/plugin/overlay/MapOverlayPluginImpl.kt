@@ -1,19 +1,16 @@
 package com.mapbox.maps.plugin.overlay
 
 import android.view.View
+import androidx.annotation.RestrictTo
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
-import com.mapbox.maps.CoordinateBounds
 import com.mapbox.maps.EdgeInsets
-import com.mapbox.maps.MapboxExperimental
+import com.mapbox.maps.dsl.cameraOptions
 import com.mapbox.maps.plugin.delegates.*
 import java.util.*
 
-/**
- * Impl class for MapOverlayPlugin
- */
-@MapboxExperimental
-class MapOverlayPluginImpl : MapOverlayPlugin {
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+internal class MapOverlayPluginImpl : MapOverlayPlugin {
   private val mapOverlays = mutableListOf<View>()
   private var mapOverlayCoordinatesProvider: MapOverlayCoordinatesProvider? = null
   internal var width: Int = 0
@@ -112,12 +109,13 @@ class MapOverlayPluginImpl : MapOverlayPlugin {
    * @param onReframeFinished the listener to get the CameraOptions
    */
   override fun reframe(onReframeFinished: OnReframeFinished?) {
-    val reframeCameraOption = getReframeCameraOption()
-    if (onReframeFinished != null) {
-      onReframeFinished.onReframeFinished(reframeCameraOption)
-    } else {
-      reframeCameraOption?.let {
-        mapCameraManagerDelegate.setCamera(it)
+    reframe { camera ->
+      if (onReframeFinished != null) {
+        onReframeFinished.onReframeFinished(camera)
+      } else {
+        camera?.let {
+          mapCameraManagerDelegate.setCamera(it)
+        }
       }
     }
   }
@@ -127,28 +125,34 @@ class MapOverlayPluginImpl : MapOverlayPlugin {
    * on the MapView and not covered by registered MapOverlays.
    * Users can use their own animation to move camera with this CameraOptions.
    *
-   * @return the CameraOptions that MapView should animate to.
+   * @param result callback with CameraOptions that MapView should animate to.
    * Will be null if MapOverlayCoordinatesProvider is not provided.
    */
-  private fun getReframeCameraOption(): CameraOptions? {
+  private fun reframe(result: (CameraOptions?) -> Unit) {
     mapOverlayCoordinatesProvider?.let {
       val coordinates = it.getShownCoordinates()
       var north = -90.0
       var south = 90.0
       var west = 180.0
       var east = -180.0
-      coordinates.forEach {
-        north = maxOf(north, it.latitude())
-        south = minOf(south, it.latitude())
-        west = minOf(west, it.longitude())
-        east = maxOf(east, it.longitude())
+      coordinates.forEach { point ->
+        north = maxOf(north, point.latitude())
+        south = minOf(south, point.latitude())
+        west = minOf(west, point.longitude())
+        east = maxOf(east, point.longitude())
       }
 
-      val bounds = CoordinateBounds(Point.fromLngLat(west, south), Point.fromLngLat(east, north), false)
-      val edgeInsets = getEdgeInsets()
-      return mapCameraManagerDelegate.cameraForCoordinateBounds(bounds, edgeInsets, null, null)
+      mapCameraManagerDelegate.cameraForCoordinates(
+        coordinates = listOf(Point.fromLngLat(west, south), Point.fromLngLat(east, north)),
+        camera = cameraOptions { },
+        coordinatesPadding = getEdgeInsets(),
+        maxZoom = null,
+        offset = null,
+        result
+      )
+    } ?: run {
+      result.invoke(null)
     }
-    return null
   }
 
   private fun getMapOverLayRect(view: View): MapOverLayRect {
@@ -168,7 +172,7 @@ class MapOverlayPluginImpl : MapOverlayPlugin {
     }.forEach {
       var size = queue.size
       while (size > 0) {
-        val subMapRect = queue.pollFirst()
+        val subMapRect = queue.pollFirst()!!
         if (it.isOverLap(subMapRect)) {
           // insert the new subMapRect
           if (it.top - subMapRect.top < subMapRect.bottom - it.bottom) {
@@ -222,6 +226,7 @@ class MapOverlayPluginImpl : MapOverlayPlugin {
   /**
    * Class represent the rectangle of MapOverlays on MapView
    */
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
   internal class MapOverLayRect(
     var left: Int,
     var top: Int,

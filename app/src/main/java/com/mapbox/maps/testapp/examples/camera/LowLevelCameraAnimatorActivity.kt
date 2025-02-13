@@ -19,10 +19,10 @@ class LowLevelCameraAnimatorActivity : AppCompatActivity() {
     super.onCreate(savedInstanceState)
     val mapView = MapView(this)
     setContentView(mapView)
-    mapboxMap = mapView.getMapboxMap()
+    mapboxMap = mapView.mapboxMap
     mapboxMap.setCamera(CAMERA_TARGET)
-    mapboxMap.loadStyleUri(
-      Style.MAPBOX_STREETS
+    mapboxMap.loadStyle(
+      Style.STANDARD
     ) {
       mapView.camera.apply {
         val bearing = createBearingAnimator(cameraAnimatorOptions(-45.0)) {

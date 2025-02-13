@@ -32,7 +32,6 @@ class DataDrivenMapSnapshotterActivity : AppCompatActivity() {
     super.onCreate(savedInstanceState)
     val snapshotMapOptions = MapSnapshotOptions.Builder()
       .size(Size(512.0f, 512.0f))
-      .resourceOptions(MapInitOptions.getDefaultResourceOptions(this))
       .build()
 
     snapshotter = Snapshotter(this, snapshotMapOptions).apply {
@@ -66,12 +65,11 @@ class DataDrivenMapSnapshotterActivity : AppCompatActivity() {
       )
       setStyleUri(Style.OUTDOORS)
     }
-    snapshotter.start {
-      it?.let { snapshot ->
-        val imageView = ImageView(this@DataDrivenMapSnapshotterActivity)
-        imageView.setImageBitmap(snapshot.bitmap())
-        setContentView(imageView)
-      }
+    // ignore error in this example
+    snapshotter.start { bitmap, _ ->
+      val imageView = ImageView(this@DataDrivenMapSnapshotterActivity)
+      imageView.setImageBitmap(bitmap)
+      setContentView(imageView)
     }
   }
 

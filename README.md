@@ -12,6 +12,9 @@ This README is intended for developers who are interested in contributing to the
 ## Developing
 If you are interested in contributing to the Maps SDK, please see the [DEVELOPING.md](DEVELOPING.md) file for information on setting up, running and building the SDK.
 
+## Migrating from previous versions
+To ensure a smooth transition for developers upgrading from previous versions of the Mapbox SDK, we've prepared comprehensive migration guides. If you're upgrading from version 10 to 11, please refer to our [v11 migration guide](https://docs.mapbox.com/android/maps/guides/migrate-to-v11/) for detailed instructions. For those moving from version 9 to 10, the [v10 migration guide](https://docs.mapbox.com/android/maps/guides/old-versions/migrate-to-v10/) is available to facilitate your upgrade process.
+
 ## Reporting issues / Need help?
 
 #### Report a bug :beetle:
@@ -21,7 +24,7 @@ Please use our [bug template](https://github.com/mapbox/mapbox-maps-android/issu
 Please use our [feature template](https://github.com/mapbox/mapbox-maps-android/issues/new?labels=feature%20%3Agreen_apple%3A&template=feature.md) to request new features or enhancements.
 
 #### Other questions
-Can't find the answer you're looking for? [Contact support](https://www.mapbox.com/contact)
+If you have any questions about how to use the SDK or if you need help with specific features, you can reach out to our support team [via our website](https://docs.mapbox.com/help/) or connect with our developer community by joining our [Discord channel](https://discord.gg/UshjQYyDFw). We kindly ask you to avoid using the issue tracker in this repository for questions and instead use our support channels.
 
 ## Historical Note
 This repository is a continuation of the Mapbox Maps SDK for Android available at [mapbox/mapbox-gl-native-android](https://github.com/mapbox/mapbox-gl-native-android).

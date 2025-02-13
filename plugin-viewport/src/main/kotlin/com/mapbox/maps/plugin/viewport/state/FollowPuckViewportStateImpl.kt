@@ -3,18 +3,19 @@ package com.mapbox.maps.plugin.viewport.state
 import android.animation.Animator
 import android.animation.AnimatorSet
 import android.animation.ValueAnimator
+import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
+import com.mapbox.common.Cancelable
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
+import com.mapbox.maps.MapboxExperimental
 import com.mapbox.maps.logW
-import com.mapbox.maps.plugin.animation.Cancelable
 import com.mapbox.maps.plugin.animation.camera
 import com.mapbox.maps.plugin.delegates.MapDelegateProvider
 import com.mapbox.maps.plugin.locationcomponent.LocationComponentPlugin
 import com.mapbox.maps.plugin.locationcomponent.OnIndicatorBearingChangedListener
 import com.mapbox.maps.plugin.locationcomponent.OnIndicatorPositionChangedListener
 import com.mapbox.maps.plugin.locationcomponent.location
-import com.mapbox.maps.plugin.viewport.DEFAULT_STATE_ANIMATION_DURATION_MS
 import com.mapbox.maps.plugin.viewport.data.FollowPuckViewportStateBearing
 import com.mapbox.maps.plugin.viewport.data.FollowPuckViewportStateOptions
 import com.mapbox.maps.plugin.viewport.transition.MapboxViewportTransitionFactory
@@ -26,6 +27,7 @@ import java.util.concurrent.*
  *
  * Note: [LocationComponentPlugin] should be enabled to use this viewport state.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 internal class FollowPuckViewportStateImpl(
   mapDelegateProvider: MapDelegateProvider,
   initialOptions: FollowPuckViewportStateOptions,
@@ -33,6 +35,19 @@ internal class FollowPuckViewportStateImpl(
     mapDelegateProvider
   )
 ) : FollowPuckViewportState {
+  private val cleanUpAnimatorListener: Animator.AnimatorListener =
+    object : Animator.AnimatorListener {
+      override fun onAnimationStart(animation: Animator) {}
+
+      override fun onAnimationEnd(animation: Animator) {
+        unregisterRunningAnimationAnimators()
+      }
+
+      override fun onAnimationCancel(animation: Animator) {}
+
+      override fun onAnimationRepeat(animation: Animator) {}
+    }
+
   private val cameraPlugin = mapDelegateProvider.mapPluginProviderDelegate.camera
   private val locationComponent = mapDelegateProvider.mapPluginProviderDelegate.location
   private val dataSourceUpdateObservers = CopyOnWriteArraySet<ViewportStateDataObserver>()
@@ -62,8 +77,7 @@ internal class FollowPuckViewportStateImpl(
     if (shouldNotifyLatestViewportData()) {
       val viewportData = evaluateViewportData()
       if (isFollowingStateRunning) {
-        // Use instant update here since the location updates are already interpolated by the location component plugin
-        updateFrame(viewportData, true)
+        updateFrame(viewportData)
       }
       dataSourceUpdateObservers.forEach {
         notifyViewportStateDataObserver(it, viewportData)
@@ -71,8 +85,7 @@ internal class FollowPuckViewportStateImpl(
     }
   }
 
-  private fun shouldNotifyLatestViewportData() =
-    lastLocation != null && (options.bearing is FollowPuckViewportStateBearing.Constant || lastBearing != null)
+  private fun shouldNotifyLatestViewportData() = lastLocation != null
 
   private fun notifyViewportStateDataObserver(
     observer: ViewportStateDataObserver,
@@ -83,22 +96,17 @@ internal class FollowPuckViewportStateImpl(
     }
   }
 
-  private fun evaluateViewportData(): CameraOptions {
-    return CameraOptions.Builder()
-      .center(lastLocation)
-      .bearing(
-        with(options.bearing) {
-          when (this) {
-            is FollowPuckViewportStateBearing.Constant -> bearing
-            else -> lastBearing
-          }
-        }
-      )
-      .zoom(options.zoom)
-      .pitch(options.pitch)
-      .padding(options.padding)
-      .build()
-  }
+  private fun evaluateViewportData(): CameraOptions = with(CameraOptions.Builder()) {
+    center(lastLocation)
+    when (val bearingOptions = options.bearing) {
+      is FollowPuckViewportStateBearing.Constant -> bearing(bearingOptions.bearing)
+      FollowPuckViewportStateBearing.SyncWithLocationPuck -> lastBearing?.let { bearing(it) }
+      else -> {} // don't touch camera bearing
+    }
+    zoom(options.zoom)
+    pitch(options.pitch)
+    padding(options.padding)
+  }.build()
 
   private fun addIndicatorListenerIfNeeded() {
     if (!isObservingLocationUpdates) {
@@ -131,7 +139,7 @@ internal class FollowPuckViewportStateImpl(
 
   /**
    * Observer the new camera options produced by the [ViewportState], it can be used to get the
-   * latest state [CameraOptions] for [ViewportTransition].
+   * latest state [CameraOptions] for [com.mapbox.maps.plugin.viewport.transition.ViewportTransition].
    *
    * @param viewportStateDataObserver observer that observe new viewport data.
    * @return a handle that cancels current observation.
@@ -176,75 +184,42 @@ internal class FollowPuckViewportStateImpl(
     removeIndicatorListenerIfNeeded()
   }
 
+  @OptIn(MapboxExperimental::class)
   private fun cancelAnimation() {
     AnimationThreadController.postOnAnimatorThread {
       runningAnimation?.apply {
+        // cancel will take care of calling unregisterRunningAnimationAnimators through
+        // the cleanUpAnimatorListener
         cancel()
-        childAnimations.forEach {
-          cameraPlugin.unregisterAnimators(it as ValueAnimator)
-        }
       }
-      runningAnimation = null
     }
   }
 
-  private fun startAnimation(
-    animatorSet: AnimatorSet,
-    instant: Boolean,
-  ) {
+  @OptIn(MapboxExperimental::class)
+  private fun startAnimation(animatorSet: AnimatorSet) {
     cancelAnimation()
     animatorSet.childAnimations.forEach {
       cameraPlugin.registerAnimators(it as ValueAnimator)
     }
-    if (instant) {
-      animatorSet.duration = 0
-    }
+    animatorSet.duration = 0
     AnimationThreadController.postOnAnimatorThread {
       animatorSet.start()
       runningAnimation = animatorSet
     }
   }
 
-  private fun finishAnimation(animatorSet: AnimatorSet?) {
-    animatorSet?.childAnimations?.forEach {
+  private fun unregisterRunningAnimationAnimators() {
+    runningAnimation?.childAnimations?.forEach {
       cameraPlugin.unregisterAnimators(it as ValueAnimator)
     }
-    if (runningAnimation == animatorSet) {
-      runningAnimation = null
-    }
+    runningAnimation = null
   }
 
-  private fun updateFrame(
-    cameraOptions: CameraOptions,
-    instant: Boolean = false,
-    onComplete: ((isFinished: Boolean) -> Unit)? = null
-  ) {
+  private fun updateFrame(cameraOptions: CameraOptions) {
     startAnimation(
-      transitionFactory.transitionLinear(cameraOptions, DEFAULT_STATE_ANIMATION_DURATION_MS)
-        .apply {
-          addListener(
-            object : Animator.AnimatorListener {
-              private var isCanceled = false
-              override fun onAnimationStart(animation: Animator) {
-                // no-ops
-              }
-
-              override fun onAnimationEnd(animation: Animator) {
-                onComplete?.invoke(!isCanceled)
-                finishAnimation(this@apply)
-              }
-
-              override fun onAnimationCancel(animation: Animator) {
-                isCanceled = true
-              }
-
-              override fun onAnimationRepeat(animation: Animator) {
-                // no-ops
-              }
-            }
-          )
-        },
-      instant
+      // Duration is set to 0 because we want instant animation
+      transitionFactory.transitionLinear(cameraOptions, 0)
+        .apply { addListener(cleanUpAnimatorListener) }
     )
   }
 

@@ -6,6 +6,11 @@ import com.mapbox.maps.extension.observable.model.StyleDataType
 /**
  * The data class for style-data-loaded event data in Observer
  */
+@Deprecated(
+  message = "This data class is deprecated, and will be removed in next major release.",
+  replaceWith = ReplaceWith("StyleDataLoaded"),
+  level = DeprecationLevel.WARNING
+)
 data class StyleDataLoadedEventData(
   /**
    * Representing timestamp taken at the time of an event creation, in microseconds, since the epoch.

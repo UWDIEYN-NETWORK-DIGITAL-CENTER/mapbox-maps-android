@@ -6,6 +6,11 @@ import com.google.gson.annotations.SerializedName
  * Describes type for request object.
  * @param value String value of this enum
  */
+@Deprecated(
+  message = "This enum class is deprecated, and will be removed in next major release.",
+  replaceWith = ReplaceWith("RequestResourceType"),
+  level = DeprecationLevel.WARNING
+)
 enum class RequestType(val value: String) {
   /**
    * Request type unknown.

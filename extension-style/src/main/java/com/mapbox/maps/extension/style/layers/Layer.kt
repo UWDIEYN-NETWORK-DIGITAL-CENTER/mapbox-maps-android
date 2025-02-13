@@ -1,12 +1,14 @@
 package com.mapbox.maps.extension.style.layers
 
 import android.util.Log
+import com.mapbox.bindgen.Expected
+import com.mapbox.bindgen.None
 import com.mapbox.bindgen.Value
 import com.mapbox.maps.LayerPosition
 import com.mapbox.maps.MapboxStyleException
-import com.mapbox.maps.StyleManagerInterface
+import com.mapbox.maps.MapboxStyleManager
 import com.mapbox.maps.extension.style.StyleContract
-import com.mapbox.maps.extension.style.StyleInterface
+import com.mapbox.maps.extension.style.expressions.generated.Expression
 import com.mapbox.maps.extension.style.layers.generated.BackgroundLayer
 import com.mapbox.maps.extension.style.layers.properties.PropertyValue
 import com.mapbox.maps.extension.style.layers.properties.generated.Visibility
@@ -26,7 +28,7 @@ abstract class Layer : StyleContract.StyleLayerExtension {
    */
   internal var internalSourceId: String? = null
 
-  internal var delegate: StyleManagerInterface? = null
+  internal var delegate: MapboxStyleManager? = null
 
   internal var appliedLayerPropertiesValue: Value? = null
 
@@ -50,18 +52,32 @@ abstract class Layer : StyleContract.StyleLayerExtension {
   internal abstract fun getType(): String
 
   /**
-   * Get the Visibility property
+   * Get the Visibility property.
    *
    * @return property wrapper value around VISIBILITY
    */
   abstract val visibility: Visibility?
 
   /**
-   * Set the Visibility property
+   * Get the Visibility property as Expression.
+   *
+   * @return property wrapper value around VISIBILITY
+   */
+  abstract val visibilityAsExpression: Expression?
+
+  /**
+   * Set the Visibility property.
    *
    * @param visibility value of Visibility
    */
   abstract fun visibility(visibility: Visibility): Layer
+
+  /**
+   * Set the Visibility property as expression.
+   *
+   * @param visibility value of Visibility as expression
+   */
+  abstract fun visibility(visibility: Expression): Layer
 
   /**
    * The minimum zoom level for the layer. At zoom levels less than the minzoom, the layer will be hidden.
@@ -96,11 +112,40 @@ abstract class Layer : StyleContract.StyleLayerExtension {
   abstract fun maxZoom(maxZoom: Double): Layer
 
   /**
+   * The slot this layer is assigned to. If specified, and a slot with that name exists,
+   * it will be placed at that position in the layer order.
+   *
+   * @param slot value of slot. Setting it to empty string removes the slot.
+   */
+  abstract fun slot(slot: String): Layer
+
+  /**
+   * The slot this layer is assigned to. If specified, and a slot with that name exists,
+   * it will be placed at that position in the layer order.
+   */
+  abstract val slot: String?
+
+  protected open fun addPersistentLayer(
+    delegate: MapboxStyleManager,
+    position: LayerPosition?
+  ): Expected<String, None> {
+    return delegate.addPersistentStyleLayer(getCachedLayerProperties(), position)
+  }
+
+  protected open fun addLayer(
+    delegate: MapboxStyleManager,
+    propertiesValue: Value,
+    position: LayerPosition?
+  ): Expected<String, None> {
+    return delegate.addStyleLayer(propertiesValue, position)
+  }
+
+  /**
    * Bind the layer to the Style.
    *
    * @param delegate The style controller
    */
-  fun bindTo(delegate: StyleInterface) {
+  fun bindTo(delegate: MapboxStyleManager) {
     bindTo(delegate, null)
   }
 
@@ -110,11 +155,11 @@ abstract class Layer : StyleContract.StyleLayerExtension {
    * @param delegate The style controller
    * @param position the position that the current layer is added to
    */
-  override fun bindTo(delegate: StyleInterface, position: LayerPosition?) {
+  override fun bindTo(delegate: MapboxStyleManager, position: LayerPosition?) {
     this.delegate = delegate
 
     val propertiesValue = appliedLayerPropertiesValue ?: getCachedLayerProperties()
-    val expected = delegate.addStyleLayer(propertiesValue, position)
+    val expected = addLayer(delegate, propertiesValue, position)
     expected.error?.let {
       throw MapboxStyleException("Add layer failed: $it")
     }
@@ -127,8 +172,31 @@ abstract class Layer : StyleContract.StyleLayerExtension {
     }
   }
 
+  /**
+   * Bind the layer to the map controller persistently.
+   *
+   * Whenever a new style is being parsed and currently used style has persistent layers,
+   * an engine will try to do following:
+   *   - keep the persistent layer at its relative position
+   *   - keep the source used by a persistent layer
+   *   - keep images added through `addStyleImage` method
+   *
+   * In cases when a new style has the same layer, source or image resource, style's resources would be
+   * used instead and `MapLoadingError` event will be emitted.
+   *
+   * @param style The style
+   * @param position the position that the current layer is added to
+   */
+  internal fun bindPersistentlyTo(style: MapboxStyleManager, position: LayerPosition? = null) {
+    this.delegate = style
+    val expected = addPersistentLayer(style, position)
+    expected.error?.let {
+      throw MapboxStyleException("Add persistent layer failed: $it")
+    }
+  }
+
   // Layer Properties
-  internal fun getCachedLayerProperties(): Value {
+  protected fun getCachedLayerProperties(): Value {
     val properties = HashMap<String, Value>()
     layerProperties.values.forEach {
       properties[it.propertyName] = it.value
@@ -159,11 +227,15 @@ abstract class Layer : StyleContract.StyleLayerExtension {
       return try {
         it.getStyleLayerProperty(layerId, propertyName).unwrap()
       } catch (e: RuntimeException) {
-        Log.e(
-          TAG,
-          "Get layer property=$propertyName for layerId=$layerId failed: ${e.message}. " +
-            "Value obtained: ${it.getStyleLayerProperty(layerId, propertyName)}"
-        )
+        // logging an error is misleading as it is valid to set a property
+        // with a concrete value (e.g. Double) and then read it as an expression
+        if (T::class != Expression::class) {
+          Log.e(
+            TAG,
+            "Get layer property=$propertyName for layerId=$layerId failed: ${e.message}. " +
+              "Value obtained: ${it.getStyleLayerProperty(layerId, propertyName)}"
+          )
+        }
         null
       }
     }

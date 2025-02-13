@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.mapbox.maps.testapp.examples
 
 import android.os.Bundle
@@ -55,24 +57,25 @@ class ViewPagerActivity : AppCompatActivity() {
     }
 
     companion object {
-      private const val NUM_ITEMS = 5
+      private const val NUM_ITEMS = 6
     }
   }
 }
 
 fun MapFragment.getMapAsync(index: Int) {
   this.getMapAsync {
-    it.loadStyleUri(getStyleFromIndex(index))
+    it.loadStyle(getStyleFromIndex(index))
   }
 }
 
 fun getStyleFromIndex(index: Int): String {
   return when (index) {
-    0 -> Style.MAPBOX_STREETS
+    0 -> Style.STANDARD
     1 -> Style.DARK
     2 -> Style.SATELLITE
     3 -> Style.LIGHT
     4 -> Style.TRAFFIC_NIGHT
-    else -> Style.MAPBOX_STREETS
+    5 -> Style.STANDARD_SATELLITE
+    else -> Style.STANDARD
   }
 }

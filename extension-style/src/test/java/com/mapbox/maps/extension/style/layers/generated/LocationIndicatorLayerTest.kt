@@ -6,11 +6,11 @@ import android.graphics.Color
 import com.mapbox.bindgen.Expected
 import com.mapbox.bindgen.None
 import com.mapbox.bindgen.Value
+import com.mapbox.maps.MapboxStyleManager
 import com.mapbox.maps.StyleManager
 import com.mapbox.maps.StylePropertyValue
 import com.mapbox.maps.StylePropertyValueKind
 import com.mapbox.maps.extension.style.ShadowStyleManager
-import com.mapbox.maps.extension.style.StyleInterface
 import com.mapbox.maps.extension.style.expressions.dsl.generated.*
 import com.mapbox.maps.extension.style.layers.getLayer
 import com.mapbox.maps.extension.style.layers.properties.generated.*
@@ -28,7 +28,7 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(shadows = [ShadowStyleManager::class])
 class LocationIndicatorLayerTest {
-  private val style = mockk<StyleInterface>(relaxUnitFun = true, relaxed = true)
+  private val style = mockk<MapboxStyleManager>(relaxUnitFun = true, relaxed = true)
   private val expected = mockk<Expected<String, None>>(relaxUnitFun = true, relaxed = true)
   private val valueExpected = mockk<Expected<String, Value>>(relaxUnitFun = true, relaxed = true)
   private val styleProperty = mockk<StylePropertyValue>()
@@ -388,6 +388,37 @@ class LocationIndicatorLayerTest {
     assertEquals(expectedValue.toString(), layer.accuracyRadiusBorderColor?.toString())
     verify { style.getStyleLayerProperty("id", "accuracy-radius-border-color") }
   }
+
+  @Test
+  fun accuracyRadiusBorderColorUseThemeSetAfterInitialization() {
+    val layer = locationIndicatorLayer("id") {}
+    val theme = "none"
+    layer.bindTo(style)
+    layer.accuracyRadiusBorderColorUseTheme(theme)
+    verify { style.setStyleLayerProperty("id", "accuracy-radius-border-color-use-theme", capture(valueSlot)) }
+    assertEquals(valueSlot.captured.toString(), theme)
+  }
+
+  @Test
+  fun accuracyRadiusBorderColorUseThemeSet() {
+    val theme = "none"
+    val layer = locationIndicatorLayer("id") {
+      accuracyRadiusBorderColorUseTheme(theme)
+    }
+    layer.bindTo(style)
+    verify { style.addStyleLayer(capture(valueSlot), any()) }
+    assertTrue(valueSlot.captured.toString().contains("accuracy-radius-border-color-use-theme"))
+  }
+
+  @Test
+  fun accuracyRadiusBorderColorUseThemeGet() {
+    val theme = "none"
+    every { styleProperty.value } returns TypeUtils.wrapToValue(theme)
+    val layer = locationIndicatorLayer("id") {}
+    layer.bindTo(style)
+    assertEquals(theme.toString(), layer.accuracyRadiusBorderColorUseTheme?.toString())
+    verify { style.getStyleLayerProperty("id", "accuracy-radius-border-color-use-theme") }
+  }
   // Expression Tests
 
   @Test
@@ -536,6 +567,37 @@ class LocationIndicatorLayerTest {
     val expectedValue = "rgba(0, 0, 0, 1)"
     assertEquals(expectedValue.toString(), layer.accuracyRadiusColor?.toString())
     verify { style.getStyleLayerProperty("id", "accuracy-radius-color") }
+  }
+
+  @Test
+  fun accuracyRadiusColorUseThemeSetAfterInitialization() {
+    val layer = locationIndicatorLayer("id") {}
+    val theme = "none"
+    layer.bindTo(style)
+    layer.accuracyRadiusColorUseTheme(theme)
+    verify { style.setStyleLayerProperty("id", "accuracy-radius-color-use-theme", capture(valueSlot)) }
+    assertEquals(valueSlot.captured.toString(), theme)
+  }
+
+  @Test
+  fun accuracyRadiusColorUseThemeSet() {
+    val theme = "none"
+    val layer = locationIndicatorLayer("id") {
+      accuracyRadiusColorUseTheme(theme)
+    }
+    layer.bindTo(style)
+    verify { style.addStyleLayer(capture(valueSlot), any()) }
+    assertTrue(valueSlot.captured.toString().contains("accuracy-radius-color-use-theme"))
+  }
+
+  @Test
+  fun accuracyRadiusColorUseThemeGet() {
+    val theme = "none"
+    every { styleProperty.value } returns TypeUtils.wrapToValue(theme)
+    val layer = locationIndicatorLayer("id") {}
+    layer.bindTo(style)
+    assertEquals(theme.toString(), layer.accuracyRadiusColorUseTheme?.toString())
+    verify { style.getStyleLayerProperty("id", "accuracy-radius-color-use-theme") }
   }
   // Expression Tests
 
@@ -900,6 +962,37 @@ class LocationIndicatorLayerTest {
     assertEquals(expectedValue.toString(), layer.emphasisCircleColor?.toString())
     verify { style.getStyleLayerProperty("id", "emphasis-circle-color") }
   }
+
+  @Test
+  fun emphasisCircleColorUseThemeSetAfterInitialization() {
+    val layer = locationIndicatorLayer("id") {}
+    val theme = "none"
+    layer.bindTo(style)
+    layer.emphasisCircleColorUseTheme(theme)
+    verify { style.setStyleLayerProperty("id", "emphasis-circle-color-use-theme", capture(valueSlot)) }
+    assertEquals(valueSlot.captured.toString(), theme)
+  }
+
+  @Test
+  fun emphasisCircleColorUseThemeSet() {
+    val theme = "none"
+    val layer = locationIndicatorLayer("id") {
+      emphasisCircleColorUseTheme(theme)
+    }
+    layer.bindTo(style)
+    verify { style.addStyleLayer(capture(valueSlot), any()) }
+    assertTrue(valueSlot.captured.toString().contains("emphasis-circle-color-use-theme"))
+  }
+
+  @Test
+  fun emphasisCircleColorUseThemeGet() {
+    val theme = "none"
+    every { styleProperty.value } returns TypeUtils.wrapToValue(theme)
+    val layer = locationIndicatorLayer("id") {}
+    layer.bindTo(style)
+    assertEquals(theme.toString(), layer.emphasisCircleColorUseTheme?.toString())
+    verify { style.getStyleLayerProperty("id", "emphasis-circle-color-use-theme") }
+  }
   // Expression Tests
 
   @Test
@@ -1019,6 +1112,113 @@ class LocationIndicatorLayerTest {
       delay(200)
     }
     verify { style.setStyleLayerProperty("id", "emphasis-circle-color-transition", capture(valueSlot)) }
+    assertEquals(valueSlot.captured.toString(), "{duration=100, delay=200}")
+  }
+
+  @Test
+  fun emphasisCircleGlowRangeSet() {
+    val layer = locationIndicatorLayer("id") {}
+    val testValue = listOf(0.0, 1.0)
+    layer.bindTo(style)
+    layer.emphasisCircleGlowRange(testValue)
+    verify { style.setStyleLayerProperty("id", "emphasis-circle-glow-range", capture(valueSlot)) }
+    assertEquals(valueSlot.captured.toString(), "[0.0, 1.0]")
+  }
+
+  @Test
+  fun emphasisCircleGlowRangeGet() {
+    val testValue = listOf(0.0, 1.0)
+    every { styleProperty.value } returns TypeUtils.wrapToValue(testValue)
+    val layer = locationIndicatorLayer("id") { }
+    layer.bindTo(style)
+    val expectedValue = listOf(0.0, 1.0)
+    assertEquals(expectedValue.toString(), layer.emphasisCircleGlowRange?.toString())
+    verify { style.getStyleLayerProperty("id", "emphasis-circle-glow-range") }
+  }
+  // Expression Tests
+
+  @Test
+  fun emphasisCircleGlowRangeAsExpressionSet() {
+    val expression = sum {
+      literal(2)
+      literal(3)
+    }
+    val layer = locationIndicatorLayer("id") {}
+    layer.bindTo(style)
+    layer.emphasisCircleGlowRange(expression)
+    verify { style.setStyleLayerProperty("id", "emphasis-circle-glow-range", capture(valueSlot)) }
+    assertEquals(valueSlot.captured.toString(), "[+, 2, 3]")
+  }
+
+  @Test
+  fun emphasisCircleGlowRangeAsExpressionGet() {
+    val expression = sum {
+      literal(2)
+      literal(3)
+    }
+    every { styleProperty.value } returns TypeUtils.wrapToValue(expression)
+    every { styleProperty.kind } returns StylePropertyValueKind.EXPRESSION
+    val layer = locationIndicatorLayer("id") { }
+    layer.bindTo(style)
+    assertEquals(expression.toString(), layer.emphasisCircleGlowRangeAsExpression?.toString())
+    verify { style.getStyleLayerProperty("id", "emphasis-circle-glow-range") }
+  }
+
+  @Test
+  fun emphasisCircleGlowRangeAsExpressionGetNull() {
+    val layer = locationIndicatorLayer("id") { }
+    layer.bindTo(style)
+    assertEquals(null, layer.emphasisCircleGlowRangeAsExpression)
+    verify { style.getStyleLayerProperty("id", "emphasis-circle-glow-range") }
+  }
+
+  @Test
+  fun emphasisCircleGlowRangeAsExpressionGetFromLiteral() {
+    every { styleProperty.value } returns TypeUtils.wrapToValue(listOf(0.0, 1.0))
+    val layer = locationIndicatorLayer("id") { }
+    layer.bindTo(style)
+    assertEquals("[literal, [0.0, 1.0]]", layer.emphasisCircleGlowRangeAsExpression.toString())
+    assertEquals(listOf(0.0, 1.0), layer.emphasisCircleGlowRange!!)
+    verify { style.getStyleLayerProperty("id", "emphasis-circle-glow-range") }
+  }
+
+  @Test
+  fun emphasisCircleGlowRangeTransitionSet() {
+    val layer = locationIndicatorLayer("id") {}
+    layer.bindTo(style)
+    layer.emphasisCircleGlowRangeTransition(
+      transitionOptions {
+        duration(100)
+        delay(200)
+      }
+    )
+    verify { style.setStyleLayerProperty("id", "emphasis-circle-glow-range-transition", capture(valueSlot)) }
+    assertEquals(valueSlot.captured.toString(), "{duration=100, delay=200}")
+  }
+
+  @Test
+  fun emphasisCircleGlowRangeTransitionGet() {
+    val transition = transitionOptions {
+      duration(100)
+      delay(200)
+    }
+    every { styleProperty.value } returns TypeUtils.wrapToValue(transition)
+    every { styleProperty.kind } returns StylePropertyValueKind.TRANSITION
+    val layer = locationIndicatorLayer("id") {}
+    layer.bindTo(style)
+    assertEquals(transition.toValue().toString(), layer.emphasisCircleGlowRangeTransition?.toValue().toString())
+    verify { style.getStyleLayerProperty("id", "emphasis-circle-glow-range-transition") }
+  }
+
+  @Test
+  fun emphasisCircleGlowRangeTransitionSetDsl() {
+    val layer = locationIndicatorLayer("id") {}
+    layer.bindTo(style)
+    layer.emphasisCircleGlowRangeTransition {
+      duration(100)
+      delay(200)
+    }
+    verify { style.setStyleLayerProperty("id", "emphasis-circle-glow-range-transition", capture(valueSlot)) }
     assertEquals(valueSlot.captured.toString(), "{duration=100, delay=200}")
   }
 
@@ -1711,6 +1911,26 @@ class LocationIndicatorLayerTest {
   }
 
   @Test
+  fun visibilityAsExpressionSet() {
+    val layer = locationIndicatorLayer("id") {}
+    layer.bindTo(style)
+    layer.visibility(literal("none"))
+    verify { style.setStyleLayerProperty("id", "visibility", capture(valueSlot)) }
+    assertEquals(valueSlot.captured.toString(), "none")
+  }
+
+  @Test
+  fun visibilityAsExpressionGet() {
+    every { styleProperty.kind } returns StylePropertyValueKind.EXPRESSION
+    every { styleProperty.value } returns literal("none")
+
+    val layer = locationIndicatorLayer("id") { }
+    layer.bindTo(style)
+    assertEquals(literal("none"), layer.visibilityAsExpression)
+    verify { style.getStyleLayerProperty("id", "visibility") }
+  }
+
+  @Test
   fun getType() {
     val layer = locationIndicatorLayer("id") { }
     assertEquals("location-indicator", layer.getType())
@@ -1889,6 +2109,15 @@ class LocationIndicatorLayerTest {
     assertEquals(expectedValue.toString(), LocationIndicatorLayer.defaultAccuracyRadiusBorderColor?.toString())
     verify { StyleManager.getStyleLayerPropertyDefaultValue("location-indicator", "accuracy-radius-border-color") }
   }
+
+  @Test
+  fun defaultAccuracyRadiusBorderColorUseThemeTest() {
+    val testValue = "default"
+    every { styleProperty.value } returns TypeUtils.wrapToValue(testValue)
+    assertEquals(testValue, LocationIndicatorLayer.defaultAccuracyRadiusBorderColorUseTheme)
+    verify { StyleManager.getStyleLayerPropertyDefaultValue("location-indicator", "accuracy-radius-border-color-use-theme") }
+  }
+
   // Expression Tests
 
   @Test
@@ -1964,6 +2193,15 @@ class LocationIndicatorLayerTest {
     assertEquals(expectedValue.toString(), LocationIndicatorLayer.defaultAccuracyRadiusColor?.toString())
     verify { StyleManager.getStyleLayerPropertyDefaultValue("location-indicator", "accuracy-radius-color") }
   }
+
+  @Test
+  fun defaultAccuracyRadiusColorUseThemeTest() {
+    val testValue = "default"
+    every { styleProperty.value } returns TypeUtils.wrapToValue(testValue)
+    assertEquals(testValue, LocationIndicatorLayer.defaultAccuracyRadiusColorUseTheme)
+    verify { StyleManager.getStyleLayerPropertyDefaultValue("location-indicator", "accuracy-radius-color-use-theme") }
+  }
+
   // Expression Tests
 
   @Test
@@ -2127,6 +2365,15 @@ class LocationIndicatorLayerTest {
     assertEquals(expectedValue.toString(), LocationIndicatorLayer.defaultEmphasisCircleColor?.toString())
     verify { StyleManager.getStyleLayerPropertyDefaultValue("location-indicator", "emphasis-circle-color") }
   }
+
+  @Test
+  fun defaultEmphasisCircleColorUseThemeTest() {
+    val testValue = "default"
+    every { styleProperty.value } returns TypeUtils.wrapToValue(testValue)
+    assertEquals(testValue, LocationIndicatorLayer.defaultEmphasisCircleColorUseTheme)
+    verify { StyleManager.getStyleLayerPropertyDefaultValue("location-indicator", "emphasis-circle-color-use-theme") }
+  }
+
   // Expression Tests
 
   @Test
@@ -2185,6 +2432,50 @@ class LocationIndicatorLayerTest {
 
     assertEquals(transition.toValue().toString(), LocationIndicatorLayer.defaultEmphasisCircleColorTransition?.toValue().toString())
     verify { StyleManager.getStyleLayerPropertyDefaultValue("location-indicator", "emphasis-circle-color-transition") }
+  }
+
+  @Test
+  fun defaultEmphasisCircleGlowRangeTest() {
+    val testValue = listOf(0.0, 1.0)
+    every { styleProperty.value } returns TypeUtils.wrapToValue(testValue)
+    val expectedValue = listOf(0.0, 1.0)
+    assertEquals(expectedValue.toString(), LocationIndicatorLayer.defaultEmphasisCircleGlowRange?.toString())
+    verify { StyleManager.getStyleLayerPropertyDefaultValue("location-indicator", "emphasis-circle-glow-range") }
+  }
+  // Expression Tests
+
+  @Test
+  fun defaultEmphasisCircleGlowRangeAsExpressionTest() {
+    val expression = sum {
+      literal(2)
+      literal(3)
+    }
+    every { styleProperty.value } returns TypeUtils.wrapToValue(expression)
+    every { styleProperty.kind } returns StylePropertyValueKind.EXPRESSION
+
+    assertEquals(expression.toString(), LocationIndicatorLayer.defaultEmphasisCircleGlowRangeAsExpression?.toString())
+    verify { StyleManager.getStyleLayerPropertyDefaultValue("location-indicator", "emphasis-circle-glow-range") }
+  }
+
+  @Test
+  fun defaultEmphasisCircleGlowRangeAsExpressionGetFromLiteral() {
+    every { styleProperty.value } returns TypeUtils.wrapToValue(listOf(0.0, 1.0))
+    assertEquals("[literal, [0.0, 1.0]]", LocationIndicatorLayer.defaultEmphasisCircleGlowRangeAsExpression.toString())
+    assertEquals(listOf(0.0, 1.0), LocationIndicatorLayer.defaultEmphasisCircleGlowRange!!)
+    verify { StyleManager.getStyleLayerPropertyDefaultValue("location-indicator", "emphasis-circle-glow-range") }
+  }
+
+  @Test
+  fun defaultEmphasisCircleGlowRangeTransitionTest() {
+    val transition = transitionOptions {
+      duration(100)
+      delay(200)
+    }
+    every { styleProperty.value } returns TypeUtils.wrapToValue(transition)
+    every { styleProperty.kind } returns StylePropertyValueKind.TRANSITION
+
+    assertEquals(transition.toValue().toString(), LocationIndicatorLayer.defaultEmphasisCircleGlowRangeTransition?.toValue().toString())
+    verify { StyleManager.getStyleLayerPropertyDefaultValue("location-indicator", "emphasis-circle-glow-range-transition") }
   }
 
   @Test

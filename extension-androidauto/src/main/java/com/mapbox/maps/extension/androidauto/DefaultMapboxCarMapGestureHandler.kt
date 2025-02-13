@@ -1,17 +1,20 @@
 package com.mapbox.maps.extension.androidauto
 
 import androidx.car.app.SurfaceCallback
-import com.mapbox.maps.*
+import com.mapbox.maps.CameraOptions
+import com.mapbox.maps.MapboxMap
+import com.mapbox.maps.ScreenCoordinate
+import com.mapbox.maps.logI
 import com.mapbox.maps.plugin.animation.camera
+import com.mapbox.maps.util.CoreGesturesHandler
 
 /**
  * This class contains the default map gestures. It Handles the gestures received from
  * [SurfaceCallback] and applies them to the [MapboxMap] camera. If you would like to customize
  * the map gestures, use [MapboxCarMap.setGestureHandler].
- *
- * @since 1.0.0
  */
 open class DefaultMapboxCarMapGestureHandler : MapboxCarMapGestureHandler {
+  private var coreGestureHandler: CoreGesturesHandler? = null
 
   /**
    * @see [MapboxCarMapGestureHandler.onScroll]
@@ -27,15 +30,15 @@ open class DefaultMapboxCarMapGestureHandler : MapboxCarMapGestureHandler {
     distanceX: Float,
     distanceY: Float
   ) {
-    with(mapboxCarMapSurface.mapSurface.getMapboxMap()) {
-      dragStart(visibleCenter)
+    with(mapboxCarMapSurface.mapSurface.mapboxMap) {
+      notifyCoreGestureStarted()
       val toCoordinate = ScreenCoordinate(
         visibleCenter.x - distanceX,
         visibleCenter.y - distanceY
       )
       logI(TAG, "scroll from $visibleCenter to $toCoordinate")
-      setCamera(getDragCameraOptions(visibleCenter, toCoordinate))
-      dragEnd()
+      setCamera(cameraForDrag(visibleCenter, toCoordinate))
+      coreGestureHandler?.notifyCoreTouchEnded()
     }
   }
 
@@ -74,7 +77,7 @@ open class DefaultMapboxCarMapGestureHandler : MapboxCarMapGestureHandler {
     scaleFactor: Float
   ) {
     with(mapboxCarMapSurface.mapSurface) {
-      val fromZoom = getMapboxMap().cameraState.zoom
+      val fromZoom = mapboxMap.cameraState.zoom
       val toZoom = fromZoom - (1.0 - scaleFactor.toDouble())
       val anchor = ScreenCoordinate(
         focusX.toDouble(),
@@ -90,9 +93,19 @@ open class DefaultMapboxCarMapGestureHandler : MapboxCarMapGestureHandler {
       if (scaleFactor == DOUBLE_TAP_SCALE_FACTOR) {
         camera.easeTo(cameraOptions)
       } else {
-        getMapboxMap().setCamera(cameraOptions)
+        mapboxMap.setCamera(cameraOptions)
       }
     }
+  }
+
+  private fun MapboxMap.notifyCoreGestureStarted() {
+    if (coreGestureHandler == null) {
+      coreGestureHandler = CoreGesturesHandler(
+        mapTransformDelegate = this,
+        mapCameraManagerDelegate = this
+      )
+    }
+    coreGestureHandler?.notifyCoreGestureStarted()
   }
 
   private companion object {

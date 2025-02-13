@@ -31,13 +31,13 @@ class CameraAnimationsListenersTest {
   private lateinit var mapCameraManagerDelegate: MapCameraManagerDelegate
 
   private class Listener : Animator.AnimatorListener {
-    override fun onAnimationStart(animation: Animator?) {}
+    override fun onAnimationStart(animation: Animator) {}
 
-    override fun onAnimationEnd(animation: Animator?) {}
+    override fun onAnimationEnd(animation: Animator) {}
 
-    override fun onAnimationCancel(animation: Animator?) {}
+    override fun onAnimationCancel(animation: Animator) {}
 
-    override fun onAnimationRepeat(animation: Animator?) {}
+    override fun onAnimationRepeat(animation: Animator) {}
   }
 
   @Before
@@ -63,14 +63,11 @@ class CameraAnimationsListenersTest {
     every { mapCameraManagerDelegate.setCamera(any<CameraOptions>()) } answers {
       actualCameraState = firstArg<CameraOptions>().toCameraState()
       cameraAnimationsPluginImpl.onCameraMove(
-        lat = actualCameraState.center.latitude(),
-        lon = actualCameraState.center.longitude(),
-        zoom = actualCameraState.zoom,
-        pitch = actualCameraState.pitch,
-        bearing = actualCameraState.bearing,
-        padding = actualCameraState.padding.let { insets ->
-          arrayOf(insets.left, insets.top, insets.right, insets.bottom)
-        }
+          center = actualCameraState.center,
+          zoom = actualCameraState.zoom,
+          pitch = actualCameraState.pitch,
+          bearing = actualCameraState.bearing,
+          padding = actualCameraState.padding
       )
     }
   }
@@ -217,8 +214,8 @@ class CameraAnimationsListenersTest {
     bearingAnimator.start()
     Shadows.shadowOf(Looper.getMainLooper()).idle()
 
-    Assert.assertEquals(5, valuesList.size)
-    Assert.assertArrayEquals(intArrayOf(0, 1, 2), valuesList.slice(0..2).toIntArray())
+    Assert.assertEquals(3, valuesList.size)
+    Assert.assertArrayEquals(intArrayOf(0, 1, 2), valuesList.toIntArray())
   }
 
   @Test
@@ -245,8 +242,8 @@ class CameraAnimationsListenersTest {
     bearingAnimator.start()
     Shadows.shadowOf(Looper.getMainLooper()).idle()
 
-    Assert.assertEquals(5, valuesList.size)
-    Assert.assertArrayEquals(intArrayOf(0, 1, 2), valuesList.slice(0..2).toIntArray())
+    Assert.assertEquals(3, valuesList.size)
+    Assert.assertArrayEquals(intArrayOf(0, 1, 2), valuesList.toIntArray())
   }
 
   @Test
@@ -295,8 +292,8 @@ class CameraAnimationsListenersTest {
     bearingAnimator.start()
     Shadows.shadowOf(Looper.getMainLooper()).idle()
 
-    Assert.assertEquals(3, valuesList.size)
-    Assert.assertArrayEquals(intArrayOf(0, 1, 1), valuesList.slice(0..2).toIntArray())
+    Assert.assertEquals(2, valuesList.size)
+    Assert.assertArrayEquals(intArrayOf(0, 1), valuesList.toIntArray())
   }
 
   @Test
@@ -332,8 +329,8 @@ class CameraAnimationsListenersTest {
     bearingAnimator.start()
     Shadows.shadowOf(Looper.getMainLooper()).idle()
 
-    Assert.assertEquals(5, valuesList.size)
-    Assert.assertArrayEquals(intArrayOf(0, 1, 2), valuesList.slice(0..2).toIntArray())
+    Assert.assertEquals(3, valuesList.size)
+    Assert.assertArrayEquals(intArrayOf(0, 1, 2), valuesList.toIntArray())
     valuesList.clear()
 
     cameraAnimationsPluginImpl.unregisterAllAnimators()

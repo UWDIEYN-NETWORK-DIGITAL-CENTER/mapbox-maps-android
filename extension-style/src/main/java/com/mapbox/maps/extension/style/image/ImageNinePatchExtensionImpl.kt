@@ -4,8 +4,8 @@ import android.graphics.Bitmap
 import com.mapbox.maps.Image
 import com.mapbox.maps.ImageContent
 import com.mapbox.maps.ImageStretches
+import com.mapbox.maps.MapboxStyleManager
 import com.mapbox.maps.extension.style.StyleContract
-import com.mapbox.maps.extension.style.StyleInterface
 import com.mapbox.maps.extension.style.utils.check
 
 /**
@@ -16,7 +16,7 @@ class ImageNinePatchExtensionImpl(private val builder: Builder) : StyleContract.
   /**
    * Add the image to the style.
    */
-  override fun bindTo(delegate: StyleInterface) {
+  override fun bindTo(delegate: MapboxStyleManager) {
     delegate.addStyleImage(
       builder.imageId,
       builder.scale ?: delegate.pixelRatio,
@@ -91,14 +91,14 @@ class ImageNinePatchExtensionImpl(private val builder: Builder) : StyleContract.
     /**
      * Scale factor for the image.
      */
-    fun scale(scale: Float) = apply {
+    fun scale(scale: Float): Builder = apply {
       this.scale = scale
     }
 
     /**
      * Option to treat whether image is SDF(signed distance field) or not.
      */
-    fun sdf(sdf: Boolean = false) = apply {
+    fun sdf(sdf: Boolean = false): Builder = apply {
       this.sdf = sdf
     }
 

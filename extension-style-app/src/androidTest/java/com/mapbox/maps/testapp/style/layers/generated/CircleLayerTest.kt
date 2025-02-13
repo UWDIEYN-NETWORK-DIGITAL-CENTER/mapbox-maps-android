@@ -195,6 +195,17 @@ class CircleLayerTest : BaseStyleTest() {
 
   @Test
   @UiThreadTest
+  fun circleColorUseTheme() {
+    val theme = "none"
+    val layer = circleLayer("id", "source") {
+      circleColorUseTheme(theme)
+    }
+    setupLayer(layer)
+    assertEquals(theme, layer.circleColorUseTheme)
+  }
+
+  @Test
+  @UiThreadTest
   fun circleColorTransitionTest() {
     val transition = transitionOptions {
       duration(100)
@@ -222,6 +233,61 @@ class CircleLayerTest : BaseStyleTest() {
     }
     setupLayer(layer)
     assertEquals(transition, layer.circleColorTransition)
+  }
+
+  @Test
+  @UiThreadTest
+  fun circleEmissiveStrengthTest() {
+    val testValue = 1.0
+    val layer = circleLayer("id", "source") {
+      circleEmissiveStrength(testValue)
+    }
+    setupLayer(layer)
+    assertEquals(testValue, layer.circleEmissiveStrength!!, 1E-5)
+  }
+
+  @Test
+  @UiThreadTest
+  fun circleEmissiveStrengthAsExpressionTest() {
+    val expression = literal(1.0)
+    val layer = circleLayer("id", "source") {
+      circleEmissiveStrength(expression)
+    }
+    setupLayer(layer)
+
+    assertEquals(1.0, layer.circleEmissiveStrengthAsExpression?.contents as Double, 1E-5)
+    assertEquals(1.0, layer.circleEmissiveStrength!!, 1E-5)
+  }
+
+  @Test
+  @UiThreadTest
+  fun circleEmissiveStrengthTransitionTest() {
+    val transition = transitionOptions {
+      duration(100)
+      delay(200)
+    }
+    val layer = circleLayer("id", "source") {
+      circleEmissiveStrengthTransition(transition)
+    }
+    setupLayer(layer)
+    assertEquals(transition, layer.circleEmissiveStrengthTransition)
+  }
+
+  @Test
+  @UiThreadTest
+  fun circleEmissiveStrengthTransitionSetDslTest() {
+    val transition = transitionOptions {
+      duration(100)
+      delay(200)
+    }
+    val layer = circleLayer("id", "source") {
+      circleEmissiveStrengthTransition {
+        duration(100)
+        delay(200)
+      }
+    }
+    setupLayer(layer)
+    assertEquals(transition, layer.circleEmissiveStrengthTransition)
   }
 
   @Test
@@ -424,6 +490,17 @@ class CircleLayerTest : BaseStyleTest() {
     }
     setupLayer(layer)
     assertEquals(Color.CYAN, layer.circleStrokeColorAsColorInt)
+  }
+
+  @Test
+  @UiThreadTest
+  fun circleStrokeColorUseTheme() {
+    val theme = "none"
+    val layer = circleLayer("id", "source") {
+      circleStrokeColorUseTheme(theme)
+    }
+    setupLayer(layer)
+    assertEquals(theme, layer.circleStrokeColorUseTheme)
   }
 
   @Test
@@ -663,6 +740,21 @@ class CircleLayerTest : BaseStyleTest() {
     assertEquals(Visibility.NONE, layer.visibility)
   }
 
+  @Test
+  @UiThreadTest
+  fun visibilityAsExpressionTest() {
+    val layer = circleLayer("id", "source") {
+      visibility(
+        concat {
+          literal("no")
+          literal("ne")
+        }
+      )
+    }
+    setupLayer(layer)
+    assertEquals(Visibility.NONE, layer.visibility)
+  }
+
   // Default property getter tests
 
   @Test
@@ -679,7 +771,11 @@ class CircleLayerTest : BaseStyleTest() {
     assertNotNull("defaultCircleColor should not be null", CircleLayer.defaultCircleColor)
     assertNotNull("defaultCircleColorAsExpression should not be null", CircleLayer.defaultCircleColorAsExpression)
     assertNotNull("defaultCircleColorAsColorInt should not be null", CircleLayer.defaultCircleColorAsColorInt)
+    assertNotNull("defaultCircleColorUseTheme should not be null", CircleLayer.defaultCircleColorUseTheme)
     assertNotNull("defaultCircleColorTransition should not be null", CircleLayer.defaultCircleColorTransition)
+    assertNotNull("defaultCircleEmissiveStrength should not be null", CircleLayer.defaultCircleEmissiveStrength)
+    assertNotNull("defaultCircleEmissiveStrengthAsExpression should not be null", CircleLayer.defaultCircleEmissiveStrengthAsExpression)
+    assertNotNull("defaultCircleEmissiveStrengthTransition should not be null", CircleLayer.defaultCircleEmissiveStrengthTransition)
     assertNotNull("defaultCircleOpacity should not be null", CircleLayer.defaultCircleOpacity)
     assertNotNull("defaultCircleOpacityAsExpression should not be null", CircleLayer.defaultCircleOpacityAsExpression)
     assertNotNull("defaultCircleOpacityTransition should not be null", CircleLayer.defaultCircleOpacityTransition)
@@ -693,6 +789,7 @@ class CircleLayerTest : BaseStyleTest() {
     assertNotNull("defaultCircleStrokeColor should not be null", CircleLayer.defaultCircleStrokeColor)
     assertNotNull("defaultCircleStrokeColorAsExpression should not be null", CircleLayer.defaultCircleStrokeColorAsExpression)
     assertNotNull("defaultCircleStrokeColorAsColorInt should not be null", CircleLayer.defaultCircleStrokeColorAsColorInt)
+    assertNotNull("defaultCircleStrokeColorUseTheme should not be null", CircleLayer.defaultCircleStrokeColorUseTheme)
     assertNotNull("defaultCircleStrokeColorTransition should not be null", CircleLayer.defaultCircleStrokeColorTransition)
     assertNotNull("defaultCircleStrokeOpacity should not be null", CircleLayer.defaultCircleStrokeOpacity)
     assertNotNull("defaultCircleStrokeOpacityAsExpression should not be null", CircleLayer.defaultCircleStrokeOpacityAsExpression)
@@ -719,11 +816,14 @@ class CircleLayerTest : BaseStyleTest() {
     val circleSortKeyTestValue = 1.0
     val circleBlurTestValue = 1.0
     val circleColorTestValue = "rgba(0, 0, 0, 1)"
+    val circleColorUseThemeTestValue = "default"
+    val circleEmissiveStrengthTestValue = 1.0
     val circleOpacityTestValue = 1.0
     val circlePitchAlignmentTestValue = CirclePitchAlignment.MAP
     val circlePitchScaleTestValue = CirclePitchScale.MAP
     val circleRadiusTestValue = 1.0
     val circleStrokeColorTestValue = "rgba(0, 0, 0, 1)"
+    val circleStrokeColorUseThemeTestValue = "default"
     val circleStrokeOpacityTestValue = 1.0
     val circleStrokeWidthTestValue = 1.0
     val circleTranslateTestValue = listOf(0.0, 1.0)
@@ -739,11 +839,14 @@ class CircleLayerTest : BaseStyleTest() {
       circleSortKey(circleSortKeyTestValue)
       circleBlur(circleBlurTestValue)
       circleColor(circleColorTestValue)
+      circleColorUseTheme(circleColorUseThemeTestValue)
+      circleEmissiveStrength(circleEmissiveStrengthTestValue)
       circleOpacity(circleOpacityTestValue)
       circlePitchAlignment(circlePitchAlignmentTestValue)
       circlePitchScale(circlePitchScaleTestValue)
       circleRadius(circleRadiusTestValue)
       circleStrokeColor(circleStrokeColorTestValue)
+      circleStrokeColorUseTheme(circleStrokeColorUseThemeTestValue)
       circleStrokeOpacity(circleStrokeOpacityTestValue)
       circleStrokeWidth(circleStrokeWidthTestValue)
       circleTranslate(circleTranslateTestValue)
@@ -764,11 +867,14 @@ class CircleLayerTest : BaseStyleTest() {
     assertEquals(circleSortKeyTestValue, cachedLayer.circleSortKey)
     assertEquals(circleBlurTestValue, cachedLayer.circleBlur)
     assertEquals(circleColorTestValue, cachedLayer.circleColor)
+    assertEquals(circleColorUseThemeTestValue, cachedLayer.circleColorUseTheme)
+    assertEquals(circleEmissiveStrengthTestValue, cachedLayer.circleEmissiveStrength)
     assertEquals(circleOpacityTestValue, cachedLayer.circleOpacity)
     assertEquals(circlePitchAlignmentTestValue, cachedLayer.circlePitchAlignment)
     assertEquals(circlePitchScaleTestValue, cachedLayer.circlePitchScale)
     assertEquals(circleRadiusTestValue, cachedLayer.circleRadius)
     assertEquals(circleStrokeColorTestValue, cachedLayer.circleStrokeColor)
+    assertEquals(circleStrokeColorUseThemeTestValue, cachedLayer.circleStrokeColorUseTheme)
     assertEquals(circleStrokeOpacityTestValue, cachedLayer.circleStrokeOpacity)
     assertEquals(circleStrokeWidthTestValue, cachedLayer.circleStrokeWidth)
     assertEquals(circleTranslateTestValue, cachedLayer.circleTranslate)

@@ -1,28 +1,332 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.mapbox.maps.compose">
+    package="com.mapbox.maps.compose.testapp">
 
-  <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-  <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
-  <application
-      android:icon="@mipmap/ic_launcher_round"
-      android:label="@string/app_name"
-      android:roundIcon="@mipmap/ic_launcher_round"
-      android:supportsRtl="true"
-      android:theme="@style/Theme.MapboxMapCompose">
-    <activity
-        android:name="com.mapbox.maps.compose.MainActivity"
-        android:exported="true"
+    <application
+        android:name=".MapboxApplication"
+        android:icon="@mipmap/ic_launcher_round"
         android:label="@string/app_name"
-        android:configChanges="orientation|screenSize|screenLayout"
-        android:theme="@style/Theme.MapboxMapCompose.NoActionBar">
-      <intent-filter>
-        <action android:name="android.intent.action.MAIN" />
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.MapboxMapCompose">
+        <activity
+            android:name=".ExampleOverviewActivity"
+            android:exported="true"
+            android:launchMode="singleTop">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
 
-        <category android:name="android.intent.category.LAUNCHER" />
-      </intent-filter>
-    </activity>
-  </application>
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".examples.basic.SimpleMapActivity"
+            android:configChanges="orientation|screenSize|screenLayout"
+            android:description="@string/description_simple_map"
+            android:exported="true"
+            android:label="@string/activity_simple_map"
+            android:parentActivityName=".ExampleOverviewActivity">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_basic" />
+        </activity>
+        <activity
+            android:name=".examples.basic.DebugModeActivity"
+            android:configChanges="orientation|screenSize|screenLayout"
+            android:description="@string/description_debug_mode"
+            android:exported="true"
+            android:label="@string/activity_debug_mode"
+            android:parentActivityName=".ExampleOverviewActivity">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_basic" />
+        </activity>
+        <activity
+            android:name=".examples.annotation.CircleAnnotationActivity"
+            android:configChanges="orientation|screenSize|screenLayout"
+            android:description="@string/description_circle_annotation"
+            android:exported="true"
+            android:label="@string/activity_circle_annotation"
+            android:parentActivityName=".ExampleOverviewActivity">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_annotation" />
+        </activity>
+        <activity
+            android:name=".examples.annotation.PointAnnotationClusterActivity"
+            android:configChanges="orientation|screenSize|screenLayout"
+            android:description="@string/description_point_annotation_cluster"
+            android:exported="true"
+            android:label="@string/activity_point_annotation_cluster"
+            android:parentActivityName=".ExampleOverviewActivity">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_annotation" />
+        </activity>
+        <activity
+            android:name=".examples.annotation.PolygonAnnotationActivity"
+            android:configChanges="orientation|screenSize|screenLayout"
+            android:description="@string/description_polygon_annotation"
+            android:exported="true"
+            android:label="@string/activity_polygon_annotation"
+            android:parentActivityName=".ExampleOverviewActivity">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_annotation" />
+        </activity>
+        <activity
+            android:name=".examples.annotation.PolylineAnnotationActivity"
+            android:configChanges="orientation|screenSize|screenLayout"
+            android:description="@string/description_polyline_annotation"
+            android:exported="true"
+            android:label="@string/activity_polyline_annotation"
+            android:parentActivityName=".ExampleOverviewActivity">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_annotation" />
+        </activity>
+        <activity
+            android:name=".examples.annotation.ViewAnnotationActivity"
+            android:configChanges="orientation|screenSize|screenLayout"
+            android:description="@string/description_view_annotation"
+            android:exported="true"
+            android:label="@string/activity_view_annotation"
+            android:parentActivityName=".ExampleOverviewActivity">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_annotation" />
+        </activity>
+        <activity
+            android:name=".examples.annotation.DynamicViewAnnotationActivity"
+            android:configChanges="orientation|screenSize|screenLayout"
+            android:description="@string/description_dynamic_view_annotation"
+            android:exported="true"
+            android:label="@string/activity_dynamic_view_annotation"
+            android:parentActivityName=".ExampleOverviewActivity">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_annotation" />
+        </activity>
+        <activity
+            android:name=".examples.animation.MapViewportAnimationsActivity"
+            android:configChanges="orientation|screenSize|screenLayout"
+            android:description="@string/description_map_viewport_animation"
+            android:exported="true"
+            android:label="@string/activity_map_viewport_animation"
+            android:parentActivityName=".ExampleOverviewActivity">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_camera" />
+        </activity>
+        <activity
+            android:name=".examples.basic.MultiDisplayActivity"
+            android:configChanges="orientation|screenSize|screenLayout"
+            android:description="@string/description_multiple_display"
+            android:exported="true"
+            android:label="@string/activity_multiple_display"
+            android:parentActivityName=".ExampleOverviewActivity">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_basic" />
+        </activity>
+        <activity
+            android:name=".examples.ornaments.OrnamentCustomisationActivity"
+            android:configChanges="orientation|screenSize|screenLayout"
+            android:description="@string/description_ornaments_customisation"
+            android:exported="true"
+            android:label="@string/activity_ornaments_customisation"
+            android:parentActivityName=".ExampleOverviewActivity">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_ornaments" />
+        </activity>
+        <activity
+            android:name=".examples.location.LocationComponentActivity"
+            android:configChanges="orientation|screenSize|screenLayout"
+            android:description="@string/description_location_location_component"
+            android:exported="true"
+            android:label="@string/activity_location_location_component"
+            android:parentActivityName=".ExampleOverviewActivity">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_location" />
+        </activity>
+        <activity
+            android:name=".examples.style.StyleCompositionActivity"
+            android:description="@string/description_style_composition"
+            android:exported="true"
+            android:label="@string/activity_style_composition"
+            android:parentActivityName=".ExampleOverviewActivity">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_styles" />
+        </activity>
+        <activity
+            android:name=".examples.location.NavigationSimulationActivity"
+            android:configChanges="orientation|screenSize|screenLayout"
+            android:description="@string/description_navigation_simulation"
+            android:exported="true"
+            android:label="@string/activity_navigation_simulation"
+            android:parentActivityName=".ExampleOverviewActivity">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_location" />
+        </activity>
+        <activity
+            android:name=".examples.basic.MultiMapActivity"
+            android:configChanges="orientation|screenSize|screenLayout"
+            android:description="@string/description_multi_map"
+            android:exported="true"
+            android:label="@string/activity_multi_map"
+            android:parentActivityName=".ExampleOverviewActivity">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_basic" />
+        </activity>
+        <activity
+            android:name=".examples.style.StyleStatesActivity"
+            android:description="@string/description_style_states"
+            android:exported="true"
+            android:label="@string/activity_style_states"
+            android:parentActivityName=".ExampleOverviewActivity">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_styles" />
+        </activity>
+        <activity
+            android:name=".examples.style.GenericStylePositionsActivity"
+            android:description="@string/description_style_positions"
+            android:exported="true"
+            android:label="@string/activity_style_positions"
+            android:parentActivityName=".ExampleOverviewActivity">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_styles" />
+        </activity>
+        <activity
+            android:name=".examples.style.ModelLayerActivity"
+            android:description="@string/description_model_layer"
+            android:exported="true"
+            android:label="@string/activity_model_layer"
+            android:parentActivityName=".ExampleOverviewActivity">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_styles" />
+        </activity>
+        <activity
+            android:name=".examples.style.ImageSourceActivity"
+            android:description="@string/description_style_image_source"
+            android:exported="true"
+            android:label="@string/activity_style_image_source_title"
+            android:parentActivityName=".ExampleOverviewActivity">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_styles" />
+        </activity>
+        <activity
+            android:name=".examples.style.TerrainActivity"
+            android:description="@string/description_terrain"
+            android:exported="true"
+            android:label="@string/activity_terrain"
+            android:parentActivityName=".ExampleOverviewActivity">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_styles" />
+        </activity>
+        <activity
+            android:name=".examples.style.AnimatedImageSourceActivity"
+            android:description="@string/description_animated_image_source"
+            android:exported="true"
+            android:label="@string/activity_animated_image_source"
+            android:parentActivityName=".ExampleOverviewActivity">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_styles" />
+        </activity>
+        <activity
+            android:name=".examples.style.StyleImportsActivity"
+            android:description="@string/description_style_imports"
+            android:exported="true"
+            android:label="@string/activity_style_imports"
+            android:parentActivityName=".ExampleOverviewActivity">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_styles" />
+        </activity>
+        <activity
+            android:name=".examples.basic.QueryRenderedFeatureActivity"
+            android:description="@string/description_query_rendered_feature"
+            android:exported="true"
+            android:label="@string/activity_query_rendered_feature"
+            android:parentActivityName=".ExampleOverviewActivity">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_basic" />
+        </activity>
+        <activity
+            android:name=".examples.style.StandardStyleActivity"
+            android:description="@string/description_standard_style"
+            android:exported="true"
+            android:label="@string/activity_standard_style"
+            android:parentActivityName=".ExampleOverviewActivity">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_styles" />
+        </activity>
+        <activity
+            android:name=".examples.annotation.PointAnnotationActivity"
+            android:configChanges="orientation|screenSize|screenLayout"
+            android:description="@string/description_point_annotation"
+            android:exported="true"
+            android:label="@string/activity_point_annotation"
+            android:parentActivityName=".ExampleOverviewActivity">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_annotation" />
+        </activity>
+        <activity
+            android:name=".examples.style.ClipLayerActivity"
+            android:description="@string/description_clip_layer"
+            android:exported="true"
+            android:label="@string/activity_clip_layer"
+            android:parentActivityName=".ExampleOverviewActivity">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_styles" />
+        </activity>
+        <activity
+            android:name=".examples.style.InteractionsActivity"
+            android:description="@string/description_interactions"
+            android:exported="true"
+            android:label="@string/activity_interactions"
+            android:parentActivityName=".ExampleOverviewActivity">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_styles" />
+        </activity>
+        <activity
+            android:name=".examples.style.PrecipitationsActivity"
+            android:description="@string/description_precipitations"
+            android:exported="true"
+            android:label="@string/activity_precipitations"
+            android:parentActivityName=".ExampleOverviewActivity">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_styles" />
+        </activity>
+        <activity
+            android:name=".examples.style.ColorThemeActivity"
+            android:description="@string/description_color_theme"
+            android:exported="true"
+            android:label="@string/activity_color_theme"
+            android:parentActivityName=".ExampleOverviewActivity">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_styles" />
+        </activity>
+    </application>
 
 </manifest>

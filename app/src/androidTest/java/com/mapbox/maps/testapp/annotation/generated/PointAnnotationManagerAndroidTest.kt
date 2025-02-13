@@ -50,6 +50,18 @@ class PointAnnotationManagerAndroidTest : BaseMapTest() {
   }
 
   @Test
+  fun testIconAnchor() {
+    rule.runOnUiThread {
+      val expectedValue = IconAnchor.CENTER
+      val pointAnnotationManager = mapView.annotations.createPointAnnotationManager()
+      pointAnnotationManager.iconAnchor = expectedValue
+      assertEquals(expectedValue, pointAnnotationManager.iconAnchor)
+      pointAnnotationManager.iconAnchor = null
+      assertEquals(null, pointAnnotationManager.iconAnchor)
+    }
+  }
+
+  @Test
   fun testIconIgnorePlacement() {
     rule.runOnUiThread {
       val expectedValue = true
@@ -62,6 +74,18 @@ class PointAnnotationManagerAndroidTest : BaseMapTest() {
   }
 
   @Test
+  fun testIconImage() {
+    rule.runOnUiThread {
+      val expectedValue = "abc"
+      val pointAnnotationManager = mapView.annotations.createPointAnnotationManager()
+      pointAnnotationManager.iconImage = expectedValue
+      assertEquals(expectedValue, pointAnnotationManager.iconImage)
+      pointAnnotationManager.iconImage = null
+      assertEquals(null, pointAnnotationManager.iconImage)
+    }
+  }
+
+  @Test
   fun testIconKeepUpright() {
     rule.runOnUiThread {
       val expectedValue = true
@@ -70,6 +94,18 @@ class PointAnnotationManagerAndroidTest : BaseMapTest() {
       assertEquals(expectedValue, pointAnnotationManager.iconKeepUpright)
       pointAnnotationManager.iconKeepUpright = null
       assertEquals(StyleManager.getStyleLayerPropertyDefaultValue("symbol", "icon-keep-upright").silentUnwrap(), pointAnnotationManager.iconKeepUpright)
+    }
+  }
+
+  @Test
+  fun testIconOffset() {
+    rule.runOnUiThread {
+      val expectedValue = listOf(0.0, 1.0)
+      val pointAnnotationManager = mapView.annotations.createPointAnnotationManager()
+      pointAnnotationManager.iconOffset = expectedValue
+      assertEquals(expectedValue, pointAnnotationManager.iconOffset)
+      pointAnnotationManager.iconOffset = null
+      assertEquals(null, pointAnnotationManager.iconOffset)
     }
   }
 
@@ -105,8 +141,20 @@ class PointAnnotationManagerAndroidTest : BaseMapTest() {
       pointAnnotationManager.iconPitchAlignment = expectedValue
       assertEquals(expectedValue, pointAnnotationManager.iconPitchAlignment)
       pointAnnotationManager.iconPitchAlignment = null
-      val expectedDefaultValue = IconPitchAlignment.valueOf(StyleManager.getStyleLayerPropertyDefaultValue("symbol", "icon-pitch-alignment").silentUnwrap<String>()!!.toUpperCase(Locale.US).replace('-', '_'))
+      val expectedDefaultValue = IconPitchAlignment.valueOf(StyleManager.getStyleLayerPropertyDefaultValue("symbol", "icon-pitch-alignment").silentUnwrap<String>()!!.uppercase(Locale.US).replace('-', '_'))
       assertEquals(expectedDefaultValue, pointAnnotationManager.iconPitchAlignment)
+    }
+  }
+
+  @Test
+  fun testIconRotate() {
+    rule.runOnUiThread {
+      val expectedValue = 1.0
+      val pointAnnotationManager = mapView.annotations.createPointAnnotationManager()
+      pointAnnotationManager.iconRotate = expectedValue
+      assertEquals(expectedValue, pointAnnotationManager.iconRotate)
+      pointAnnotationManager.iconRotate = null
+      assertEquals(null, pointAnnotationManager.iconRotate)
     }
   }
 
@@ -118,8 +166,32 @@ class PointAnnotationManagerAndroidTest : BaseMapTest() {
       pointAnnotationManager.iconRotationAlignment = expectedValue
       assertEquals(expectedValue, pointAnnotationManager.iconRotationAlignment)
       pointAnnotationManager.iconRotationAlignment = null
-      val expectedDefaultValue = IconRotationAlignment.valueOf(StyleManager.getStyleLayerPropertyDefaultValue("symbol", "icon-rotation-alignment").silentUnwrap<String>()!!.toUpperCase(Locale.US).replace('-', '_'))
+      val expectedDefaultValue = IconRotationAlignment.valueOf(StyleManager.getStyleLayerPropertyDefaultValue("symbol", "icon-rotation-alignment").silentUnwrap<String>()!!.uppercase(Locale.US).replace('-', '_'))
       assertEquals(expectedDefaultValue, pointAnnotationManager.iconRotationAlignment)
+    }
+  }
+
+  @Test
+  fun testIconSize() {
+    rule.runOnUiThread {
+      val expectedValue = 1.0
+      val pointAnnotationManager = mapView.annotations.createPointAnnotationManager()
+      pointAnnotationManager.iconSize = expectedValue
+      assertEquals(expectedValue, pointAnnotationManager.iconSize)
+      pointAnnotationManager.iconSize = null
+      assertEquals(null, pointAnnotationManager.iconSize)
+    }
+  }
+
+  @Test
+  fun testIconSizeScaleRange() {
+    rule.runOnUiThread {
+      val expectedValue = listOf(0.0, 1.0)
+      val pointAnnotationManager = mapView.annotations.createPointAnnotationManager()
+      pointAnnotationManager.iconSizeScaleRange = expectedValue
+      assertEquals(expectedValue, pointAnnotationManager.iconSizeScaleRange)
+      pointAnnotationManager.iconSizeScaleRange = null
+      assertEquals(StyleManager.getStyleLayerPropertyDefaultValue("symbol", "icon-size-scale-range").silentUnwrap(), pointAnnotationManager.iconSizeScaleRange)
     }
   }
 
@@ -131,8 +203,7 @@ class PointAnnotationManagerAndroidTest : BaseMapTest() {
       pointAnnotationManager.iconTextFit = expectedValue
       assertEquals(expectedValue, pointAnnotationManager.iconTextFit)
       pointAnnotationManager.iconTextFit = null
-      val expectedDefaultValue = IconTextFit.valueOf(StyleManager.getStyleLayerPropertyDefaultValue("symbol", "icon-text-fit").silentUnwrap<String>()!!.toUpperCase(Locale.US).replace('-', '_'))
-      assertEquals(expectedDefaultValue, pointAnnotationManager.iconTextFit)
+      assertEquals(null, pointAnnotationManager.iconTextFit)
     }
   }
 
@@ -144,7 +215,7 @@ class PointAnnotationManagerAndroidTest : BaseMapTest() {
       pointAnnotationManager.iconTextFitPadding = expectedValue
       assertEquals(expectedValue, pointAnnotationManager.iconTextFitPadding)
       pointAnnotationManager.iconTextFitPadding = null
-      assertEquals(StyleManager.getStyleLayerPropertyDefaultValue("symbol", "icon-text-fit-padding").silentUnwrap(), pointAnnotationManager.iconTextFitPadding)
+      assertEquals(null, pointAnnotationManager.iconTextFitPadding)
     }
   }
 
@@ -161,6 +232,19 @@ class PointAnnotationManagerAndroidTest : BaseMapTest() {
   }
 
   @Test
+  fun testSymbolElevationReference() {
+    rule.runOnUiThread {
+      val expectedValue = SymbolElevationReference.SEA
+      val pointAnnotationManager = mapView.annotations.createPointAnnotationManager()
+      pointAnnotationManager.symbolElevationReference = expectedValue
+      assertEquals(expectedValue, pointAnnotationManager.symbolElevationReference)
+      pointAnnotationManager.symbolElevationReference = null
+      val expectedDefaultValue = SymbolElevationReference.valueOf(StyleManager.getStyleLayerPropertyDefaultValue("symbol", "symbol-elevation-reference").silentUnwrap<String>()!!.uppercase(Locale.US).replace('-', '_'))
+      assertEquals(expectedDefaultValue, pointAnnotationManager.symbolElevationReference)
+    }
+  }
+
+  @Test
   fun testSymbolPlacement() {
     rule.runOnUiThread {
       val expectedValue = SymbolPlacement.POINT
@@ -168,8 +252,20 @@ class PointAnnotationManagerAndroidTest : BaseMapTest() {
       pointAnnotationManager.symbolPlacement = expectedValue
       assertEquals(expectedValue, pointAnnotationManager.symbolPlacement)
       pointAnnotationManager.symbolPlacement = null
-      val expectedDefaultValue = SymbolPlacement.valueOf(StyleManager.getStyleLayerPropertyDefaultValue("symbol", "symbol-placement").silentUnwrap<String>()!!.toUpperCase(Locale.US).replace('-', '_'))
+      val expectedDefaultValue = SymbolPlacement.valueOf(StyleManager.getStyleLayerPropertyDefaultValue("symbol", "symbol-placement").silentUnwrap<String>()!!.uppercase(Locale.US).replace('-', '_'))
       assertEquals(expectedDefaultValue, pointAnnotationManager.symbolPlacement)
+    }
+  }
+
+  @Test
+  fun testSymbolSortKey() {
+    rule.runOnUiThread {
+      val expectedValue = 1.0
+      val pointAnnotationManager = mapView.annotations.createPointAnnotationManager()
+      pointAnnotationManager.symbolSortKey = expectedValue
+      assertEquals(expectedValue, pointAnnotationManager.symbolSortKey)
+      pointAnnotationManager.symbolSortKey = null
+      assertEquals(null, pointAnnotationManager.symbolSortKey)
     }
   }
 
@@ -186,6 +282,18 @@ class PointAnnotationManagerAndroidTest : BaseMapTest() {
   }
 
   @Test
+  fun testSymbolZElevate() {
+    rule.runOnUiThread {
+      val expectedValue = true
+      val pointAnnotationManager = mapView.annotations.createPointAnnotationManager()
+      pointAnnotationManager.symbolZElevate = expectedValue
+      assertEquals(expectedValue, pointAnnotationManager.symbolZElevate)
+      pointAnnotationManager.symbolZElevate = null
+      assertEquals(StyleManager.getStyleLayerPropertyDefaultValue("symbol", "symbol-z-elevate").silentUnwrap(), pointAnnotationManager.symbolZElevate)
+    }
+  }
+
+  @Test
   fun testSymbolZOrder() {
     rule.runOnUiThread {
       val expectedValue = SymbolZOrder.AUTO
@@ -193,7 +301,7 @@ class PointAnnotationManagerAndroidTest : BaseMapTest() {
       pointAnnotationManager.symbolZOrder = expectedValue
       assertEquals(expectedValue, pointAnnotationManager.symbolZOrder)
       pointAnnotationManager.symbolZOrder = null
-      val expectedDefaultValue = SymbolZOrder.valueOf(StyleManager.getStyleLayerPropertyDefaultValue("symbol", "symbol-z-order").silentUnwrap<String>()!!.toUpperCase(Locale.US).replace('-', '_'))
+      val expectedDefaultValue = SymbolZOrder.valueOf(StyleManager.getStyleLayerPropertyDefaultValue("symbol", "symbol-z-order").silentUnwrap<String>()!!.uppercase(Locale.US).replace('-', '_'))
       assertEquals(expectedDefaultValue, pointAnnotationManager.symbolZOrder)
     }
   }
@@ -207,6 +315,30 @@ class PointAnnotationManagerAndroidTest : BaseMapTest() {
       assertEquals(expectedValue, pointAnnotationManager.textAllowOverlap)
       pointAnnotationManager.textAllowOverlap = null
       assertEquals(StyleManager.getStyleLayerPropertyDefaultValue("symbol", "text-allow-overlap").silentUnwrap(), pointAnnotationManager.textAllowOverlap)
+    }
+  }
+
+  @Test
+  fun testTextAnchor() {
+    rule.runOnUiThread {
+      val expectedValue = TextAnchor.CENTER
+      val pointAnnotationManager = mapView.annotations.createPointAnnotationManager()
+      pointAnnotationManager.textAnchor = expectedValue
+      assertEquals(expectedValue, pointAnnotationManager.textAnchor)
+      pointAnnotationManager.textAnchor = null
+      assertEquals(null, pointAnnotationManager.textAnchor)
+    }
+  }
+
+  @Test
+  fun testTextField() {
+    rule.runOnUiThread {
+      val expectedValue = "test text"
+      val pointAnnotationManager = mapView.annotations.createPointAnnotationManager()
+      pointAnnotationManager.textField = expectedValue
+      assertEquals(expectedValue, pointAnnotationManager.textField)
+      pointAnnotationManager.textField = null
+      assertEquals(null, pointAnnotationManager.textField)
     }
   }
 
@@ -235,6 +367,18 @@ class PointAnnotationManagerAndroidTest : BaseMapTest() {
   }
 
   @Test
+  fun testTextJustify() {
+    rule.runOnUiThread {
+      val expectedValue = TextJustify.AUTO
+      val pointAnnotationManager = mapView.annotations.createPointAnnotationManager()
+      pointAnnotationManager.textJustify = expectedValue
+      assertEquals(expectedValue, pointAnnotationManager.textJustify)
+      pointAnnotationManager.textJustify = null
+      assertEquals(null, pointAnnotationManager.textJustify)
+    }
+  }
+
+  @Test
   fun testTextKeepUpright() {
     rule.runOnUiThread {
       val expectedValue = true
@@ -247,6 +391,30 @@ class PointAnnotationManagerAndroidTest : BaseMapTest() {
   }
 
   @Test
+  fun testTextLetterSpacing() {
+    rule.runOnUiThread {
+      val expectedValue = 1.0
+      val pointAnnotationManager = mapView.annotations.createPointAnnotationManager()
+      pointAnnotationManager.textLetterSpacing = expectedValue
+      assertEquals(expectedValue, pointAnnotationManager.textLetterSpacing)
+      pointAnnotationManager.textLetterSpacing = null
+      assertEquals(null, pointAnnotationManager.textLetterSpacing)
+    }
+  }
+
+  @Test
+  fun testTextLineHeight() {
+    rule.runOnUiThread {
+      val expectedValue = 1.0
+      val pointAnnotationManager = mapView.annotations.createPointAnnotationManager()
+      pointAnnotationManager.textLineHeight = expectedValue
+      assertEquals(expectedValue, pointAnnotationManager.textLineHeight)
+      pointAnnotationManager.textLineHeight = null
+      assertEquals(null, pointAnnotationManager.textLineHeight)
+    }
+  }
+
+  @Test
   fun testTextMaxAngle() {
     rule.runOnUiThread {
       val expectedValue = 1.0
@@ -255,6 +423,30 @@ class PointAnnotationManagerAndroidTest : BaseMapTest() {
       assertEquals(expectedValue, pointAnnotationManager.textMaxAngle)
       pointAnnotationManager.textMaxAngle = null
       assertEquals(StyleManager.getStyleLayerPropertyDefaultValue("symbol", "text-max-angle").silentUnwrap(), pointAnnotationManager.textMaxAngle)
+    }
+  }
+
+  @Test
+  fun testTextMaxWidth() {
+    rule.runOnUiThread {
+      val expectedValue = 1.0
+      val pointAnnotationManager = mapView.annotations.createPointAnnotationManager()
+      pointAnnotationManager.textMaxWidth = expectedValue
+      assertEquals(expectedValue, pointAnnotationManager.textMaxWidth)
+      pointAnnotationManager.textMaxWidth = null
+      assertEquals(null, pointAnnotationManager.textMaxWidth)
+    }
+  }
+
+  @Test
+  fun testTextOffset() {
+    rule.runOnUiThread {
+      val expectedValue = listOf(0.0, 1.0)
+      val pointAnnotationManager = mapView.annotations.createPointAnnotationManager()
+      pointAnnotationManager.textOffset = expectedValue
+      assertEquals(expectedValue, pointAnnotationManager.textOffset)
+      pointAnnotationManager.textOffset = null
+      assertEquals(null, pointAnnotationManager.textOffset)
     }
   }
 
@@ -290,8 +482,32 @@ class PointAnnotationManagerAndroidTest : BaseMapTest() {
       pointAnnotationManager.textPitchAlignment = expectedValue
       assertEquals(expectedValue, pointAnnotationManager.textPitchAlignment)
       pointAnnotationManager.textPitchAlignment = null
-      val expectedDefaultValue = TextPitchAlignment.valueOf(StyleManager.getStyleLayerPropertyDefaultValue("symbol", "text-pitch-alignment").silentUnwrap<String>()!!.toUpperCase(Locale.US).replace('-', '_'))
+      val expectedDefaultValue = TextPitchAlignment.valueOf(StyleManager.getStyleLayerPropertyDefaultValue("symbol", "text-pitch-alignment").silentUnwrap<String>()!!.uppercase(Locale.US).replace('-', '_'))
       assertEquals(expectedDefaultValue, pointAnnotationManager.textPitchAlignment)
+    }
+  }
+
+  @Test
+  fun testTextRadialOffset() {
+    rule.runOnUiThread {
+      val expectedValue = 1.0
+      val pointAnnotationManager = mapView.annotations.createPointAnnotationManager()
+      pointAnnotationManager.textRadialOffset = expectedValue
+      assertEquals(expectedValue, pointAnnotationManager.textRadialOffset)
+      pointAnnotationManager.textRadialOffset = null
+      assertEquals(null, pointAnnotationManager.textRadialOffset)
+    }
+  }
+
+  @Test
+  fun testTextRotate() {
+    rule.runOnUiThread {
+      val expectedValue = 1.0
+      val pointAnnotationManager = mapView.annotations.createPointAnnotationManager()
+      pointAnnotationManager.textRotate = expectedValue
+      assertEquals(expectedValue, pointAnnotationManager.textRotate)
+      pointAnnotationManager.textRotate = null
+      assertEquals(null, pointAnnotationManager.textRotate)
     }
   }
 
@@ -303,8 +519,44 @@ class PointAnnotationManagerAndroidTest : BaseMapTest() {
       pointAnnotationManager.textRotationAlignment = expectedValue
       assertEquals(expectedValue, pointAnnotationManager.textRotationAlignment)
       pointAnnotationManager.textRotationAlignment = null
-      val expectedDefaultValue = TextRotationAlignment.valueOf(StyleManager.getStyleLayerPropertyDefaultValue("symbol", "text-rotation-alignment").silentUnwrap<String>()!!.toUpperCase(Locale.US).replace('-', '_'))
+      val expectedDefaultValue = TextRotationAlignment.valueOf(StyleManager.getStyleLayerPropertyDefaultValue("symbol", "text-rotation-alignment").silentUnwrap<String>()!!.uppercase(Locale.US).replace('-', '_'))
       assertEquals(expectedDefaultValue, pointAnnotationManager.textRotationAlignment)
+    }
+  }
+
+  @Test
+  fun testTextSize() {
+    rule.runOnUiThread {
+      val expectedValue = 1.0
+      val pointAnnotationManager = mapView.annotations.createPointAnnotationManager()
+      pointAnnotationManager.textSize = expectedValue
+      assertEquals(expectedValue, pointAnnotationManager.textSize)
+      pointAnnotationManager.textSize = null
+      assertEquals(null, pointAnnotationManager.textSize)
+    }
+  }
+
+  @Test
+  fun testTextSizeScaleRange() {
+    rule.runOnUiThread {
+      val expectedValue = listOf(0.0, 1.0)
+      val pointAnnotationManager = mapView.annotations.createPointAnnotationManager()
+      pointAnnotationManager.textSizeScaleRange = expectedValue
+      assertEquals(expectedValue, pointAnnotationManager.textSizeScaleRange)
+      pointAnnotationManager.textSizeScaleRange = null
+      assertEquals(StyleManager.getStyleLayerPropertyDefaultValue("symbol", "text-size-scale-range").silentUnwrap(), pointAnnotationManager.textSizeScaleRange)
+    }
+  }
+
+  @Test
+  fun testTextTransform() {
+    rule.runOnUiThread {
+      val expectedValue = TextTransform.NONE
+      val pointAnnotationManager = mapView.annotations.createPointAnnotationManager()
+      pointAnnotationManager.textTransform = expectedValue
+      assertEquals(expectedValue, pointAnnotationManager.textTransform)
+      pointAnnotationManager.textTransform = null
+      assertEquals(null, pointAnnotationManager.textTransform)
     }
   }
 
@@ -333,6 +585,120 @@ class PointAnnotationManagerAndroidTest : BaseMapTest() {
   }
 
   @Test
+  fun testIconColor() {
+    rule.runOnUiThread {
+      val expectedValue = "rgba(0, 0, 0, 1)"
+      val pointAnnotationManager = mapView.annotations.createPointAnnotationManager()
+      pointAnnotationManager.iconColorString = expectedValue
+      assertEquals(expectedValue, pointAnnotationManager.iconColorString)
+      pointAnnotationManager.iconColorString = null
+      assertEquals(
+        null,
+        pointAnnotationManager.iconColorString
+      )
+    }
+  }
+
+  @Test
+  fun testIconColorSaturation() {
+    rule.runOnUiThread {
+      val expectedValue = 1.0
+      val pointAnnotationManager = mapView.annotations.createPointAnnotationManager()
+      pointAnnotationManager.iconColorSaturation = expectedValue
+      assertEquals(expectedValue, pointAnnotationManager.iconColorSaturation)
+      pointAnnotationManager.iconColorSaturation = null
+      assertEquals(StyleManager.getStyleLayerPropertyDefaultValue("symbol", "icon-color-saturation").silentUnwrap(), pointAnnotationManager.iconColorSaturation)
+    }
+  }
+
+  @Test
+  fun testIconEmissiveStrength() {
+    rule.runOnUiThread {
+      val expectedValue = 1.0
+      val pointAnnotationManager = mapView.annotations.createPointAnnotationManager()
+      pointAnnotationManager.iconEmissiveStrength = expectedValue
+      assertEquals(expectedValue, pointAnnotationManager.iconEmissiveStrength)
+      pointAnnotationManager.iconEmissiveStrength = null
+      assertEquals(null, pointAnnotationManager.iconEmissiveStrength)
+    }
+  }
+
+  @Test
+  fun testIconHaloBlur() {
+    rule.runOnUiThread {
+      val expectedValue = 1.0
+      val pointAnnotationManager = mapView.annotations.createPointAnnotationManager()
+      pointAnnotationManager.iconHaloBlur = expectedValue
+      assertEquals(expectedValue, pointAnnotationManager.iconHaloBlur)
+      pointAnnotationManager.iconHaloBlur = null
+      assertEquals(null, pointAnnotationManager.iconHaloBlur)
+    }
+  }
+
+  @Test
+  fun testIconHaloColor() {
+    rule.runOnUiThread {
+      val expectedValue = "rgba(0, 0, 0, 1)"
+      val pointAnnotationManager = mapView.annotations.createPointAnnotationManager()
+      pointAnnotationManager.iconHaloColorString = expectedValue
+      assertEquals(expectedValue, pointAnnotationManager.iconHaloColorString)
+      pointAnnotationManager.iconHaloColorString = null
+      assertEquals(
+        null,
+        pointAnnotationManager.iconHaloColorString
+      )
+    }
+  }
+
+  @Test
+  fun testIconHaloWidth() {
+    rule.runOnUiThread {
+      val expectedValue = 1.0
+      val pointAnnotationManager = mapView.annotations.createPointAnnotationManager()
+      pointAnnotationManager.iconHaloWidth = expectedValue
+      assertEquals(expectedValue, pointAnnotationManager.iconHaloWidth)
+      pointAnnotationManager.iconHaloWidth = null
+      assertEquals(null, pointAnnotationManager.iconHaloWidth)
+    }
+  }
+
+  @Test
+  fun testIconImageCrossFade() {
+    rule.runOnUiThread {
+      val expectedValue = 1.0
+      val pointAnnotationManager = mapView.annotations.createPointAnnotationManager()
+      pointAnnotationManager.iconImageCrossFade = expectedValue
+      assertEquals(expectedValue, pointAnnotationManager.iconImageCrossFade)
+      pointAnnotationManager.iconImageCrossFade = null
+      assertEquals(null, pointAnnotationManager.iconImageCrossFade)
+    }
+  }
+
+  @Test
+  fun testIconOcclusionOpacity() {
+    rule.runOnUiThread {
+      val expectedValue = 1.0
+      val pointAnnotationManager = mapView.annotations.createPointAnnotationManager()
+      pointAnnotationManager.iconOcclusionOpacity = expectedValue
+      assertEquals(expectedValue, pointAnnotationManager.iconOcclusionOpacity)
+      pointAnnotationManager.iconOcclusionOpacity = null
+      assertEquals(null, pointAnnotationManager.iconOcclusionOpacity)
+    }
+  }
+
+  @Test
+  fun testIconOpacity() {
+    rule.runOnUiThread {
+      val expectedValue = 1.0
+      val pointAnnotationManager = mapView.annotations.createPointAnnotationManager()
+      pointAnnotationManager.iconOpacity = expectedValue
+      assertEquals(expectedValue, pointAnnotationManager.iconOpacity)
+      pointAnnotationManager.iconOpacity = null
+      assertEquals(null, pointAnnotationManager.iconOpacity)
+    }
+  }
+
+  @Test
   fun testIconTranslate() {
     rule.runOnUiThread {
       val expectedValue = listOf(0.0, 1.0)
@@ -352,8 +718,110 @@ class PointAnnotationManagerAndroidTest : BaseMapTest() {
       pointAnnotationManager.iconTranslateAnchor = expectedValue
       assertEquals(expectedValue, pointAnnotationManager.iconTranslateAnchor)
       pointAnnotationManager.iconTranslateAnchor = null
-      val expectedDefaultValue = IconTranslateAnchor.valueOf(StyleManager.getStyleLayerPropertyDefaultValue("symbol", "icon-translate-anchor").silentUnwrap<String>()!!.toUpperCase(Locale.US).replace('-', '_'))
+      val expectedDefaultValue = IconTranslateAnchor.valueOf(StyleManager.getStyleLayerPropertyDefaultValue("symbol", "icon-translate-anchor").silentUnwrap<String>()!!.uppercase(Locale.US).replace('-', '_'))
       assertEquals(expectedDefaultValue, pointAnnotationManager.iconTranslateAnchor)
+    }
+  }
+
+  @Test
+  fun testSymbolZOffset() {
+    rule.runOnUiThread {
+      val expectedValue = 1.0
+      val pointAnnotationManager = mapView.annotations.createPointAnnotationManager()
+      pointAnnotationManager.symbolZOffset = expectedValue
+      assertEquals(expectedValue, pointAnnotationManager.symbolZOffset)
+      pointAnnotationManager.symbolZOffset = null
+      assertEquals(null, pointAnnotationManager.symbolZOffset)
+    }
+  }
+
+  @Test
+  fun testTextColor() {
+    rule.runOnUiThread {
+      val expectedValue = "rgba(0, 0, 0, 1)"
+      val pointAnnotationManager = mapView.annotations.createPointAnnotationManager()
+      pointAnnotationManager.textColorString = expectedValue
+      assertEquals(expectedValue, pointAnnotationManager.textColorString)
+      pointAnnotationManager.textColorString = null
+      assertEquals(
+        null,
+        pointAnnotationManager.textColorString
+      )
+    }
+  }
+
+  @Test
+  fun testTextEmissiveStrength() {
+    rule.runOnUiThread {
+      val expectedValue = 1.0
+      val pointAnnotationManager = mapView.annotations.createPointAnnotationManager()
+      pointAnnotationManager.textEmissiveStrength = expectedValue
+      assertEquals(expectedValue, pointAnnotationManager.textEmissiveStrength)
+      pointAnnotationManager.textEmissiveStrength = null
+      assertEquals(null, pointAnnotationManager.textEmissiveStrength)
+    }
+  }
+
+  @Test
+  fun testTextHaloBlur() {
+    rule.runOnUiThread {
+      val expectedValue = 1.0
+      val pointAnnotationManager = mapView.annotations.createPointAnnotationManager()
+      pointAnnotationManager.textHaloBlur = expectedValue
+      assertEquals(expectedValue, pointAnnotationManager.textHaloBlur)
+      pointAnnotationManager.textHaloBlur = null
+      assertEquals(null, pointAnnotationManager.textHaloBlur)
+    }
+  }
+
+  @Test
+  fun testTextHaloColor() {
+    rule.runOnUiThread {
+      val expectedValue = "rgba(0, 0, 0, 1)"
+      val pointAnnotationManager = mapView.annotations.createPointAnnotationManager()
+      pointAnnotationManager.textHaloColorString = expectedValue
+      assertEquals(expectedValue, pointAnnotationManager.textHaloColorString)
+      pointAnnotationManager.textHaloColorString = null
+      assertEquals(
+        null,
+        pointAnnotationManager.textHaloColorString
+      )
+    }
+  }
+
+  @Test
+  fun testTextHaloWidth() {
+    rule.runOnUiThread {
+      val expectedValue = 1.0
+      val pointAnnotationManager = mapView.annotations.createPointAnnotationManager()
+      pointAnnotationManager.textHaloWidth = expectedValue
+      assertEquals(expectedValue, pointAnnotationManager.textHaloWidth)
+      pointAnnotationManager.textHaloWidth = null
+      assertEquals(null, pointAnnotationManager.textHaloWidth)
+    }
+  }
+
+  @Test
+  fun testTextOcclusionOpacity() {
+    rule.runOnUiThread {
+      val expectedValue = 1.0
+      val pointAnnotationManager = mapView.annotations.createPointAnnotationManager()
+      pointAnnotationManager.textOcclusionOpacity = expectedValue
+      assertEquals(expectedValue, pointAnnotationManager.textOcclusionOpacity)
+      pointAnnotationManager.textOcclusionOpacity = null
+      assertEquals(null, pointAnnotationManager.textOcclusionOpacity)
+    }
+  }
+
+  @Test
+  fun testTextOpacity() {
+    rule.runOnUiThread {
+      val expectedValue = 1.0
+      val pointAnnotationManager = mapView.annotations.createPointAnnotationManager()
+      pointAnnotationManager.textOpacity = expectedValue
+      assertEquals(expectedValue, pointAnnotationManager.textOpacity)
+      pointAnnotationManager.textOpacity = null
+      assertEquals(null, pointAnnotationManager.textOpacity)
     }
   }
 
@@ -377,8 +845,20 @@ class PointAnnotationManagerAndroidTest : BaseMapTest() {
       pointAnnotationManager.textTranslateAnchor = expectedValue
       assertEquals(expectedValue, pointAnnotationManager.textTranslateAnchor)
       pointAnnotationManager.textTranslateAnchor = null
-      val expectedDefaultValue = TextTranslateAnchor.valueOf(StyleManager.getStyleLayerPropertyDefaultValue("symbol", "text-translate-anchor").silentUnwrap<String>()!!.toUpperCase(Locale.US).replace('-', '_'))
+      val expectedDefaultValue = TextTranslateAnchor.valueOf(StyleManager.getStyleLayerPropertyDefaultValue("symbol", "text-translate-anchor").silentUnwrap<String>()!!.uppercase(Locale.US).replace('-', '_'))
       assertEquals(expectedDefaultValue, pointAnnotationManager.textTranslateAnchor)
+    }
+  }
+
+  @Test
+  fun testSlot() {
+    rule.runOnUiThread {
+      val expectedValue = "abc"
+      val pointAnnotationManager = mapView.annotations.createPointAnnotationManager()
+      pointAnnotationManager.slot = expectedValue
+      assertEquals(expectedValue, pointAnnotationManager.slot)
+      pointAnnotationManager.slot = null
+      assertEquals(StyleManager.getStyleLayerPropertyDefaultValue("symbol", "slot").silentUnwrap(), pointAnnotationManager.slot)
     }
   }
 
@@ -429,12 +909,14 @@ class PointAnnotationManagerAndroidTest : BaseMapTest() {
       assertEquals(annotation, pointAnnotationManager.annotations[0])
       annotation.point = Point.fromLngLat(1.0, 1.0)
       annotation.iconAnchor = IconAnchor.CENTER
+      annotation.iconTextFit = IconTextFit.NONE
       annotation.textAnchor = TextAnchor.CENTER
       annotation.textJustify = TextJustify.AUTO
       annotation.textTransform = TextTransform.NONE
       pointAnnotationManager.update(annotation)
       assertEquals(annotation, pointAnnotationManager.annotations[0])
       assertEquals(IconAnchor.CENTER, annotation.iconAnchor)
+      assertEquals(IconTextFit.NONE, annotation.iconTextFit)
       assertEquals(TextAnchor.CENTER, annotation.textAnchor)
       assertEquals(TextJustify.AUTO, annotation.textJustify)
       assertEquals(TextTransform.NONE, annotation.textTransform)

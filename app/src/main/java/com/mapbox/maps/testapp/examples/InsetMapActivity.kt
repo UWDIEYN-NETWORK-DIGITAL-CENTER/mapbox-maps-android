@@ -7,7 +7,7 @@ import com.mapbox.geojson.Feature
 import com.mapbox.geojson.LineString
 import com.mapbox.geojson.Point
 import com.mapbox.maps.*
-import com.mapbox.maps.extension.observable.eventdata.CameraChangedEventData
+import com.mapbox.maps.dsl.cameraOptions
 import com.mapbox.maps.extension.style.layers.addLayer
 import com.mapbox.maps.extension.style.layers.generated.lineLayer
 import com.mapbox.maps.extension.style.layers.getLayer
@@ -20,7 +20,6 @@ import com.mapbox.maps.extension.style.sources.generated.geoJsonSource
 import com.mapbox.maps.extension.style.sources.getSource
 import com.mapbox.maps.plugin.attribution.attribution
 import com.mapbox.maps.plugin.compass.compass
-import com.mapbox.maps.plugin.delegates.listeners.OnCameraChangeListener
 import com.mapbox.maps.plugin.gestures.gestures
 import com.mapbox.maps.plugin.logo.logo
 import com.mapbox.maps.plugin.scalebar.scalebar
@@ -32,7 +31,7 @@ import com.mapbox.maps.testapp.examples.fragment.MapFragment
  * Example demonstrating displaying two maps: main map and small map with lower zoom
  * in bottom-right corner with optional bounds showing what area is covered by main map.
  */
-class InsetMapActivity : AppCompatActivity(), OnCameraChangeListener {
+class InsetMapActivity : AppCompatActivity(), CameraChangedCallback {
 
   private lateinit var mainMapboxMap: MapboxMap
   private var insetMapboxMap: MapboxMap? = null
@@ -41,10 +40,11 @@ class InsetMapActivity : AppCompatActivity(), OnCameraChangeListener {
     super.onCreate(savedInstanceState)
     val binding = ActivityInsetMapBinding.inflate(layoutInflater)
     setContentView(binding.root)
-    mainMapboxMap = binding.mapView.getMapboxMap()
-    mainMapboxMap.loadStyleUri(
-      styleUri = STYLE_URL
-    ) { mainMapboxMap.addOnCameraChangeListener(this@InsetMapActivity) }
+    mainMapboxMap = binding.mapView.mapboxMap
+    mainMapboxMap.setCamera(MAIN_MAP_CAMERA_POSITION)
+    mainMapboxMap.loadStyle(
+      style = STYLE_URL
+    ) { mainMapboxMap.subscribeCameraChanged(this@InsetMapActivity) }
 
     var insetMapFragment: MapFragment? =
       supportFragmentManager.findFragmentByTag(INSET_FRAGMENT_TAG) as? MapFragment
@@ -71,26 +71,28 @@ class InsetMapActivity : AppCompatActivity(), OnCameraChangeListener {
   private fun setInsetMapStyle(insetMapFragment: MapFragment) {
     insetMapFragment.getMapAsync {
       insetMapboxMap = it
-      insetMapboxMap?.loadStyleUri(
-        styleUri = STYLE_URL
-      ) { style ->
-        val source = geoJsonSource(BOUNDS_LINE_LAYER_SOURCE_ID) {
-          feature(Feature.fromGeometry(LineString.fromLngLats(getRectanglePoints())))
+      insetMapboxMap?.apply {
+        setCamera(INSET_CAMERA_POSITION)
+        loadStyle(
+          style = STYLE_URL
+        ) { style ->
+          val source = geoJsonSource(BOUNDS_LINE_LAYER_SOURCE_ID) {
+            feature(Feature.fromGeometry(LineString.fromLngLats(getRectanglePoints())))
+          }
+          style.addSource(source)
+          // The layer properties for our line. This is where we make the line dotted, set the color, etc.
+          val layer = lineLayer(BOUNDS_LINE_LAYER_LAYER_ID, BOUNDS_LINE_LAYER_SOURCE_ID) {
+            lineCap(LineCap.ROUND)
+            lineJoin(LineJoin.ROUND)
+            lineWidth(3.0)
+            lineColor(Color.YELLOW)
+            visibility(Visibility.VISIBLE)
+          }
+          style.addLayer(layer)
+          updateInsetMapLineLayerBounds(style)
         }
-        style.addSource(source)
-
-        // The layer properties for our line. This is where we make the line dotted, set the color, etc.
-        val layer = lineLayer(BOUNDS_LINE_LAYER_LAYER_ID, BOUNDS_LINE_LAYER_SOURCE_ID) {
-          lineCap(LineCap.ROUND)
-          lineJoin(LineJoin.ROUND)
-          lineWidth(3.0)
-          lineColor(Color.YELLOW)
-          visibility(Visibility.VISIBLE)
-        }
-        style.addLayer(layer)
-        updateInsetMapLineLayerBounds(style)
       }
-      insetMapFragment.getMapView()?.apply {
+      insetMapFragment.getMapView().apply {
         logo.enabled = false
         scalebar.enabled = false
         attribution.enabled = false
@@ -104,7 +106,7 @@ class InsetMapActivity : AppCompatActivity(), OnCameraChangeListener {
     }
   }
 
-  override fun onCameraChanged(eventData: CameraChangedEventData) {
+  override fun run(cameraChanged: CameraChanged) {
     val mainCameraPosition = mainMapboxMap.cameraState
     val insetCameraPosition = CameraOptions.Builder()
       .zoom(mainCameraPosition.zoom.minus(ZOOM_DISTANCE_BETWEEN_MAIN_AND_INSET_MAPS))
@@ -141,5 +143,16 @@ class InsetMapActivity : AppCompatActivity(), OnCameraChangeListener {
     private const val BOUNDS_LINE_LAYER_SOURCE_ID = "BOUNDS_LINE_LAYER_SOURCE_ID"
     private const val BOUNDS_LINE_LAYER_LAYER_ID = "BOUNDS_LINE_LAYER_LAYER_ID"
     private const val ZOOM_DISTANCE_BETWEEN_MAIN_AND_INSET_MAPS = 3
+    private val MAIN_MAP_CAMERA_POSITION = cameraOptions {
+      center(Point.fromLngLat(106.025839, 11.302318))
+      zoom(5.11)
+    }
+
+    private val INSET_CAMERA_POSITION = CameraOptions.Builder()
+      .zoom(MAIN_MAP_CAMERA_POSITION.zoom?.minus(ZOOM_DISTANCE_BETWEEN_MAIN_AND_INSET_MAPS))
+      .pitch(MAIN_MAP_CAMERA_POSITION.pitch)
+      .bearing(MAIN_MAP_CAMERA_POSITION.bearing)
+      .center(MAIN_MAP_CAMERA_POSITION.center)
+      .build()
   }
 }

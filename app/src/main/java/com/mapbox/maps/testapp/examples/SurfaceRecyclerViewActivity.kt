@@ -43,30 +43,12 @@ class SurfaceRecyclerViewActivity : AppCompatActivity() {
     private val inflater: LayoutInflater
   ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
-    private val items = listOf(
-      "one",
-      "two",
-      "three",
-      MapItem(Style.MAPBOX_STREETS),
-      "four",
-      "five",
-      "six",
-      "seven",
-      "eight",
-      "nine",
-      "ten",
-      "eleven",
-      "twelve",
-      "thirteen",
-      "fourteen",
-      "fifteen",
-      "sixteen",
-      "seventeen",
-      "eighteen",
-      "nineteen",
-      "twenty",
-      "twenty-one"
-    )
+    private val items = List(75) {
+      if (it == 4)
+        MapItem(Style.STANDARD)
+      else
+        "Row $it"
+    }
 
     private var mapHolders: MutableList<MapHolder> = mutableListOf()
 
@@ -137,7 +119,7 @@ class SurfaceRecyclerViewActivity : AppCompatActivity() {
 
       fun bind(mapItem: MapItem) {
         mapView.gestures.scrollEnabled = false
-        mapView.getMapboxMap().loadStyleUri(mapItem.style)
+        mapView.mapboxMap.loadStyle(mapItem.style)
       }
     }
   }

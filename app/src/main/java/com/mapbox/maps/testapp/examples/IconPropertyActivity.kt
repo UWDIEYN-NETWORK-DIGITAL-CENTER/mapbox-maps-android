@@ -25,18 +25,12 @@ class IconPropertyActivity : AppCompatActivity() {
     val binding = ActivityIconPropertyBinding.inflate(layoutInflater)
     setContentView(binding.root)
 
-    binding.mapView.getMapboxMap().loadStyle(
+    binding.mapView.mapboxMap.loadStyle(
       styleExtension = style(Style.OUTDOORS) {
         // Add icons from the U.S. National Parks Service to the map's style.
-        +image(RESTROOMS) {
-          bitmap(BitmapFactory.decodeResource(resources, R.drawable.nps_restrooms))
-        }
-        +image(TRAIL_HEAD) {
-          bitmap(BitmapFactory.decodeResource(resources, R.drawable.nps_trailhead))
-        }
-        +image(PICNIC_AREA) {
-          bitmap(BitmapFactory.decodeResource(resources, R.drawable.nps_picnic_area))
-        }
+        +image(RESTROOMS, BitmapFactory.decodeResource(resources, R.drawable.nps_restrooms))
+        +image(TRAIL_HEAD, BitmapFactory.decodeResource(resources, R.drawable.nps_trailhead))
+        +image(PICNIC_AREA, BitmapFactory.decodeResource(resources, R.drawable.nps_picnic_area))
         // Access a vector tileset that contains places of interest at Yosemite National Park.
         // This tileset was created by uploading NPS shape files to Mapbox Studio.
         +vectorSource(SOURCE_ID) {

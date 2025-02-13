@@ -1,54 +1,41 @@
-import org.jetbrains.dokka.gradle.DokkaTask
-
 plugins {
-  id("com.android.library")
-  kotlin("android")
-  id("org.jetbrains.dokka")
-  id("io.gitlab.arturbosch.detekt").version(Versions.detekt)
+  id("com.mapbox.gradle.library")
 }
 
 android {
-  compileSdk = AndroidVersions.compileSdkVersion
+  compileSdk = libs.versions.androidCompileSdkVersion.get().toInt()
   defaultConfig {
-    minSdk = AndroidVersions.minSdkVersion
-    targetSdk = AndroidVersions.targetSdkVersion
+    minSdk = libs.versions.androidMinSdkVersion.get().toInt()
+    targetSdk = libs.versions.androidTargetSdkVersion.get().toInt()
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+  }
+  namespace = "com.mapbox.maps.extension.style"
+}
+
+mapboxLibrary {
+  publish {
+    group = "com.mapbox.extension"
+    artifactId = "maps-style"
+    artifactTitle = "The style extension for the Mapbox Maps SDK for Android"
+    artifactDescription = artifactTitle
+    sdkName = "mobile-maps-android-style"
   }
 }
 
 dependencies {
   implementation(project(":sdk-base"))
-  implementation(Dependencies.mapboxJavaGeoJSON)
-  implementation(Dependencies.mapboxBase)
-  implementation(Dependencies.kotlin)
-  implementation(Dependencies.androidxAppCompat)
-  implementation(Dependencies.androidxCoreKtx)
-  implementation(Dependencies.androidxAnnotations)
-  testImplementation(Dependencies.junit)
-  testImplementation(Dependencies.mockk)
-  testImplementation(Dependencies.androidxTestCore)
-  testImplementation(Dependencies.robolectric)
-  testImplementation(Dependencies.equalsVerifier)
-  androidTestImplementation(Dependencies.androidxTestRunner)
-  androidTestImplementation(Dependencies.androidxJUnitTestRules)
-  androidTestImplementation(Dependencies.androidxEspresso)
-  detektPlugins(Dependencies.detektFormatting)
-}
+  implementation(libs.mapbox.javaGeoJSON)
+  implementation(libs.bundles.base.dependencies)
 
-tasks.withType<DokkaTask>().configureEach {
-  dokkaSourceSets {
-    configureEach {
-      reportUndocumented.set(true)
-      failOnWarning.set(true)
-    }
-  }
+  testImplementation(libs.bundles.base.dependenciesTests)
+  androidTestImplementation(libs.bundles.base.dependenciesAndroidTests)
+  detektPlugins(libs.detektFormatting)
+  lintPublish(project(":extension-style-lint-rules"))
 }
 
 project.apply {
   from("$rootDir/gradle/ktlint.gradle")
   from("$rootDir/gradle/lint.gradle")
-  from("${rootDir}/gradle/jacoco.gradle")
-  from("$rootDir/gradle/sdk-registry.gradle")
   from("$rootDir/gradle/track-public-apis.gradle")
   from("$rootDir/gradle/detekt.gradle")
   from("$rootDir/gradle/dependency-updates.gradle")

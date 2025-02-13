@@ -2,21 +2,24 @@ package com.mapbox.maps.plugin.compass
 
 import android.animation.Animator
 import android.animation.ValueAnimator
+import android.graphics.Bitmap
+import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.os.Handler
 import android.util.AttributeSet
 import android.view.Gravity
 import android.widget.FrameLayout
+import androidx.appcompat.content.res.AppCompatResources
+import com.mapbox.geojson.Point
+import com.mapbox.maps.EdgeInsets
+import com.mapbox.maps.ImageHolder
 import com.mapbox.maps.plugin.Plugin
 import com.mapbox.maps.plugin.animation.CameraAnimationsPlugin
 import com.mapbox.maps.plugin.animation.MapAnimationOptions.Companion.mapAnimationOptions
 import com.mapbox.maps.plugin.animation.MapAnimationOwnerRegistry
 import com.mapbox.maps.plugin.delegates.MapCameraManagerDelegate
 import com.mapbox.maps.plugin.delegates.MapDelegateProvider
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.slot
-import io.mockk.verify
+import io.mockk.*
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
@@ -24,14 +27,15 @@ import org.junit.Test
 class CompassViewPluginTest {
 
   private lateinit var compassPlugin: CompassPlugin
-  private val compassView = mockk<CompassViewImpl>(relaxUnitFun = true)
+  private val compassView = mockk<CompassViewImpl>(relaxed = true)
   private val fadeAnimator = mockk<ValueAnimator>(relaxUnitFun = true)
   private val delegateProvider = mockk<MapDelegateProvider>()
   private val mapCameraDelegate = mockk<MapCameraManagerDelegate>(relaxUnitFun = true)
   private val animatePlugin = mockk<CameraAnimationsPlugin>(relaxed = true)
   private lateinit var fadeAnimatorEndListener: Animator.AnimatorListener
   private lateinit var fadeAnimatorUpdateListener: ValueAnimator.AnimatorUpdateListener
-  private val padding = arrayOf(0.0, 0.0, 0.0, 0.0)
+  private val padding = EdgeInsets(0.0, 0.0, 0.0, 0.0)
+  private val zeroPoint = Point.fromLngLat(0.0, 0.0)
 
   @Before
   fun setUp() {
@@ -52,7 +56,7 @@ class CompassViewPluginTest {
       true
     }
 
-    compassPlugin = CompassViewPlugin({ compassView }, fadeAnimator, mainHandler)
+    compassPlugin = CompassViewPlugin({ compassView }, fadeAnimator)
     compassPlugin.onPluginView(compassView)
     compassPlugin.onDelegateProvider(delegateProvider)
     fadeAnimatorEndListener = animatorEndListenerSlot.captured
@@ -119,12 +123,11 @@ class CompassViewPluginTest {
     every { compassView.isCompassEnabled } returns true
     every { compassView.compassRotation } returns 0.33f
     compassPlugin.onCameraMove(
-      0.0,
-      0.0,
-      0.0,
-      0.0,
-      -0.33,
-      padding
+        zeroPoint,
+        0.0,
+        0.0,
+        -0.33,
+        padding
     )
     compassPlugin.fadeWhenFacingNorth = false
     verify { compassView.setCompassAlpha(1.0f) }
@@ -138,12 +141,11 @@ class CompassViewPluginTest {
     every { compassView.isCompassEnabled } returns true
     every { compassView.compassRotation } returns 0.33f
     compassPlugin.onCameraMove(
-      0.0,
-      0.0,
-      0.0,
-      0.0,
-      -0.33,
-      padding
+      zeroPoint,
+        0.0,
+        0.0,
+        -0.33,
+        padding
     )
     compassPlugin.fadeWhenFacingNorth = true
     verify { fadeAnimator.start() }
@@ -155,10 +157,25 @@ class CompassViewPluginTest {
   }
 
   @Test
-  fun setCompassImage() {
-    val image = mockk<Drawable>()
-    compassPlugin.image = image
-    verify { compassView.compassImage = image }
+  fun setCompassImageAsBitmap() {
+    val image = mockk<Bitmap>()
+    compassPlugin.image = ImageHolder.from(image)
+    val slot = slot<Drawable>()
+    verify { compassView.compassImage = capture(slot) }
+    // did not find a way to check that BitmapDrawable is created with specific arg, see
+    // https://github.com/mockk/mockk/issues/735
+    assert(slot.captured is BitmapDrawable)
+  }
+
+  @Test
+  fun setCompassImageAsDrawable() {
+    val imageId = 1
+    mockkStatic(AppCompatResources::class)
+    every { AppCompatResources.getDrawable(any(), any()) } returns mockk()
+    compassPlugin.image = ImageHolder.from(imageId)
+    verify { compassView.compassImage = any() }
+    verify { AppCompatResources.getDrawable(any(), imageId) }
+    unmockkStatic(AppCompatResources::class)
   }
 
   @Test
@@ -241,12 +258,15 @@ class CompassViewPluginTest {
     every { mapCameraDelegate.cameraState.bearing } returns 0.0
     every { compassView.compassRotation } returns 0f
     every { compassView.isCompassEnabled } returns true
+    mockkStatic(AppCompatResources::class)
+    every { AppCompatResources.getDrawable(any(), any()) } returns mockk()
     val attrs = mockk<AttributeSet>()
     compassPlugin.bind(mockk(relaxed = true), attrs, 1.0f)
     compassPlugin.initialize()
     verify { compassView.isCompassVisible = false }
     verify { compassView.compassGravity = any() }
     verify { compassView.compassRotation = (-0.0).toFloat() }
+    unmockkStatic(AppCompatResources::class)
   }
 
   @Test
@@ -280,12 +300,11 @@ class CompassViewPluginTest {
     every { compassView.isCompassEnabled } returns true
     every { compassView.compassRotation } returns 15f
     compassPlugin.onCameraMove(
-      0.0,
-      0.0,
-      0.0,
-      0.0,
-      -15.0,
-      padding
+      zeroPoint,
+        0.0,
+        0.0,
+        -15.0,
+        padding
     )
     verify { compassView.compassRotation = -(-15.0).toFloat() }
     verify { fadeAnimator.cancel() }
@@ -297,12 +316,11 @@ class CompassViewPluginTest {
     every { compassView.isCompassEnabled } returns false
     every { compassView.compassRotation } returns 15f
     compassPlugin.onCameraMove(
-      0.0,
-      0.0,
-      0.0,
-      0.0,
-      -15.0,
-      padding
+      zeroPoint,
+        0.0,
+        0.0,
+        -15.0,
+        padding
     )
     verify { compassView.compassRotation = -(-15.0).toFloat() }
     verify(exactly = 0) { fadeAnimator.cancel() }
@@ -314,30 +332,27 @@ class CompassViewPluginTest {
     every { compassView.isCompassEnabled } returns true
     every { compassView.compassRotation } returns 15f
     compassPlugin.onCameraMove(
-      0.0,
-      0.0,
-      0.0,
-      0.0,
-      -15.0,
-      padding
+      zeroPoint,
+        0.0,
+        0.0,
+        -15.0,
+        padding
     )
     every { compassView.compassRotation } returns 0.33f
     compassPlugin.onCameraMove(
-      0.0,
-      0.0,
-      0.0,
-      0.0,
-      -0.33,
-      padding
+      zeroPoint,
+        0.0,
+        0.0,
+        -0.33,
+        padding
     )
     every { compassView.compassRotation } returns 0.23f
     compassPlugin.onCameraMove(
-      0.0,
-      0.0,
-      0.0,
-      0.0,
-      -0.23,
-      padding
+      zeroPoint,
+        0.0,
+        0.0,
+        -0.23,
+        padding
     )
     verify(exactly = 1) { fadeAnimator.start() }
   }
@@ -348,21 +363,19 @@ class CompassViewPluginTest {
     every { compassView.compassRotation } returns 15f
     compassPlugin.fadeWhenFacingNorth = false
     compassPlugin.onCameraMove(
-      0.0,
-      0.0,
-      0.0,
-      0.0,
-      -15.0,
-      padding
+      zeroPoint,
+        0.0,
+        0.0,
+        -15.0,
+        padding
     )
     every { compassView.compassRotation } returns 0.23f
     compassPlugin.onCameraMove(
-      0.0,
-      0.0,
-      0.0,
-      0.0,
-      -0.23,
-      padding
+      zeroPoint,
+        0.0,
+        0.0,
+        -0.23,
+        padding
     )
     verify(exactly = 0) { fadeAnimator.start() }
   }
@@ -410,9 +423,19 @@ class CompassViewPluginTest {
   @Test
   fun onCompassDisabledRotateMapEnabled() {
     compassPlugin.enabled = false
-    compassPlugin.onCameraMove(0.0, 0.0, 0.0, 0.0, 40.0, arrayOf())
+    compassPlugin.onCameraMove(zeroPoint, 0.0, 0.0, 40.0, padding)
     every { compassView.compassRotation } returns -40.0f
     compassPlugin.enabled = true
     verify { compassView.isCompassVisible = true }
+  }
+
+  @Test
+  fun updateSettings_disableCompass_viewHidden() {
+    clearMocks(compassView)
+
+    compassPlugin.updateSettings { this.enabled = false }
+
+    assertFalse(compassPlugin.enabled)
+    verify { compassView.isCompassVisible = false }
   }
 }

@@ -7,6 +7,11 @@ import com.google.gson.annotations.SerializedName
  * Defines what resource could not be loaded.
  * @param value String value of this enum
  */
+@Deprecated(
+  message = "This enum class is deprecated, and will be removed in next major release.",
+  replaceWith = ReplaceWith("MapLoadingErrorType"),
+  level = DeprecationLevel.WARNING
+)
 enum class MapLoadErrorType(val value: String) {
   /**
    * An error related to style.

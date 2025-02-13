@@ -7,6 +7,11 @@ import com.mapbox.maps.extension.observable.model.TileID
 /**
  * The data class for map-loading-error event data in Observer
  */
+@Deprecated(
+  message = "This data class is deprecated, and will be removed in next major release.",
+  replaceWith = ReplaceWith("MapLoadingError"),
+  level = DeprecationLevel.WARNING
+)
 data class MapLoadingErrorEventData(
   /**
    * Representing timestamp taken at the time of an event creation, in microseconds, since the epoch.

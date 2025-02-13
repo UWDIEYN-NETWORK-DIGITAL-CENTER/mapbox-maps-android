@@ -9,6 +9,7 @@ import com.mapbox.geojson.FeatureCollection
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.MapboxMap
+import com.mapbox.maps.Style
 import com.mapbox.maps.extension.style.expressions.dsl.generated.literal
 import com.mapbox.maps.extension.style.expressions.generated.Expression.Companion.color
 import com.mapbox.maps.plugin.annotation.AnnotationConfig
@@ -16,11 +17,13 @@ import com.mapbox.maps.plugin.annotation.AnnotationSourceOptions
 import com.mapbox.maps.plugin.annotation.ClusterOptions
 import com.mapbox.maps.plugin.annotation.annotations
 import com.mapbox.maps.plugin.annotation.generated.OnPointAnnotationClickListener
+import com.mapbox.maps.plugin.annotation.generated.OnPointAnnotationLongClickListener
 import com.mapbox.maps.plugin.annotation.generated.PointAnnotationManager
 import com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions
 import com.mapbox.maps.plugin.annotation.generated.createPointAnnotationManager
 import com.mapbox.maps.testapp.databinding.ActivityAnnotationBinding
 import com.mapbox.maps.testapp.examples.annotation.AnnotationUtils
+import com.mapbox.maps.testapp.examples.annotation.AnnotationUtils.showShortToast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -35,11 +38,16 @@ class PointAnnotationClusterActivity : AppCompatActivity(), CoroutineScope {
   override val coroutineContext = job + Dispatchers.IO
   private var pointAnnotationManager: PointAnnotationManager? = null
   private var options: List<PointAnnotationOptions>? = null
-  private var index: Int = 0
+  private var styleIndex: Int = 0
+  private var slotIndex: Int = 0
+
+  // STANDARD style doesn't support ICON_FIRE_STATION image
+  private val styles =
+    AnnotationUtils.STYLES.filterNot { it == Style.STANDARD || it == Style.STANDARD_SATELLITE }
   private val nextStyle: String
-    get() {
-      return AnnotationUtils.STYLES[index++ % AnnotationUtils.STYLES.size]
-    }
+    get() = styles[styleIndex++ % styles.size]
+  private val nextSlot: String
+    get() = AnnotationUtils.SLOTS[slotIndex++ % AnnotationUtils.SLOTS.size]
   private lateinit var binding: ActivityAnnotationBinding
 
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,7 +55,7 @@ class PointAnnotationClusterActivity : AppCompatActivity(), CoroutineScope {
     binding = ActivityAnnotationBinding.inflate(layoutInflater)
     setContentView(binding.root)
     binding.progress.visibility = View.VISIBLE
-    mapboxMap = binding.mapView.getMapboxMap()
+    mapboxMap = binding.mapView.mapboxMap
       .apply {
         setCamera(
           CameraOptions.Builder()
@@ -55,7 +63,7 @@ class PointAnnotationClusterActivity : AppCompatActivity(), CoroutineScope {
             .zoom(10.0)
             .build()
         )
-        loadStyleUri(nextStyle) {
+        loadStyle(nextStyle) {
           val annotationPlugin = binding.mapView.annotations
           val annotationConfig = AnnotationConfig(
             annotationSourceOptions = AnnotationSourceOptions(
@@ -73,18 +81,48 @@ class PointAnnotationClusterActivity : AppCompatActivity(), CoroutineScope {
             )
           )
           pointAnnotationManager =
-            annotationPlugin.createPointAnnotationManager(annotationConfig)
-          pointAnnotationManager?.addClickListener(
-            OnPointAnnotationClickListener {
-              Toast.makeText(
-                this@PointAnnotationClusterActivity,
-                "Click: ${it.id}",
-                Toast.LENGTH_SHORT
+            annotationPlugin.createPointAnnotationManager(annotationConfig).apply {
+              // Set the icon image for this point annotation manager, so it will be applied to all annotations
+              iconImage = ICON_FIRE_STATION
+              addClickListener(
+                OnPointAnnotationClickListener {
+                  Toast.makeText(
+                    this@PointAnnotationClusterActivity,
+                    "Click: ${it.id}",
+                    Toast.LENGTH_SHORT
+                  ).show()
+                  true
+                }
               )
-                .show()
-              true
+              addLongClickListener(
+                OnPointAnnotationLongClickListener {
+                  Toast.makeText(
+                    this@PointAnnotationClusterActivity,
+                    "Long Click: ${it.id}",
+                    Toast.LENGTH_SHORT
+                  )
+                    .show()
+                  true
+                }
+              )
+              addClusterClickListener {
+                Toast.makeText(
+                  this@PointAnnotationClusterActivity,
+                  "Cluster Click ID: ${it.clusterId}, points:  ${it.pointCount}, abbreviatedCount: ${it.pointCountAbbreviated}",
+                  Toast.LENGTH_SHORT
+                ).show()
+                true
+              }
+              addClusterLongClickListener {
+                Toast.makeText(
+                  this@PointAnnotationClusterActivity,
+                  "Cluster Long Click ID:${it.clusterId}, points:  ${it.pointCount}, abbreviatedCount: ${it.pointCountAbbreviated}",
+                  Toast.LENGTH_SHORT
+                ).show()
+                true
+              }
             }
-          )
+
           launch {
             loadData()
           }
@@ -93,7 +131,12 @@ class PointAnnotationClusterActivity : AppCompatActivity(), CoroutineScope {
 
     binding.deleteAll.setOnClickListener { pointAnnotationManager?.deleteAll() }
     binding.changeStyle.setOnClickListener {
-      binding.mapView.getMapboxMap().loadStyleUri(nextStyle)
+      binding.mapView.mapboxMap.loadStyle(nextStyle)
+    }
+    binding.changeSlot.setOnClickListener {
+      val slot = nextSlot
+      showShortToast("Switching to $slot slot")
+      pointAnnotationManager?.slot = slot
     }
   }
 
@@ -104,7 +147,6 @@ class PointAnnotationClusterActivity : AppCompatActivity(), CoroutineScope {
         options = features.take(AMOUNT).map { feature ->
           PointAnnotationOptions()
             .withGeometry((feature.geometry() as Point))
-            .withIconImage(ICON_FIRE_STATION)
         }
       }
     }
@@ -118,7 +160,7 @@ class PointAnnotationClusterActivity : AppCompatActivity(), CoroutineScope {
 
   companion object {
     private const val AMOUNT = 10000
-    private const val ICON_FIRE_STATION = "fire-station-11"
+    private const val ICON_FIRE_STATION = "fire-station"
     private const val LONGITUDE = -77.00897
     private const val LATITUDE = 38.87031
     private const val POINTS_URL =

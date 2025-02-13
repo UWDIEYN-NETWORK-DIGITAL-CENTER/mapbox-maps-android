@@ -4,16 +4,28 @@ import android.graphics.Color
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.mapbox.geojson.FeatureCollection
 import com.mapbox.geojson.Point
+import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.extension.style.layers.getLayer
 import com.mapbox.maps.plugin.annotation.AnnotationConfig
 import com.mapbox.maps.plugin.annotation.AnnotationPlugin
 import com.mapbox.maps.plugin.annotation.annotations
-import com.mapbox.maps.plugin.annotation.generated.*
+import com.mapbox.maps.plugin.annotation.generated.OnPolylineAnnotationClickListener
+import com.mapbox.maps.plugin.annotation.generated.OnPolylineAnnotationInteractionListener
+import com.mapbox.maps.plugin.annotation.generated.OnPolylineAnnotationLongClickListener
+import com.mapbox.maps.plugin.annotation.generated.PolylineAnnotation
+import com.mapbox.maps.plugin.annotation.generated.PolylineAnnotationManager
+import com.mapbox.maps.plugin.annotation.generated.PolylineAnnotationOptions
+import com.mapbox.maps.plugin.annotation.generated.createPolylineAnnotationManager
 import com.mapbox.maps.testapp.databinding.ActivityAnnotationBinding
 import com.mapbox.maps.testapp.examples.annotation.AnnotationUtils
-import java.util.*
+import com.mapbox.maps.testapp.examples.annotation.AnnotationUtils.showShortToast
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.util.Random
 
 /**
  * Example showing how to add Line annotations
@@ -21,18 +33,32 @@ import java.util.*
 class PolylineAnnotationActivity : AppCompatActivity() {
   private val random = Random()
   private var polylineAnnotationManager: PolylineAnnotationManager? = null
-  private var index: Int = 0
+  private var styleIndex: Int = 0
+  private var slotIndex: Int = 0
   private val nextStyle: String
     get() {
-      return AnnotationUtils.STYLES[index++ % AnnotationUtils.STYLES.size]
+      return AnnotationUtils.STYLES[styleIndex++ % AnnotationUtils.STYLES.size]
     }
+  private val nextSlot: String
+    get() {
+      return AnnotationUtils.SLOTS[slotIndex++ % AnnotationUtils.SLOTS.size]
+    }
+
   private lateinit var annotationPlugin: AnnotationPlugin
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     val binding = ActivityAnnotationBinding.inflate(layoutInflater)
     setContentView(binding.root)
-    binding.mapView.getMapboxMap().loadStyleUri(nextStyle) {
+    binding.mapView.mapboxMap.setCamera(
+      CameraOptions.Builder()
+        .center(Point.fromLngLat(-7.0, -1.0))
+        .pitch(0.0)
+        .zoom(4.0)
+        .bearing(0.0)
+        .build()
+    )
+    binding.mapView.mapboxMap.loadStyle(nextStyle) {
       annotationPlugin = binding.mapView.annotations
       polylineAnnotationManager = annotationPlugin.createPolylineAnnotationManager(
         annotationConfig = AnnotationConfig(PITCH_OUTLINE, LAYER_ID, SOURCE_ID)
@@ -43,6 +69,13 @@ class PolylineAnnotationActivity : AppCompatActivity() {
         addClickListener(
           OnPolylineAnnotationClickListener {
             Toast.makeText(this@PolylineAnnotationActivity, "click ${it.id}", Toast.LENGTH_SHORT)
+              .show()
+            false
+          }
+        )
+        addLongClickListener(
+          OnPolylineAnnotationLongClickListener {
+            Toast.makeText(this@PolylineAnnotationActivity, "long click ${it.id}", Toast.LENGTH_SHORT)
               .show()
             false
           }
@@ -79,24 +112,25 @@ class PolylineAnnotationActivity : AppCompatActivity() {
         create(polylineAnnotationOptions)
 
         // random add lines across the globe
-        val lists: MutableList<List<Point>> = ArrayList<List<Point>>()
-        for (i in 0..99) {
-          lists.add(AnnotationUtils.createRandomPoints())
-        }
-        val lineOptionsList = lists.map {
+        val lineOptionsList = List(100) {
           val color = Color.argb(255, random.nextInt(256), random.nextInt(256), random.nextInt(256))
           PolylineAnnotationOptions()
-            .withPoints(it)
+            .withPoints(AnnotationUtils.createRandomPoints())
             .withLineColor(color)
         }
 
         create(lineOptionsList)
 
-        AnnotationUtils.loadStringFromAssets(
-          this@PolylineAnnotationActivity,
-          "annotations.json"
-        )?.let {
-          create(FeatureCollection.fromJson(it))
+        lifecycleScope.launch {
+          val featureCollection = withContext(Dispatchers.Default) {
+            FeatureCollection.fromJson(
+              AnnotationUtils.loadStringFromAssets(
+                this@PolylineAnnotationActivity,
+                "annotations.json"
+              )
+            )
+          }
+          create(featureCollection)
         }
       }
     }
@@ -107,7 +141,12 @@ class PolylineAnnotationActivity : AppCompatActivity() {
       }
     }
     binding.changeStyle.setOnClickListener {
-      binding.mapView.getMapboxMap().loadStyleUri(nextStyle)
+      binding.mapView.mapboxMap.loadStyle(nextStyle)
+    }
+    binding.changeSlot.setOnClickListener {
+      val slot = nextSlot
+      showShortToast("Switching to $slot slot")
+      polylineAnnotationManager?.slot = slot
     }
   }
 

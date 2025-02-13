@@ -5,6 +5,7 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.os.Handler
+import android.os.Looper
 import android.os.Message
 import android.util.AttributeSet
 import android.util.Pair
@@ -85,8 +86,7 @@ class ScaleBarImpl : ScaleBar, View {
       field = value
     }
 
-  @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-  internal val refreshHandler: RefreshHandler
+  private val refreshHandler: RefreshHandler
   private val decimalFormat = DecimalFormat("0.#")
   private var isScaleBarVisible = false
   private var reusableCanvas: Canvas? = null
@@ -94,7 +94,7 @@ class ScaleBarImpl : ScaleBar, View {
   /**
    * Current settings will be used to draw ScaleBar
    */
-  override var settings: ScaleBarSettings = ScaleBarSettings()
+  override var settings: ScaleBarSettings = ScaleBarSettings { }
     set(value) {
       textPaint.color = value.textColor
       textPaint.textSize = value.textSize
@@ -103,6 +103,7 @@ class ScaleBarImpl : ScaleBar, View {
       unit = if (value.isMetricUnits) METER_UNIT else FEET_UNIT
       strokePaint.strokeWidth = if (value.showTextBorder) value.textBorderWidth else 0F
       enable = value.enabled
+      useContinuousRendering = value.useContinuousRendering
       if (useContinuousRendering) {
         reusableCanvas = null
       } else {
@@ -112,7 +113,7 @@ class ScaleBarImpl : ScaleBar, View {
       }
 
       field = value
-      (layoutParams as FrameLayout.LayoutParams).apply {
+      (layoutParams as? FrameLayout.LayoutParams)?.apply {
         gravity = value.position
         setMargins(
           value.marginLeft.toInt(),
@@ -487,10 +488,13 @@ class ScaleBarImpl : ScaleBar, View {
     }
   }
 
+  @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+  internal fun refreshHandlerHasMessages(what: Int): Boolean = refreshHandler.hasMessages(what)
+
   /**
    * Handler class to limit the refresh frequent.
    */
-  internal class RefreshHandler(scaleBarImpl: ScaleBarImpl) : Handler() {
+  private class RefreshHandler(scaleBarImpl: ScaleBarImpl) : Handler(Looper.getMainLooper()) {
     private var scaleBarWidgetWeakReference: WeakReference<ScaleBarImpl> =
       WeakReference(scaleBarImpl)
 

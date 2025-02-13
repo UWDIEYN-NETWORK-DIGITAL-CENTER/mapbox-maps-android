@@ -1,6 +1,7 @@
 package com.mapbox.maps.extension.androidauto
 
 import android.graphics.Rect
+import androidx.annotation.RestrictTo
 import androidx.car.app.CarContext
 import androidx.car.app.SurfaceCallback
 import androidx.car.app.SurfaceContainer
@@ -16,7 +17,8 @@ import java.util.concurrent.CopyOnWriteArraySet
  *
  * Maintains the surface state for [MapboxCarMap].
  */
-internal class CarMapSurfaceOwner @JvmOverloads constructor(
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+internal class CarMapSurfaceOwner(
   internal var gestureHandler: MapboxCarMapGestureHandler? = DefaultMapboxCarMapGestureHandler()
 ) : SurfaceCallback {
 
@@ -92,13 +94,13 @@ internal class CarMapSurfaceOwner @JvmOverloads constructor(
       val carMapSurface = MapboxCarMapSurface(carContext, mapSurface, surfaceContainer)
       val oldCarMapSurface = this.mapboxCarMapSurface
       this.mapboxCarMapSurface = carMapSurface
-      oldCarMapSurface?.mapSurface?.let { mapSurface ->
+      oldCarMapSurface?.mapSurface?.let { oldMapSurface ->
         carMapObservers.forEach { it.onDetached(oldCarMapSurface) }
         // The surface can become available without a call to surfaceDestroyed
         // https://issuetracker.google.com/issues/235121269
-        mapSurface.onStop()
-        mapSurface.surfaceDestroyed()
-        mapSurface.onDestroy()
+        oldMapSurface.onStop()
+        oldMapSurface.surfaceDestroyed()
+        oldMapSurface.onDestroy()
       }
       carMapObservers.forEach { it.onAttached(carMapSurface) }
 

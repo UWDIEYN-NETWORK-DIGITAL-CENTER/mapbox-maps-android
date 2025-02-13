@@ -1,12 +1,12 @@
 package com.mapbox.maps.testapp.examples
 
-import android.graphics.BitmapFactory
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmap
 import com.mapbox.geojson.Feature
 import com.mapbox.geojson.FeatureCollection
 import com.mapbox.geojson.Point
-import com.mapbox.maps.MapboxExperimental
 import com.mapbox.maps.MapboxMap
 import com.mapbox.maps.Style
 import com.mapbox.maps.extension.style.image.image
@@ -25,7 +25,6 @@ import com.mapbox.maps.plugin.overlay.mapboxOverlay
 import com.mapbox.maps.testapp.R
 import com.mapbox.maps.testapp.databinding.ActivityMapOverlayBinding
 
-@MapboxExperimental
 class MapOverlayActivity : AppCompatActivity(), OnMapClickListener {
 
   private val markerCoordinates = mutableListOf<Point>(
@@ -43,7 +42,7 @@ class MapOverlayActivity : AppCompatActivity(), OnMapClickListener {
     binding = ActivityMapOverlayBinding.inflate(layoutInflater)
     setContentView(binding.root)
 
-    mapboxMap = binding.mapView.getMapboxMap()
+    mapboxMap = binding.mapView.mapboxMap
     mapboxMap.loadStyle(
       styleExtension = style(Style.LIGHT) {
         +geoJsonSource(sourceId) {
@@ -56,9 +55,13 @@ class MapOverlayActivity : AppCompatActivity(), OnMapClickListener {
           )
         }
         // Add the marker image to map
-        +image(imageId) {
-          bitmap(BitmapFactory.decodeResource(resources, R.drawable.blue_marker_view))
-        }
+        +image(
+          imageId,
+          ContextCompat.getDrawable(
+            this@MapOverlayActivity,
+            R.drawable.ic_blue_marker
+          )!!.toBitmap()
+        )
         +symbolLayer(layerId, sourceId) {
           iconImage(imageId)
           iconAllowOverlap(true)
@@ -85,7 +88,7 @@ class MapOverlayActivity : AppCompatActivity(), OnMapClickListener {
 
   override fun onMapClick(point: Point): Boolean {
     markerCoordinates.add(point)
-    mapboxMap.getStyle()?.getSourceAs<GeoJsonSource>(sourceId)!!.featureCollection(
+    mapboxMap.style?.getSourceAs<GeoJsonSource>(sourceId)!!.featureCollection(
       FeatureCollection.fromFeatures(
         markerCoordinates.map {
           Feature.fromGeometry(it)

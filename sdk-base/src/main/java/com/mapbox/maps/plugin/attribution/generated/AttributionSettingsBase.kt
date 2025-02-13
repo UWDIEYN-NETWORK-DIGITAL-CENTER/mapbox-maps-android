@@ -24,7 +24,7 @@ abstract class AttributionSettingsBase : AttributionSettingsInterface {
    * @return attribution settings
    */
   override fun getSettings(): AttributionSettings {
-    return internalSettings.copy()
+    return internalSettings.toBuilder().build()
   }
 
   /**
@@ -32,13 +32,13 @@ abstract class AttributionSettingsBase : AttributionSettingsInterface {
    *
    * @param block the receiver function of AttributionSettings
    */
-  override fun updateSettings(block: AttributionSettings.() -> Unit) {
-    this.internalSettings.apply(block)
+  override fun updateSettings(block: AttributionSettings.Builder.() -> Unit) {
+    this.internalSettings = this.internalSettings.toBuilder().apply(block).build()
     applySettings()
   }
 
   /**
-   * Whether the attribution icon is visible on the map.
+   * Whether the attribution icon is visible on the map. Default value: true.
    */
   override var enabled: Boolean
     get() {
@@ -46,13 +46,13 @@ abstract class AttributionSettingsBase : AttributionSettingsInterface {
     }
     set(value) {
       if (this.internalSettings.enabled != value) {
-        this.internalSettings.enabled = value
+        this.internalSettings = this.internalSettings.toBuilder().setEnabled(value).build()
         applySettings()
       }
     }
 
   /**
-   * Defines text color of the attribution icon.
+   * Defines text color of the attribution icon. Default value: "#FF1E8CAB".
    */
   override var iconColor: Int
     get() {
@@ -60,13 +60,13 @@ abstract class AttributionSettingsBase : AttributionSettingsInterface {
     }
     set(value) {
       if (this.internalSettings.iconColor != value) {
-        this.internalSettings.iconColor = value
+        this.internalSettings = this.internalSettings.toBuilder().setIconColor(value).build()
         applySettings()
       }
     }
 
   /**
-   * Defines where the attribution icon is positioned on the map
+   * Defines where the attribution icon is positioned on the map Default value: "bottom-left".
    */
   override var position: Int
     get() {
@@ -74,13 +74,13 @@ abstract class AttributionSettingsBase : AttributionSettingsInterface {
     }
     set(value) {
       if (this.internalSettings.position != value) {
-        this.internalSettings.position = value
+        this.internalSettings = this.internalSettings.toBuilder().setPosition(value).build()
         applySettings()
       }
     }
 
   /**
-   * Defines the margin to the left that the attribution icon honors.
+   * Defines the margin to the left that the attribution icon honors. Default value: 92.
    */
   override var marginLeft: Float
     get() {
@@ -88,13 +88,13 @@ abstract class AttributionSettingsBase : AttributionSettingsInterface {
     }
     set(value) {
       if (this.internalSettings.marginLeft != value) {
-        this.internalSettings.marginLeft = value
+        this.internalSettings = this.internalSettings.toBuilder().setMarginLeft(value).build()
         applySettings()
       }
     }
 
   /**
-   * Defines the margin to the top that the attribution icon honors.
+   * Defines the margin to the top that the attribution icon honors. Default value: 4.
    */
   override var marginTop: Float
     get() {
@@ -102,13 +102,13 @@ abstract class AttributionSettingsBase : AttributionSettingsInterface {
     }
     set(value) {
       if (this.internalSettings.marginTop != value) {
-        this.internalSettings.marginTop = value
+        this.internalSettings = this.internalSettings.toBuilder().setMarginTop(value).build()
         applySettings()
       }
     }
 
   /**
-   * Defines the margin to the right that the attribution icon honors.
+   * Defines the margin to the right that the attribution icon honors. Default value: 4.
    */
   override var marginRight: Float
     get() {
@@ -116,13 +116,13 @@ abstract class AttributionSettingsBase : AttributionSettingsInterface {
     }
     set(value) {
       if (this.internalSettings.marginRight != value) {
-        this.internalSettings.marginRight = value
+        this.internalSettings = this.internalSettings.toBuilder().setMarginRight(value).build()
         applySettings()
       }
     }
 
   /**
-   * Defines the margin to the bottom that the attribution icon honors.
+   * Defines the margin to the bottom that the attribution icon honors. Default value: 4.
    */
   override var marginBottom: Float
     get() {
@@ -130,13 +130,13 @@ abstract class AttributionSettingsBase : AttributionSettingsInterface {
     }
     set(value) {
       if (this.internalSettings.marginBottom != value) {
-        this.internalSettings.marginBottom = value
+        this.internalSettings = this.internalSettings.toBuilder().setMarginBottom(value).build()
         applySettings()
       }
     }
 
   /**
-   * Whether the attribution can be clicked and click events can be registered.
+   * Whether the attribution can be clicked and click events can be registered. Default value: true.
    */
   override var clickable: Boolean
     get() {
@@ -144,7 +144,7 @@ abstract class AttributionSettingsBase : AttributionSettingsInterface {
     }
     set(value) {
       if (this.internalSettings.clickable != value) {
-        this.internalSettings.clickable = value
+        this.internalSettings = this.internalSettings.toBuilder().setClickable(value).build()
         applySettings()
       }
     }

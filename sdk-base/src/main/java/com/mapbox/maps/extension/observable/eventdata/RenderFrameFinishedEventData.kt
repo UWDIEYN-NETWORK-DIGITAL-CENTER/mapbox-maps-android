@@ -6,6 +6,11 @@ import com.mapbox.maps.extension.observable.model.RenderMode
 /**
  * The data class for render-frame-finished event data in Observer
  */
+@Deprecated(
+  message = "This data class is deprecated, and will be removed in next major release.",
+  replaceWith = ReplaceWith("RenderFrameFinished"),
+  level = DeprecationLevel.WARNING
+)
 data class RenderFrameFinishedEventData(
   /**
    * Representing timestamp taken at the time of an event creation, in microseconds, since the epoch.

@@ -262,6 +262,12 @@ class ExpressionTest {
   }
 
   @Test
+  fun expression_activeAnchor() {
+    val expression = activeAnchor()
+    assertEquals("assert active-anchor expression", "[active-anchor]", expression.toString())
+  }
+
+  @Test
   fun dsl_expression_all() {
     val expression = all {
       // test builder function
@@ -455,6 +461,21 @@ class ExpressionTest {
   }
 
   @Test
+  fun dsl_expression_config() {
+    val expression = config {
+      // test builder function
+      config {}
+    }
+    assertEquals("assert config expression", "[config, [config]]", expression.toString())
+  }
+
+  @Test
+  fun expression_config() {
+    val expression = Expression.config(Expression.literal("abc"))
+    assertEquals("assert config expression", "[config, abc]", expression.toString())
+  }
+
+  @Test
   fun dsl_expression_cos() {
     val expression = cos {
       // test builder function
@@ -618,6 +639,36 @@ class ExpressionTest {
   }
 
   @Test
+  fun dsl_expression_hsl() {
+    val expression = hsl {
+      // test builder function
+      hsl {}
+    }
+    assertEquals("assert hsl expression", "[hsl, [hsl]]", expression.toString())
+  }
+
+  @Test
+  fun expression_hsl() {
+    val expression = Expression.hsl(Expression.literal("abc"))
+    assertEquals("assert hsl expression", "[hsl, abc]", expression.toString())
+  }
+
+  @Test
+  fun dsl_expression_hsla() {
+    val expression = hsla {
+      // test builder function
+      hsla {}
+    }
+    assertEquals("assert hsla expression", "[hsla, [hsla]]", expression.toString())
+  }
+
+  @Test
+  fun expression_hsla() {
+    val expression = Expression.hsla(Expression.literal("abc"))
+    assertEquals("assert hsla expression", "[hsla, abc]", expression.toString())
+  }
+
+  @Test
   fun expression_id() {
     val expression = id()
     assertEquals("assert id expression", "[id]", expression.toString())
@@ -625,17 +676,61 @@ class ExpressionTest {
 
   @Test
   fun dsl_expression_image() {
-    val expression = image {
-      // test builder function
-      image {}
+    val empty = image { }
+    val oneImage = image {
+      literal("image-name")
     }
-    assertEquals("assert image expression", "[image, [image]]", expression.toString())
+    val oneImageWithOptios = image {
+      literal("image-name")
+      imageOptions("foo" to Expression.literal("bar"))
+    }
+    val twoImages = image {
+      literal("image-name")
+      literal("image-name-2")
+    }
+    val twoImagesWithOptios = image {
+      literal("image-name")
+      imageOptions("foo" to Expression.literal("bar"))
+      literal("image-name-2")
+      imageOptions("foo" to Expression.get("bar"))
+    }
+    val twoImagesOneOptions = image {
+      literal("image-name")
+      literal("image-name-2")
+      imageOptions("foo" to Expression.get("bar"))
+    }
+
+    assertEquals("assert empty image expression", "[image]", empty.toString())
+    assertEquals("assert one image expression", "[image, image-name]", oneImage.toString())
+    assertEquals(
+      "assert one image with options expression",
+      "[image, image-name, {params={foo=bar}}]",
+      oneImageWithOptios.toString()
+    )
+    assertEquals("assert two images expression", "[image, image-name, image-name-2]", twoImages.toString())
+    assertEquals("assert two images two options expression", "[image, image-name, {params={foo=bar}}, image-name-2, {params={foo=[get, bar]}}]", twoImagesWithOptios.toString())
+    assertEquals("assert two images one options expression", "[image, image-name, image-name-2, {params={foo=[get, bar]}}]", twoImagesOneOptions.toString())
   }
 
   @Test
   fun expression_image() {
-    val expression = Expression.image(Expression.literal("abc"))
-    assertEquals("assert image expression", "[image, abc]", expression.toString())
+    val oneImage = Expression.image(Expression.literal("abc"))
+    val oneImageWithOptions = Expression.image(Expression.literal("abc"), mapOf("foo" to Expression.literal("bar")))
+    val twoImages = Expression.image(Expression.literal("abc"), Expression.literal("def"))
+    val twoImagesWithOptions = Expression.image(
+      Expression.literal("abc"), mapOf("foo" to Expression.literal("bar")),
+      Expression.literal("foo"), mapOf("option" to Expression.literal("value"))
+    )
+    val twoImagesOneOptions = Expression.image(
+      Expression.literal("abc"), mapOf(),
+      Expression.literal("foo"), mapOf("option" to Expression.literal("value"))
+    )
+
+    assertEquals("assert one image expression", "[image, abc]", oneImage.toString())
+    assertEquals("assert one image with options expression", "[image, abc, {params={foo=bar}}]", oneImageWithOptions.toString())
+    assertEquals("assert two images expression", "[image, abc, def]", twoImages.toString())
+    assertEquals("assert two images two options expression", "[image, abc, {params={foo=bar}}, foo, {params={option=value}}]", twoImagesWithOptions.toString())
+    assertEquals("assert two images one options expression", "[image, abc, {params={}}, foo, {params={option=value}}]", twoImagesOneOptions.toString())
   }
 
   @Test
@@ -1041,6 +1136,21 @@ class ExpressionTest {
   }
 
   @Test
+  fun dsl_expression_measureLight() {
+    val expression = measureLight {
+      // test builder function
+      measureLight {}
+    }
+    assertEquals("assert measure-light expression", "[measure-light, [measure-light]]", expression.toString())
+  }
+
+  @Test
+  fun expression_measureLight() {
+    val expression = Expression.measureLight(Expression.literal("abc"))
+    assertEquals("assert measure-light expression", "[measure-light, abc]", expression.toString())
+  }
+
+  @Test
   fun dsl_expression_min() {
     val expression = min {
       // test builder function
@@ -1132,6 +1242,33 @@ class ExpressionTest {
   fun expression_properties() {
     val expression = properties()
     assertEquals("assert properties expression", "[properties]", expression.toString())
+  }
+
+  @Test
+  fun dsl_expression_random() {
+    val expression = random {
+      // test builder function
+      random {}
+    }
+    assertEquals("assert random expression", "[random, [random]]", expression.toString())
+  }
+
+  @Test
+  fun expression_random() {
+    val expression = Expression.random(Expression.literal("abc"))
+    assertEquals("assert random expression", "[random, abc]", expression.toString())
+  }
+
+  @Test
+  fun expression_rasterParticleSpeed() {
+    val expression = rasterParticleSpeed()
+    assertEquals("assert raster-particle-speed expression", "[raster-particle-speed]", expression.toString())
+  }
+
+  @Test
+  fun expression_rasterValue() {
+    val expression = rasterValue()
+    assertEquals("assert raster-value expression", "[raster-value]", expression.toString())
   }
 
   @Test
@@ -1318,6 +1455,21 @@ class ExpressionTest {
   fun expression_toColor() {
     val expression = Expression.toColor(Expression.literal("abc"))
     assertEquals("assert to-color expression", "[to-color, abc]", expression.toString())
+  }
+
+  @Test
+  fun dsl_expression_toHsla() {
+    val expression = toHsla {
+      // test builder function
+      toHsla {}
+    }
+    assertEquals("assert to-hsla expression", "[to-hsla, [to-hsla]]", expression.toString())
+  }
+
+  @Test
+  fun expression_toHsla() {
+    val expression = Expression.toHsla(Expression.literal("abc"))
+    assertEquals("assert to-hsla expression", "[to-hsla, abc]", expression.toString())
   }
 
   @Test

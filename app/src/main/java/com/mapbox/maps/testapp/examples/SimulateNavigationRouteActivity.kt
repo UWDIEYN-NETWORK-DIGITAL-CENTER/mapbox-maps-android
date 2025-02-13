@@ -1,15 +1,20 @@
 package com.mapbox.maps.testapp.examples
 
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.mapbox.api.directions.v5.models.DirectionsResponse
 import com.mapbox.core.constants.Constants
 import com.mapbox.geojson.LineString
+import com.mapbox.geojson.Point
 import com.mapbox.maps.MapView
+import com.mapbox.maps.dsl.cameraOptions
 import com.mapbox.maps.testapp.examples.annotation.AnnotationUtils
 import com.mapbox.maps.testapp.utils.NavigationSimulator
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Simulate a navigation route with pre-defined route (from LA to San Francisco) with location puck,
@@ -19,49 +24,55 @@ import com.mapbox.maps.testapp.utils.NavigationSimulator
 class SimulateNavigationRouteActivity : AppCompatActivity() {
 
   private lateinit var navigationSimulator: NavigationSimulator
-  private val handler = Handler(Looper.getMainLooper())
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     val mapView = MapView(this)
     setContentView(mapView)
-    val routePoints = LineString.fromPolyline(
-      DirectionsResponse.fromJson(
-        AnnotationUtils.loadStringFromAssets(
-          this,
-          NAVIGATION_ROUTE_JSON_NAME
+    mapView.mapboxMap.setCamera(
+      cameraOptions {
+        center(Point.fromLngLat(-118.289795, 34.03084))
+        bearing(0.0)
+        pitch(0.0)
+        zoom(9.0)
+      }
+    )
+    lifecycleScope.launch {
+      val routePoints = withContext(Dispatchers.Default) {
+        LineString.fromPolyline(
+          DirectionsResponse.fromJson(
+            AnnotationUtils.loadStringFromAssets(
+              this@SimulateNavigationRouteActivity,
+              NAVIGATION_ROUTE_JSON_NAME
+            )
+          ).routes()[0].geometry()!!,
+          Constants.PRECISION_6
         )
-      ).routes()[0].geometry()!!,
-      Constants.PRECISION_6
-    )
-    navigationSimulator = NavigationSimulator(mapView, routePoints)
-    navigationSimulator.apply {
-      disableGestures()
-      playCustomNavigationScripts(
-        NavigationSimulator.NavigationStep(INITIAL_OVERVIEW_DELAY_MS) {
-          setCameraTrackingMode(NavigationSimulator.CameraFollowMode.FOLLOW)
-        },
-        NavigationSimulator.NavigationStep(FIRST_FOLLOW_MODE_DELAY_MS) {
-          setCameraTrackingMode(NavigationSimulator.CameraFollowMode.OVERVIEW)
-        },
-        NavigationSimulator.NavigationStep(SECOND_OVERVIEW_MODE_DELAY_MS) {
-          setCameraTrackingMode(NavigationSimulator.CameraFollowMode.FOLLOW)
-        }
-      )
+      }
+      navigationSimulator = NavigationSimulator(mapView, routePoints)
+      navigationSimulator.apply {
+        disableGestures()
+        playCustomNavigationScripts(
+          NavigationSimulator.NavigationStep(INITIAL_OVERVIEW_DELAY_MS) {
+            setCameraTrackingMode(NavigationSimulator.CameraFollowMode.FOLLOW)
+          },
+          NavigationSimulator.NavigationStep(FIRST_FOLLOW_MODE_DELAY_MS) {
+            setCameraTrackingMode(NavigationSimulator.CameraFollowMode.OVERVIEW)
+          },
+          NavigationSimulator.NavigationStep(SECOND_OVERVIEW_MODE_DELAY_MS) {
+            setCameraTrackingMode(NavigationSimulator.CameraFollowMode.FOLLOW)
+          }
+        )
+      }
+      delay(SIMULATION_DURATION)
+      finish()
+      // Uncomment below to play the default navigation script in loop.
+      // navigationSimulator.playDefaultNavigationScriptsInLoop()
     }
-    handler.postDelayed(
-      {
-        finish()
-      },
-      SIMULATION_DURATION
-    )
-    // Uncomment below to play the default navigation script in loop.
-    // navigationSimulator.playDefaultNavigationScriptsInLoop()
   }
 
   override fun onDestroy() {
     super.onDestroy()
-    handler.removeCallbacksAndMessages(null)
     if (this::navigationSimulator.isInitialized) {
       navigationSimulator.onDestroy()
     }

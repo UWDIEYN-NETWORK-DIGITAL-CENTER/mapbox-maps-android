@@ -4,6 +4,15 @@ pluginManagement {
     gradlePluginPortal()
     mavenCentral()
   }
+  includeBuild("mapbox-convention-plugin")
+}
+
+dependencyResolutionManagement {
+  versionCatalogs {
+    create("commonLibs") {
+      from(files("gradle/commonlibs.versions.toml"))
+    }
+  }
 }
 
 include(
@@ -11,10 +20,12 @@ include(
   ":compose-app",
   ":app",
   ":extension-androidauto",
+  ":extension-compose",
   ":extension-style",
+  ":extension-style-lint-rules",
   ":extension-localization",
   ":extension-style-app",
-  ":mapbox-lint",
+  ":plugin-lifecycle-lint-rules",
   ":module-telemetry",
   ":plugin-animation",
   ":plugin-annotation",
@@ -27,7 +38,7 @@ include(
   ":plugin-overlay",
   ":plugin-scalebar",
   ":plugin-viewport",
-  ":sdk",
+  ":maps-sdk",
   ":sdk-base"
 )
 rootProject.name = "Mapbox Maps Android"

@@ -574,7 +574,7 @@ class ExpressionTest : BaseStyleTest() {
     }
     setupLayer(layer)
     assertEquals(
-      "[case, [==, Abc, abc, [collator, {diacritic-sensitive=false, locale=en_us, case-sensitive=false}]], 1.0, 0.0]",
+      "[case, [==, Abc, abc, [collator, {diacritic-sensitive=false, case-sensitive=false, locale=en_us}]], 1.0, 0.0]",
       layer.textSizeAsExpression.toString()
     )
   }
@@ -705,7 +705,7 @@ class ExpressionTest : BaseStyleTest() {
     }
     setupLayer(layer)
     assertEquals(
-      "[format, text, {font-scale=1.0, text-font=[literal, [font1, font2]], text-color=[rgba, 0.0, 0.0, 255.0, 1.0]}, text2, {font-scale=2.0, text-font=[literal, [font1, font2]], text-color=[rgba, 255.0, 0.0, 0.0, 1.0]}]",
+      "[format, text, {text-color=[rgba, 0.0, 0.0, 255.0, 1.0], font-scale=1.0, text-font=[literal, [font1, font2]]}, text2, {text-color=[rgba, 255.0, 0.0, 0.0, 1.0], font-scale=2.0, text-font=[literal, [font1, font2]]}]",
       layer.textFieldAsExpression.toString()
     )
   }
@@ -1426,7 +1426,7 @@ class ExpressionTest : BaseStyleTest() {
     }
     setupLayer(layer)
     assertEquals(
-      "[number, [case, [==, it, [resolved-locale, [collator, {diacritic-sensitive=false, locale=en-us, case-sensitive=false}]]], 1.0, 2.0]]",
+      "[number, [case, [==, it, [resolved-locale, [collator, {diacritic-sensitive=false, case-sensitive=false, locale=en-us}]]], 1.0, 2.0]]",
       layer.textSizeAsExpression.toString()
     )
   }
@@ -1661,6 +1661,22 @@ class ExpressionTest : BaseStyleTest() {
   }
 
   /**
+   * Returns a four-element array containing the input color's Hue, Saturation, Luminance and alpha components, in that order.
+   */
+  @Test
+  @UiThreadTest
+  fun toHslaTest() {
+    val expression = toHsla {
+      literal("blue")
+    }
+    val layer = symbolLayer("id", "source") {
+      iconTextFitPadding(expression)
+    }
+    setupLayer(layer)
+    assertEquals(listOf(240.0, 100.0, 50.0, 1.0), layer.iconTextFitPadding!!)
+  }
+
+  /**
    * Converts the input value to a string. If the input is `null`, the result is `""`. If the input is a boolean, the result is `"true"` or `"false"`. If the input is a number, it is converted to a string as specified by the ["NumberToString" algorithm](https://tc39.github.io/ecma262/#sec-tostring-applied-to-the-number-type) of the ECMAScript Language Specification. If the input is a color, it is converted to a string of the form `"rgba(r,g,b,a)"`, where `r`, `g`, and `b` are numerals ranging from 0 to 255, and `a` ranges from 0 to 1. Otherwise, the input is converted to a string in the format specified by the [`JSON.stringify`](https://tc39.github.io/ecma262/#sec-json.stringify) function of the ECMAScript Language Specification.
    */
   @Test
@@ -1872,6 +1888,23 @@ class ExpressionTest : BaseStyleTest() {
     }
     setupLayer(layer)
     assertEquals(expression.toString(), layer.textColorAsExpression.toString())
+  }
+
+  /**
+   * Test constructing an match Expression from raw string.
+   */
+  @Test
+  @UiThreadTest
+  fun rawMatchExpressionTest() {
+    val expressionString = """
+      ["match",["get","data_property"],[0,1],true,false]
+    """.trimIndent()
+    val expression = Expression.fromRaw(expressionString)
+    val layer = symbolLayer("id", "source") {
+      filter(expression)
+    }
+    setupLayer(layer)
+    assertEquals(expressionString, layer.filter!!.toJson())
   }
 
   /**

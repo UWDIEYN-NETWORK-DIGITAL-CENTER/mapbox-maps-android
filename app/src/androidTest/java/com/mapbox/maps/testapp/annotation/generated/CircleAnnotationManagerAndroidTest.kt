@@ -38,6 +38,69 @@ class CircleAnnotationManagerAndroidTest : BaseMapTest() {
   }
 
   @Test
+  fun testCircleSortKey() {
+    rule.runOnUiThread {
+      val expectedValue = 1.0
+      val circleAnnotationManager = mapView.annotations.createCircleAnnotationManager()
+      circleAnnotationManager.circleSortKey = expectedValue
+      assertEquals(expectedValue, circleAnnotationManager.circleSortKey)
+      circleAnnotationManager.circleSortKey = null
+      assertEquals(null, circleAnnotationManager.circleSortKey)
+    }
+  }
+
+  @Test
+  fun testCircleBlur() {
+    rule.runOnUiThread {
+      val expectedValue = 1.0
+      val circleAnnotationManager = mapView.annotations.createCircleAnnotationManager()
+      circleAnnotationManager.circleBlur = expectedValue
+      assertEquals(expectedValue, circleAnnotationManager.circleBlur)
+      circleAnnotationManager.circleBlur = null
+      assertEquals(null, circleAnnotationManager.circleBlur)
+    }
+  }
+
+  @Test
+  fun testCircleColor() {
+    rule.runOnUiThread {
+      val expectedValue = "rgba(0, 0, 0, 1)"
+      val circleAnnotationManager = mapView.annotations.createCircleAnnotationManager()
+      circleAnnotationManager.circleColorString = expectedValue
+      assertEquals(expectedValue, circleAnnotationManager.circleColorString)
+      circleAnnotationManager.circleColorString = null
+      assertEquals(
+        null,
+        circleAnnotationManager.circleColorString
+      )
+    }
+  }
+
+  @Test
+  fun testCircleEmissiveStrength() {
+    rule.runOnUiThread {
+      val expectedValue = 1.0
+      val circleAnnotationManager = mapView.annotations.createCircleAnnotationManager()
+      circleAnnotationManager.circleEmissiveStrength = expectedValue
+      assertEquals(expectedValue, circleAnnotationManager.circleEmissiveStrength)
+      circleAnnotationManager.circleEmissiveStrength = null
+      assertEquals(StyleManager.getStyleLayerPropertyDefaultValue("circle", "circle-emissive-strength").silentUnwrap(), circleAnnotationManager.circleEmissiveStrength)
+    }
+  }
+
+  @Test
+  fun testCircleOpacity() {
+    rule.runOnUiThread {
+      val expectedValue = 1.0
+      val circleAnnotationManager = mapView.annotations.createCircleAnnotationManager()
+      circleAnnotationManager.circleOpacity = expectedValue
+      assertEquals(expectedValue, circleAnnotationManager.circleOpacity)
+      circleAnnotationManager.circleOpacity = null
+      assertEquals(null, circleAnnotationManager.circleOpacity)
+    }
+  }
+
+  @Test
   fun testCirclePitchAlignment() {
     rule.runOnUiThread {
       val expectedValue = CirclePitchAlignment.MAP
@@ -45,7 +108,7 @@ class CircleAnnotationManagerAndroidTest : BaseMapTest() {
       circleAnnotationManager.circlePitchAlignment = expectedValue
       assertEquals(expectedValue, circleAnnotationManager.circlePitchAlignment)
       circleAnnotationManager.circlePitchAlignment = null
-      val expectedDefaultValue = CirclePitchAlignment.valueOf(StyleManager.getStyleLayerPropertyDefaultValue("circle", "circle-pitch-alignment").silentUnwrap<String>()!!.toUpperCase(Locale.US).replace('-', '_'))
+      val expectedDefaultValue = CirclePitchAlignment.valueOf(StyleManager.getStyleLayerPropertyDefaultValue("circle", "circle-pitch-alignment").silentUnwrap<String>()!!.uppercase(Locale.US).replace('-', '_'))
       assertEquals(expectedDefaultValue, circleAnnotationManager.circlePitchAlignment)
     }
   }
@@ -58,8 +121,59 @@ class CircleAnnotationManagerAndroidTest : BaseMapTest() {
       circleAnnotationManager.circlePitchScale = expectedValue
       assertEquals(expectedValue, circleAnnotationManager.circlePitchScale)
       circleAnnotationManager.circlePitchScale = null
-      val expectedDefaultValue = CirclePitchScale.valueOf(StyleManager.getStyleLayerPropertyDefaultValue("circle", "circle-pitch-scale").silentUnwrap<String>()!!.toUpperCase(Locale.US).replace('-', '_'))
+      val expectedDefaultValue = CirclePitchScale.valueOf(StyleManager.getStyleLayerPropertyDefaultValue("circle", "circle-pitch-scale").silentUnwrap<String>()!!.uppercase(Locale.US).replace('-', '_'))
       assertEquals(expectedDefaultValue, circleAnnotationManager.circlePitchScale)
+    }
+  }
+
+  @Test
+  fun testCircleRadius() {
+    rule.runOnUiThread {
+      val expectedValue = 1.0
+      val circleAnnotationManager = mapView.annotations.createCircleAnnotationManager()
+      circleAnnotationManager.circleRadius = expectedValue
+      assertEquals(expectedValue, circleAnnotationManager.circleRadius)
+      circleAnnotationManager.circleRadius = null
+      assertEquals(null, circleAnnotationManager.circleRadius)
+    }
+  }
+
+  @Test
+  fun testCircleStrokeColor() {
+    rule.runOnUiThread {
+      val expectedValue = "rgba(0, 0, 0, 1)"
+      val circleAnnotationManager = mapView.annotations.createCircleAnnotationManager()
+      circleAnnotationManager.circleStrokeColorString = expectedValue
+      assertEquals(expectedValue, circleAnnotationManager.circleStrokeColorString)
+      circleAnnotationManager.circleStrokeColorString = null
+      assertEquals(
+        null,
+        circleAnnotationManager.circleStrokeColorString
+      )
+    }
+  }
+
+  @Test
+  fun testCircleStrokeOpacity() {
+    rule.runOnUiThread {
+      val expectedValue = 1.0
+      val circleAnnotationManager = mapView.annotations.createCircleAnnotationManager()
+      circleAnnotationManager.circleStrokeOpacity = expectedValue
+      assertEquals(expectedValue, circleAnnotationManager.circleStrokeOpacity)
+      circleAnnotationManager.circleStrokeOpacity = null
+      assertEquals(null, circleAnnotationManager.circleStrokeOpacity)
+    }
+  }
+
+  @Test
+  fun testCircleStrokeWidth() {
+    rule.runOnUiThread {
+      val expectedValue = 1.0
+      val circleAnnotationManager = mapView.annotations.createCircleAnnotationManager()
+      circleAnnotationManager.circleStrokeWidth = expectedValue
+      assertEquals(expectedValue, circleAnnotationManager.circleStrokeWidth)
+      circleAnnotationManager.circleStrokeWidth = null
+      assertEquals(null, circleAnnotationManager.circleStrokeWidth)
     }
   }
 
@@ -83,8 +197,20 @@ class CircleAnnotationManagerAndroidTest : BaseMapTest() {
       circleAnnotationManager.circleTranslateAnchor = expectedValue
       assertEquals(expectedValue, circleAnnotationManager.circleTranslateAnchor)
       circleAnnotationManager.circleTranslateAnchor = null
-      val expectedDefaultValue = CircleTranslateAnchor.valueOf(StyleManager.getStyleLayerPropertyDefaultValue("circle", "circle-translate-anchor").silentUnwrap<String>()!!.toUpperCase(Locale.US).replace('-', '_'))
+      val expectedDefaultValue = CircleTranslateAnchor.valueOf(StyleManager.getStyleLayerPropertyDefaultValue("circle", "circle-translate-anchor").silentUnwrap<String>()!!.uppercase(Locale.US).replace('-', '_'))
       assertEquals(expectedDefaultValue, circleAnnotationManager.circleTranslateAnchor)
+    }
+  }
+
+  @Test
+  fun testSlot() {
+    rule.runOnUiThread {
+      val expectedValue = "abc"
+      val circleAnnotationManager = mapView.annotations.createCircleAnnotationManager()
+      circleAnnotationManager.slot = expectedValue
+      assertEquals(expectedValue, circleAnnotationManager.slot)
+      circleAnnotationManager.slot = null
+      assertEquals(StyleManager.getStyleLayerPropertyDefaultValue("circle", "slot").silentUnwrap(), circleAnnotationManager.slot)
     }
   }
 

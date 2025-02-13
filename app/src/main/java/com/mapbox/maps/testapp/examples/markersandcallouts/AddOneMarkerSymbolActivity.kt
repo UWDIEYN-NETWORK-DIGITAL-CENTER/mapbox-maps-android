@@ -1,8 +1,9 @@
 package com.mapbox.maps.testapp.examples.markersandcallouts
 
-import android.graphics.BitmapFactory
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmap
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.MapView
@@ -25,7 +26,7 @@ class AddOneMarkerSymbolActivity : AppCompatActivity() {
     val mapView = MapView(this)
     setContentView(mapView)
 
-    mapView.getMapboxMap().also {
+    mapView.mapboxMap.also {
       it.setCamera(
         CameraOptions.Builder()
           .center(Point.fromLngLat(LONGITUDE, LATITUDE))
@@ -33,11 +34,12 @@ class AddOneMarkerSymbolActivity : AppCompatActivity() {
           .build()
       )
     }.loadStyle(
-      styleExtension = style(Style.MAPBOX_STREETS) {
+      styleExtension = style(Style.STANDARD) {
         // prepare blue marker from resources
-        +image(BLUE_ICON_ID) {
-          bitmap(BitmapFactory.decodeResource(resources, R.drawable.blue_marker_view))
-        }
+        +image(
+          BLUE_ICON_ID,
+          ContextCompat.getDrawable(this@AddOneMarkerSymbolActivity, R.drawable.ic_blue_marker)!!.toBitmap()
+        )
         +geoJsonSource(SOURCE_ID) {
           geometry(Point.fromLngLat(LONGITUDE, LATITUDE))
         }

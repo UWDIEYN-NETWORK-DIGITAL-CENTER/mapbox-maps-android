@@ -5,11 +5,11 @@ package com.mapbox.maps.extension.style.layers.generated
 import com.mapbox.bindgen.Expected
 import com.mapbox.bindgen.None
 import com.mapbox.bindgen.Value
+import com.mapbox.maps.MapboxStyleManager
 import com.mapbox.maps.StyleManager
 import com.mapbox.maps.StylePropertyValue
 import com.mapbox.maps.StylePropertyValueKind
 import com.mapbox.maps.extension.style.ShadowStyleManager
-import com.mapbox.maps.extension.style.StyleInterface
 import com.mapbox.maps.extension.style.expressions.dsl.generated.*
 import com.mapbox.maps.extension.style.layers.getLayer
 import com.mapbox.maps.extension.style.layers.properties.generated.*
@@ -27,7 +27,7 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(shadows = [ShadowStyleManager::class])
 class HeatmapLayerTest {
-  private val style = mockk<StyleInterface>(relaxUnitFun = true, relaxed = true)
+  private val style = mockk<MapboxStyleManager>(relaxUnitFun = true, relaxed = true)
   private val expected = mockk<Expected<String, None>>(relaxUnitFun = true, relaxed = true)
   private val valueExpected = mockk<Expected<String, Value>>(relaxUnitFun = true, relaxed = true)
   private val styleProperty = mockk<StylePropertyValue>()
@@ -131,7 +131,7 @@ class HeatmapLayerTest {
       }
       literal(0)
     }
-    val layer = symbolLayer("id", "source") {}
+    val layer = heatmapLayer("id", "source") {}
     layer.bindTo(style)
     layer.filter(expression)
     verify { style.setStyleLayerProperty("id", "filter", capture(valueSlot)) }
@@ -149,7 +149,7 @@ class HeatmapLayerTest {
     every { styleProperty.value } returns expression
     every { styleProperty.kind } returns StylePropertyValueKind.EXPRESSION
 
-    val layer = symbolLayer("id", "source") { }
+    val layer = heatmapLayer("id", "source") { }
     layer.bindTo(style)
     assertEquals(expression.toString(), layer.filter?.toString())
     verify { style.getStyleLayerProperty("id", "filter") }
@@ -239,6 +239,37 @@ class HeatmapLayerTest {
     }
     assertEquals(expectedValue.toString(), layer.heatmapColor?.toString())
     verify { style.getStyleLayerProperty("id", "heatmap-color") }
+  }
+
+  @Test
+  fun heatmapColorUseThemeSetAfterInitialization() {
+    val layer = heatmapLayer("id", "source") {}
+    val theme = "none"
+    layer.bindTo(style)
+    layer.heatmapColorUseTheme(theme)
+    verify { style.setStyleLayerProperty("id", "heatmap-color-use-theme", capture(valueSlot)) }
+    assertEquals(valueSlot.captured.toString(), theme)
+  }
+
+  @Test
+  fun heatmapColorUseThemeSet() {
+    val theme = "none"
+    val layer = heatmapLayer("id", "source") {
+      heatmapColorUseTheme(theme)
+    }
+    layer.bindTo(style)
+    verify { style.addStyleLayer(capture(valueSlot), any()) }
+    assertTrue(valueSlot.captured.toString().contains("heatmap-color-use-theme"))
+  }
+
+  @Test
+  fun heatmapColorUseThemeGet() {
+    val theme = "none"
+    every { styleProperty.value } returns TypeUtils.wrapToValue(theme)
+    val layer = heatmapLayer("id", "source") {}
+    layer.bindTo(style)
+    assertEquals(theme.toString(), layer.heatmapColorUseTheme?.toString())
+    verify { style.getStyleLayerProperty("id", "heatmap-color-use-theme") }
   }
   // Expression Tests
 
@@ -650,6 +681,26 @@ class HeatmapLayerTest {
   }
 
   @Test
+  fun visibilityAsExpressionSet() {
+    val layer = heatmapLayer("id", "source") {}
+    layer.bindTo(style)
+    layer.visibility(literal("none"))
+    verify { style.setStyleLayerProperty("id", "visibility", capture(valueSlot)) }
+    assertEquals(valueSlot.captured.toString(), "none")
+  }
+
+  @Test
+  fun visibilityAsExpressionGet() {
+    every { styleProperty.kind } returns StylePropertyValueKind.EXPRESSION
+    every { styleProperty.value } returns literal("none")
+
+    val layer = heatmapLayer("id", "source") { }
+    layer.bindTo(style)
+    assertEquals(literal("none"), layer.visibilityAsExpression)
+    verify { style.getStyleLayerProperty("id", "visibility") }
+  }
+
+  @Test
   fun getType() {
     val layer = heatmapLayer("id", "source") { }
     assertEquals("heatmap", layer.getType())
@@ -729,6 +780,15 @@ class HeatmapLayerTest {
     assertEquals(expectedValue.toString(), HeatmapLayer.defaultHeatmapColor?.toString())
     verify { StyleManager.getStyleLayerPropertyDefaultValue("heatmap", "heatmap-color") }
   }
+
+  @Test
+  fun defaultHeatmapColorUseThemeTest() {
+    val testValue = "default"
+    every { styleProperty.value } returns TypeUtils.wrapToValue(testValue)
+    assertEquals(testValue, HeatmapLayer.defaultHeatmapColorUseTheme)
+    verify { StyleManager.getStyleLayerPropertyDefaultValue("heatmap", "heatmap-color-use-theme") }
+  }
+
   // Expression Tests
 
   @Test

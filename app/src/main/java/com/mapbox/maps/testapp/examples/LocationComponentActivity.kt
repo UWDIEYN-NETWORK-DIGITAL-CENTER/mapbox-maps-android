@@ -1,41 +1,47 @@
 package com.mapbox.maps.testapp.examples
 
+import android.graphics.Color
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.content.res.AppCompatResources
 import com.mapbox.maps.CameraOptions
+import com.mapbox.maps.ImageHolder
+import com.mapbox.maps.MapboxExperimental
 import com.mapbox.maps.Style
 import com.mapbox.maps.extension.style.expressions.dsl.generated.interpolate
+import com.mapbox.maps.extension.style.layers.properties.generated.Anchor
 import com.mapbox.maps.extension.style.layers.properties.generated.ProjectionName
+import com.mapbox.maps.extension.style.light.generated.flatLight
+import com.mapbox.maps.extension.style.light.setLight
 import com.mapbox.maps.extension.style.projection.generated.getProjection
 import com.mapbox.maps.extension.style.projection.generated.projection
 import com.mapbox.maps.extension.style.projection.generated.setProjection
 import com.mapbox.maps.plugin.LocationPuck2D
 import com.mapbox.maps.plugin.LocationPuck3D
-import com.mapbox.maps.plugin.PuckBearingSource
+import com.mapbox.maps.plugin.PuckBearing
 import com.mapbox.maps.plugin.gestures.gestures
 import com.mapbox.maps.plugin.locationcomponent.DefaultLocationProvider
 import com.mapbox.maps.plugin.locationcomponent.OnIndicatorPositionChangedListener
 import com.mapbox.maps.plugin.locationcomponent.createDefault2DPuck
 import com.mapbox.maps.plugin.locationcomponent.location
-import com.mapbox.maps.plugin.locationcomponent.location2
 import com.mapbox.maps.testapp.R
 import com.mapbox.maps.testapp.databinding.ActivityLocationComponentBinding
+import com.mapbox.maps.testapp.examples.annotation.AnnotationUtils.showShortToast
 import com.mapbox.maps.testapp.utils.LocationPermissionHelper
 import java.lang.ref.WeakReference
 
+@OptIn(MapboxExperimental::class)
 class LocationComponentActivity : AppCompatActivity() {
 
   private var lastStyleUri = Style.DARK
   private lateinit var locationPermissionHelper: LocationPermissionHelper
   private val onIndicatorPositionChangedListener = OnIndicatorPositionChangedListener {
     // Jump to the current indicator position
-    binding.mapView.getMapboxMap().setCamera(CameraOptions.Builder().center(it).build())
+    binding.mapView.mapboxMap.setCamera(CameraOptions.Builder().center(it).build())
     // Set the gestures plugin's focal point to the current indicator location.
-    binding.mapView.gestures.focalPoint = binding.mapView.getMapboxMap().pixelForCoordinate(it)
+    binding.mapView.gestures.focalPoint = binding.mapView.mapboxMap.pixelForCoordinate(it)
   }
   private lateinit var binding: ActivityLocationComponentBinding
 
@@ -46,7 +52,18 @@ class LocationComponentActivity : AppCompatActivity() {
     locationPermissionHelper = LocationPermissionHelper(WeakReference(this))
     locationPermissionHelper.checkPermissions {
       binding.mapView.apply {
-        getMapboxMap().loadStyleUri(Style.MAPBOX_STREETS) {
+        mapboxMap.loadStyle(Style.STANDARD) {
+          it.setLight(
+            flatLight {
+              anchor(Anchor.MAP)
+              color(Color.YELLOW)
+              position(
+                radialCoordinate = 10.0,
+                azimuthalAngle = 40.0,
+                polarAngle = 50.0
+              )
+            }
+          )
           // Disable scroll gesture, since we are updating the camera position based on the indicator location.
           gestures.scrollEnabled = false
           gestures.addOnMapClickListener { point ->
@@ -104,38 +121,61 @@ class LocationComponentActivity : AppCompatActivity() {
         return true
       }
       R.id.action_show_bearing -> {
+        binding.mapView.location.puckBearingEnabled = true
         if (binding.mapView.location.locationPuck is LocationPuck2D) {
-          binding.mapView.location.apply {
-            locationPuck = createDefault2DPuck(this@LocationComponentActivity, withBearing = true)
-          }
+          binding.mapView.location.locationPuck = createDefault2DPuck(withBearing = true)
         }
         return true
       }
       R.id.action_hide_bearing -> {
+        binding.mapView.location.puckBearingEnabled = false
         if (binding.mapView.location.locationPuck is LocationPuck2D) {
-          binding.mapView.location.apply {
-            locationPuck = createDefault2DPuck(this@LocationComponentActivity)
-          }
+          binding.mapView.location.locationPuck = createDefault2DPuck(withBearing = false)
         }
         return true
       }
       R.id.heading -> {
-        binding.mapView.location2.puckBearingSource = PuckBearingSource.HEADING
+        binding.mapView.location.puckBearing = PuckBearing.HEADING
         item.isChecked = true
         return true
       }
       R.id.course -> {
-        binding.mapView.location2.puckBearingSource = PuckBearingSource.COURSE
+        binding.mapView.location.puckBearing = PuckBearing.COURSE
+        item.isChecked = true
+        return true
+      }
+      R.id.location_no_animation -> {
+        (binding.mapView.location.getLocationProvider() as DefaultLocationProvider).locationAnimatorOptions {
+            duration = 0
+          }
+        item.isChecked = true
+        return true
+      }
+      R.id.location_1s_animation -> {
+        (binding.mapView.location.getLocationProvider() as DefaultLocationProvider).locationAnimatorOptions {
+          duration = 1000
+        }
+        item.isChecked = true
+        return true
+      }
+      R.id.location_300ms_animation -> {
+        (binding.mapView.location.getLocationProvider() as DefaultLocationProvider).locationAnimatorOptions {
+            duration = 300
+          }
         item.isChecked = true
         return true
       }
       R.id.action_accuracy_enabled -> {
-        binding.mapView.location2.showAccuracyRing = true
+        val location = binding.mapView.location
+        location.showAccuracyRing = true
+        if (location.locationPuck is LocationPuck3D) {
+          showShortToast("showAccuracyRing works for 2D location puck only")
+        }
         item.isChecked = true
         return true
       }
       R.id.action_accuracy_disable -> {
-        binding.mapView.location2.showAccuracyRing = false
+        binding.mapView.location.showAccuracyRing = false
         item.isChecked = true
         return true
       }
@@ -149,6 +189,18 @@ class LocationComponentActivity : AppCompatActivity() {
         }
         return true
       }
+      R.id.move_to_bottom_slot -> {
+        val location = binding.mapView.location
+        location.slot = "bottom"
+        return true
+      }
+
+      R.id.reset_slot -> {
+        val location = binding.mapView.location
+        location.slot = null
+        return true
+      }
+
       else -> return super.onOptionsItemSelected(item)
     }
   }
@@ -157,18 +209,9 @@ class LocationComponentActivity : AppCompatActivity() {
     binding.mapView.location.let {
       when (it.locationPuck) {
         is LocationPuck3D -> it.locationPuck = LocationPuck2D(
-          topImage = AppCompatResources.getDrawable(
-            this,
-            com.mapbox.maps.plugin.locationcomponent.R.drawable.mapbox_user_icon
-          ),
-          bearingImage = AppCompatResources.getDrawable(
-            this,
-            com.mapbox.maps.plugin.locationcomponent.R.drawable.mapbox_user_bearing_icon
-          ),
-          shadowImage = AppCompatResources.getDrawable(
-            this,
-            com.mapbox.maps.plugin.locationcomponent.R.drawable.mapbox_user_stroke_icon
-          ),
+          topImage = ImageHolder.from(com.mapbox.maps.plugin.locationcomponent.R.drawable.mapbox_user_icon),
+          bearingImage = ImageHolder.from(com.mapbox.maps.plugin.locationcomponent.R.drawable.mapbox_user_bearing_icon),
+          shadowImage = ImageHolder.from(com.mapbox.maps.plugin.locationcomponent.R.drawable.mapbox_user_stroke_icon),
           scaleExpression = interpolate {
             linear()
             zoom()
@@ -184,9 +227,12 @@ class LocationComponentActivity : AppCompatActivity() {
         )
         is LocationPuck2D -> it.locationPuck = LocationPuck3D(
           modelUri = "asset://sportcar.glb",
-          modelScale = listOf(0.1f, 0.1f, 0.1f),
+          modelScale = listOf(10f, 10f, 10f),
           modelTranslation = listOf(0.1f, 0.1f, 0.1f),
           modelRotation = listOf(0.0f, 0.0f, 180.0f),
+          modelCastShadows = false,
+          modelReceiveShadows = false,
+          modelEmissiveStrength = 1.1f
         )
       }
     }
@@ -194,18 +240,19 @@ class LocationComponentActivity : AppCompatActivity() {
 
   private fun toggleMapStyle() {
     val styleUrl = if (lastStyleUri == Style.DARK) Style.LIGHT else Style.DARK
-    binding.mapView.getMapboxMap().loadStyleUri(styleUrl) {
+    binding.mapView.mapboxMap.loadStyle(styleUrl) {
       lastStyleUri = styleUrl
     }
   }
 
   private fun toggleMapProjection() {
-    binding.mapView.getMapboxMap().getStyle { style ->
+    binding.mapView.mapboxMap.getStyle { style ->
       style.setProjection(
         projection(
-          when (style.getProjection().name) {
+          when (style.getProjection()?.name) {
             ProjectionName.MERCATOR -> ProjectionName.GLOBE
             ProjectionName.GLOBE -> ProjectionName.MERCATOR
+            else -> ProjectionName.GLOBE
           }
         )
       )

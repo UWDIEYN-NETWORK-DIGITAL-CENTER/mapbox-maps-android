@@ -5,8 +5,8 @@ import android.util.Log
 import androidx.annotation.UiThread
 import com.mapbox.bindgen.Value
 import com.mapbox.maps.MapboxStyleException
+import com.mapbox.maps.MapboxStyleManager
 import com.mapbox.maps.extension.style.StyleContract
-import com.mapbox.maps.extension.style.StyleInterface
 import com.mapbox.maps.extension.style.expressions.generated.Expression
 import com.mapbox.maps.extension.style.layers.properties.PropertyValue
 import com.mapbox.maps.extension.style.types.StyleTransition
@@ -20,15 +20,15 @@ import com.mapbox.maps.extension.style.utils.unwrap
  */
 @UiThread
 class Terrain(private val sourceId: String) : TerrainDslReceiver, StyleContract.StyleTerrainExtension {
-  internal var delegate: StyleInterface? = null
+  internal var delegate: MapboxStyleManager? = null
   private val properties = HashMap<String, PropertyValue<*>>()
 
   /**
-   * Exaggerates the elevation of the terrain by multiplying the data from the DEM with this value.
+   * Exaggerates the elevation of the terrain by multiplying the data from the DEM with this value. Default value: 1. Value range: [0, 1000]
    */
   val exaggeration: Double?
     /**
-     * Exaggerates the elevation of the terrain by multiplying the data from the DEM with this value.
+     * Exaggerates the elevation of the terrain by multiplying the data from the DEM with this value. Default value: 1. Value range: [0, 1000]
      *
      * @return exaggeration as Double
      */
@@ -37,11 +37,11 @@ class Terrain(private val sourceId: String) : TerrainDslReceiver, StyleContract.
     }
 
   /**
-   * Exaggerates the elevation of the terrain by multiplying the data from the DEM with this value.
+   * Exaggerates the elevation of the terrain by multiplying the data from the DEM with this value. Default value: 1. Value range: [0, 1000]
    *
    * @param exaggeration as Double
    */
-  override fun exaggeration(exaggeration: Double) = apply {
+  override fun exaggeration(exaggeration: Double): Terrain = apply {
     setProperty(PropertyValue("exaggeration", exaggeration))
   }
 
@@ -62,7 +62,7 @@ class Terrain(private val sourceId: String) : TerrainDslReceiver, StyleContract.
    *
    * @param options transition options for exaggeration
    */
-  override fun exaggerationTransition(options: StyleTransition) = apply {
+  override fun exaggerationTransition(options: StyleTransition): Terrain = apply {
     val propertyValue = PropertyValue("exaggeration-transition", options)
     setProperty(propertyValue)
   }
@@ -70,18 +70,18 @@ class Terrain(private val sourceId: String) : TerrainDslReceiver, StyleContract.
   /**
    * DSL for [exaggerationTransition].
    */
-  override fun exaggerationTransition(block: StyleTransition.Builder.() -> Unit) = apply {
+  override fun exaggerationTransition(block: StyleTransition.Builder.() -> Unit): Terrain = apply {
     exaggerationTransition(StyleTransition.Builder().apply(block).build())
   }
 
   /**
-   * Exaggerates the elevation of the terrain by multiplying the data from the DEM with this value.
+   * Exaggerates the elevation of the terrain by multiplying the data from the DEM with this value. Default value: 1. Value range: [0, 1000]
    *
    * This is an Expression representation of "exaggeration".
    */
   val exaggerationAsExpression: Expression?
     /**
-     * Exaggerates the elevation of the terrain by multiplying the data from the DEM with this value.
+     * Exaggerates the elevation of the terrain by multiplying the data from the DEM with this value. Default value: 1. Value range: [0, 1000]
      *
      * Get the Exaggeration property as an Expression
      *
@@ -97,11 +97,11 @@ class Terrain(private val sourceId: String) : TerrainDslReceiver, StyleContract.
       return null
     }
   /**
-   * Exaggerates the elevation of the terrain by multiplying the data from the DEM with this value.
+   * Exaggerates the elevation of the terrain by multiplying the data from the DEM with this value. Default value: 1. Value range: [0, 1000]
    *
    * @param exaggeration value of exaggeration as Expression
    */
-  override fun exaggeration(exaggeration: Expression) = apply {
+  override fun exaggeration(exaggeration: Expression): Terrain = apply {
     val propertyValue = PropertyValue("exaggeration", exaggeration)
     setProperty(propertyValue)
   }
@@ -111,7 +111,7 @@ class Terrain(private val sourceId: String) : TerrainDslReceiver, StyleContract.
    *
    * @param delegate The map controller
    */
-  override fun bindTo(delegate: StyleInterface) {
+  override fun bindTo(delegate: MapboxStyleManager) {
     this.delegate = delegate
     val terrainParams = HashMap<String, Value>()
     terrainParams["source"] = Value(sourceId)
@@ -187,14 +187,14 @@ class Terrain(private val sourceId: String) : TerrainDslReceiver, StyleContract.
 @TerrainDsl
 interface TerrainDslReceiver {
   /**
-   * Exaggerates the elevation of the terrain by multiplying the data from the DEM with this value.
+   * Exaggerates the elevation of the terrain by multiplying the data from the DEM with this value. Default value: 1. Value range: [0, 1000]
    *
    * @param exaggeration as Double
    */
   fun exaggeration(exaggeration: Double = 1.0): Terrain
 
   /**
-   * Exaggerates the elevation of the terrain by multiplying the data from the DEM with this value.
+   * Exaggerates the elevation of the terrain by multiplying the data from the DEM with this value. Default value: 1. Value range: [0, 1000]
    *
    * @param exaggeration value of exaggeration as Expression
    */

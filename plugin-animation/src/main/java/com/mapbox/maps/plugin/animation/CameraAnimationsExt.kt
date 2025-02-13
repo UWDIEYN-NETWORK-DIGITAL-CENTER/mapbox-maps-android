@@ -1,6 +1,9 @@
 @file:JvmName("CameraAnimationsUtils")
 package com.mapbox.maps.plugin.animation
 
+import android.animation.Animator
+import androidx.annotation.RestrictTo
+import com.mapbox.common.Cancelable
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.ScreenCoordinate
 import com.mapbox.maps.plugin.Plugin
@@ -32,8 +35,9 @@ private val emptyCancelable = Cancelable { }
 @JvmOverloads
 fun MapPluginExtensionsDelegate.easeTo(
   cameraOptions: CameraOptions,
-  animationOptions: MapAnimationOptions? = null
-) = (cameraAnimationsPlugin { easeTo(cameraOptions, animationOptions) } as? Cancelable) ?: emptyCancelable
+  animationOptions: MapAnimationOptions? = null,
+  animatorListener: Animator.AnimatorListener? = null
+) = (cameraAnimationsPlugin { easeTo(cameraOptions, animationOptions, animatorListener) } as? Cancelable) ?: emptyCancelable
 
 /**
  * Extension flyTo() function for [MapPluginExtensionsDelegate]
@@ -50,8 +54,9 @@ fun MapPluginExtensionsDelegate.easeTo(
 @JvmOverloads
 fun MapPluginExtensionsDelegate.flyTo(
   cameraOptions: CameraOptions,
-  animationOptions: MapAnimationOptions? = null
-) = (cameraAnimationsPlugin { flyTo(cameraOptions, animationOptions) } as? Cancelable) ?: emptyCancelable
+  animationOptions: MapAnimationOptions? = null,
+  animatorListener: Animator.AnimatorListener? = null
+) = (cameraAnimationsPlugin { flyTo(cameraOptions, animationOptions, animatorListener) } as? Cancelable) ?: emptyCancelable
 
 /**
  * Extension pitchBy() function for [MapPluginExtensionsDelegate]
@@ -68,8 +73,9 @@ fun MapPluginExtensionsDelegate.flyTo(
 @JvmOverloads
 fun MapPluginExtensionsDelegate.pitchBy(
   pitch: Double,
-  animationOptions: MapAnimationOptions? = null
-) = (cameraAnimationsPlugin { pitchBy(pitch, animationOptions) } as? Cancelable) ?: emptyCancelable
+  animationOptions: MapAnimationOptions? = null,
+  animatorListener: Animator.AnimatorListener? = null
+) = (cameraAnimationsPlugin { pitchBy(pitch, animationOptions, animatorListener) } as? Cancelable) ?: emptyCancelable
 
 /**
  * Extension scaleBy() function for [MapPluginExtensionsDelegate]
@@ -88,8 +94,9 @@ fun MapPluginExtensionsDelegate.pitchBy(
 fun MapPluginExtensionsDelegate.scaleBy(
   amount: Double,
   screenCoordinate: ScreenCoordinate?,
-  animationOptions: MapAnimationOptions? = null
-) = (cameraAnimationsPlugin { scaleBy(amount, screenCoordinate, animationOptions) } as? Cancelable) ?: emptyCancelable
+  animationOptions: MapAnimationOptions? = null,
+  animatorListener: Animator.AnimatorListener? = null
+) = (cameraAnimationsPlugin { scaleBy(amount, screenCoordinate, animationOptions, animatorListener) } as? Cancelable) ?: emptyCancelable
 
 /**
  * Extension moveBy() function for [MapPluginExtensionsDelegate]
@@ -106,8 +113,9 @@ fun MapPluginExtensionsDelegate.scaleBy(
 @JvmOverloads
 fun MapPluginExtensionsDelegate.moveBy(
   screenCoordinate: ScreenCoordinate,
-  animationOptions: MapAnimationOptions? = null
-) = (cameraAnimationsPlugin { moveBy(screenCoordinate, animationOptions) } as? Cancelable) ?: emptyCancelable
+  animationOptions: MapAnimationOptions? = null,
+  animatorListener: Animator.AnimatorListener? = null
+) = (cameraAnimationsPlugin { moveBy(screenCoordinate, animationOptions, animatorListener) } as? Cancelable) ?: emptyCancelable
 
 /**
  * Extension rotateBy() function for [MapPluginExtensionsDelegate]
@@ -126,5 +134,26 @@ fun MapPluginExtensionsDelegate.moveBy(
 fun MapPluginExtensionsDelegate.rotateBy(
   first: ScreenCoordinate,
   second: ScreenCoordinate,
-  animationOptions: MapAnimationOptions? = null
-) = (cameraAnimationsPlugin { rotateBy(first, second, animationOptions) } as? Cancelable) ?: emptyCancelable
+  animationOptions: MapAnimationOptions? = null,
+  animatorListener: Animator.AnimatorListener? = null
+) = (cameraAnimationsPlugin { rotateBy(first, second, animationOptions, animatorListener) } as? Cancelable) ?: emptyCancelable
+
+/**
+ * Static method to create instance of Mapbox camera animation plugin.
+ * @suppress
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@JvmSynthetic
+fun createCameraAnimationPlugin(): CameraAnimationsPlugin {
+  return CameraAnimationsPluginImpl()
+}
+
+/**
+ * Static method to get [CameraAnimatorsFactory].
+ * @suppress
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@JvmSynthetic
+fun CameraAnimationsPlugin.getCameraAnimatorsFactory(): CameraAnimatorsFactory {
+  return (this as CameraAnimationsPluginImpl).cameraAnimationsFactory
+}

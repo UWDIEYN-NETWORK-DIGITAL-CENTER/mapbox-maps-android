@@ -21,7 +21,7 @@ class DrawGeoJsonLineActivity : AppCompatActivity() {
     super.onCreate(savedInstanceState)
     val mapView = MapView(this)
     setContentView(mapView)
-    mapView.getMapboxMap().setCamera(
+    mapView.mapboxMap.setCamera(
       CameraOptions.Builder().center(
         Point.fromLngLat(
           LATITUDE,
@@ -29,11 +29,11 @@ class DrawGeoJsonLineActivity : AppCompatActivity() {
         )
       ).zoom(ZOOM).build()
     )
-    mapView.getMapboxMap().loadStyle(
+    mapView.mapboxMap.loadStyle(
       (
-        style(styleUri = Style.MAPBOX_STREETS) {
+        style(style = Style.STANDARD) {
           +geoJsonSource(GEOJSON_SOURCE_ID) {
-            url("asset://from_crema_to_council_crest.geojson")
+            data("asset://from_crema_to_council_crest.geojson")
           }
           +lineLayer("linelayer", GEOJSON_SOURCE_ID) {
             lineCap(LineCap.ROUND)

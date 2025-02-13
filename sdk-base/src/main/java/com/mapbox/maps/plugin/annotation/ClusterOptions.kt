@@ -4,7 +4,7 @@ import android.graphics.Color
 import com.mapbox.bindgen.Value
 
 /**
- * Options to show and configure symbol clustering with using SymbolManager.
+ * Options to show and configure symbol clustering with using `PointAnnotationManager` or `CircleAnnotationManager`.
  *
  * It exposes a minimal of configuration options, a more advanced setup can be created manually with
  * using CircleLayer and SymbolLayers directly.
@@ -16,8 +16,8 @@ data class ClusterOptions @JvmOverloads constructor(
    * If the data is a collection of point features, setting this to true clusters the points
    * by radius into groups. Cluster groups become new `Point` features in the source with additional properties:
    * - `cluster` Is `true` if the point is a cluster
-   * - `cluster_id` A unqiue id for the cluster to be used in conjunction with the
-   * [cluster inspection methods](https://www.mapbox.com/mapbox-gl-js/api/#geojsonsource#getclusterexpansionzoom)
+   * - `cluster_id` A unique id for the cluster to be used in conjunction with the
+   * [cluster inspection methods](https://docs.mapbox.com/mapbox-gl-js/api/sources/#geojsonsource#getclusterexpansionzoom, https://docs.mapbox.com/mapbox-gl-js/api/sources/#geojsonsource#getclusterchildren, https://docs.mapbox.com/mapbox-gl-js/api/sources/#geojsonsource#getclusterleaves)
    * - `point_count` Number of original points grouped into this cluster
    * - `point_count_abbreviated` An abbreviated point count
    */
@@ -73,6 +73,11 @@ data class ClusterOptions @JvmOverloads constructor(
    * levels so setting clusterMaxZoom to 14 means the clusters will be displayed until z15.
    */
   val clusterMaxZoom: Long = 14,
+
+  /**
+   * Minimum number of points necessary to form a cluster if clustering is enabled. literal(2) by default.
+    */
+  val clusterMinPoints: Long = 2L,
 
   /**
    * The cluster color levels, which a pair constructed with amount of point and a int color value.

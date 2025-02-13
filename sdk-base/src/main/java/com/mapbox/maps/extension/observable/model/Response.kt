@@ -5,6 +5,11 @@ import com.google.gson.annotations.SerializedName
 /**
  * The response data class that included in EventData
  */
+@Deprecated(
+  message = "This data class is deprecated, and will be removed in next major release.",
+  replaceWith = ReplaceWith("ResponseInfo"),
+  level = DeprecationLevel.WARNING
+)
 data class Response(
   /**
    * "etag" property

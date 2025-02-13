@@ -5,11 +5,11 @@ package com.mapbox.maps.extension.style.sources.generated
 import com.mapbox.bindgen.Expected
 import com.mapbox.bindgen.None
 import com.mapbox.bindgen.Value
+import com.mapbox.maps.MapboxStyleManager
 import com.mapbox.maps.StyleManager
 import com.mapbox.maps.StylePropertyValue
 import com.mapbox.maps.StylePropertyValueKind
 import com.mapbox.maps.extension.style.ShadowStyleManager
-import com.mapbox.maps.extension.style.StyleInterface
 import com.mapbox.maps.extension.style.utils.TypeUtils
 import io.mockk.*
 import org.junit.Assert.*
@@ -22,7 +22,7 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(shadows = [ShadowStyleManager::class])
 class ImageSourceTest {
-  private val style = mockk<StyleInterface>(relaxUnitFun = true, relaxed = true)
+  private val style = mockk<MapboxStyleManager>(relaxUnitFun = true, relaxed = true)
   private val valueSlot = slot<Value>()
   private val expected = mockk<Expected<String, None>>(relaxUnitFun = true, relaxed = true)
   private val expectedDelta = mockk<Expected<String, Byte>>(relaxUnitFun = true, relaxed = true)
@@ -30,16 +30,21 @@ class ImageSourceTest {
 
   @Before
   fun prepareTest() {
-    every { style.addStyleSource(any(), any()) } returns expected
-    every { style.setStyleSourceProperty(any(), any(), any()) } returns expected
-    every { style.getStyleSourceProperty(any(), any()) } returns styleProperty
     every { expected.error } returns null
     every { expectedDelta.error } returns null
     every { styleProperty.kind } returns StylePropertyValueKind.CONSTANT
 
+    mockkStyle(style)
+
     // For default property getters
     mockkStatic(StyleManager::class)
     every { StyleManager.getStyleSourcePropertyDefaultValue(any(), any()) } returns styleProperty
+  }
+
+  private fun mockkStyle(style: MapboxStyleManager) {
+    every { style.addStyleSource(any(), any()) } returns expected
+    every { style.setStyleSourceProperty(any(), any(), any()) } returns expected
+    every { style.getStyleSourceProperty(any(), any()) } returns styleProperty
   }
 
   @Test

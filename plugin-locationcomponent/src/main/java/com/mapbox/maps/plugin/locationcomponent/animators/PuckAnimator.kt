@@ -7,11 +7,13 @@ import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.view.animation.LinearInterpolator
 import androidx.annotation.VisibleForTesting
-import androidx.annotation.VisibleForTesting.PRIVATE
+import androidx.annotation.VisibleForTesting.Companion.PRIVATE
+import com.mapbox.maps.MapboxExperimental
 import com.mapbox.maps.plugin.locationcomponent.LocationComponentConstants
 import com.mapbox.maps.plugin.locationcomponent.LocationLayerRenderer
 import com.mapbox.maps.threading.AnimationThreadController
 
+@OptIn(MapboxExperimental::class)
 @SuppressLint("Recycle")
 internal abstract class PuckAnimator<T>(
   evaluator: TypeEvaluator<T>
@@ -40,6 +42,9 @@ internal abstract class PuckAnimator<T>(
     duration = LocationComponentConstants.DEFAULT_INTERVAL_MILLIS
     interpolator = DEFAULT_INTERPOLATOR
     userConfiguredAnimator = clone()
+    // workaround for bug in Android 12 described in
+    // https://github.com/mapbox/mapbox-maps-android/issues/1446
+    userConfiguredAnimator.duration = duration
   }
 
   /**

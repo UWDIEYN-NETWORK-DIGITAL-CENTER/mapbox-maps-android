@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    package="com.mapbox.maps.testapp">
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
 
     <application
         android:name=".MapboxApplication"
@@ -16,6 +17,9 @@
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true"
         tools:ignore="GoogleAppIndexingWarning,UnusedAttribute">
+
+        <profileable android:shell="true"/>
+
         <activity
             android:name=".ExampleOverviewActivity"
             android:exported="true"
@@ -36,6 +40,18 @@
             android:description="@string/description_simple_map"
             android:exported="true"
             android:label="@string/activity_simple_map">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_basic" />
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".ExampleOverviewActivity" />
+        </activity>
+        <activity
+            android:name=".examples.StandardStyleActivity"
+            android:description="@string/description_standard_style"
+            android:exported="true"
+            android:label="@string/activity_standard_style">
             <meta-data
                 android:name="@string/category"
                 android:value="@string/category_basic" />
@@ -119,12 +135,20 @@
             android:name=".examples.java.DSLStylingJavaActivity"
             android:description="@string/description_dsl_styling"
             android:exported="true"
-            android:label="@string/activity_dsl_styling"></activity>
+            android:label="@string/activity_java_dsl_styling">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".ExampleOverviewActivity" />
+        </activity>
         <activity
             android:name=".examples.java.RuntimeStylingJavaActivity"
             android:description="@string/description_dsl_styling"
             android:exported="true"
-            android:label="@string/activity_dsl_styling"></activity>
+            android:label="@string/activity_java_runtime_dsl_styling"  >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".ExampleOverviewActivity" />
+        </activity>
         <activity
             android:name=".examples.globe.HeatmapLayerGlobeActivity"
             android:description="@string/description_heatmap_layer"
@@ -258,6 +282,18 @@
                 android:value=".ExampleOverviewActivity" />
         </activity>
         <activity
+            android:name=".examples.MapboxMapRecorderActivity"
+            android:description="@string/description_mapbox_recorder"
+            android:exported="true"
+            android:label="@string/activity_mapbox_recorder">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_basic" />
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".ExampleOverviewActivity" />
+        </activity>
+        <activity
             android:name=".examples.snapshotter.MapSnapshotterActivity"
             android:description="@string/description_snapshotter"
             android:exported="true"
@@ -298,6 +334,19 @@
             android:description="@string/description_fill_extrusion"
             android:exported="true"
             android:label="@string/activity_fill_extrusion">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_3D" />
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".ExampleOverviewActivity" />
+        </activity>
+
+        <activity
+            android:name=".examples.terrain3D.Lights3DActivity"
+            android:description="@string/description_lights3d"
+            android:exported="true"
+            android:label="@string/activity_lights3d">
             <meta-data
                 android:name="@string/category"
                 android:value="@string/category_3D" />
@@ -346,6 +395,32 @@
             android:description="@string/description_location_basic_pulsing_circle"
             android:exported="true"
             android:label="@string/activity_basic_location_pulsing_circle">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_location" />
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".ExampleOverviewActivity" />
+        </activity>
+        <activity
+            android:name=".examples.geofence.SimpleGeofencingActivity"
+            android:description="@string/description_simple_geofencing"
+            android:exported="true"
+            android:label="@string/activity_simple_geofencing"
+            android:launchMode="singleTask">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_location" />
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".ExampleOverviewActivity" />
+        </activity>
+        <activity
+            android:name=".examples.geofence.ExtendedGeofencingActivity"
+            android:description="@string/description_extended_geofencing"
+            android:exported="true"
+            android:label="@string/activity_extended_geofencing"
+            android:launchMode="singleTask">
             <meta-data
                 android:name="@string/category"
                 android:value="@string/category_location" />
@@ -851,7 +926,7 @@
                 android:value=".ExampleOverviewActivity" />
         </activity>
         <activity
-            android:name=".examples.markersandcallouts.PolygoneAnnotationActivity"
+            android:name=".examples.markersandcallouts.PolygonAnnotationActivity"
             android:description="@string/description_annotation_fill"
             android:exported="true"
             android:label="@string/activity_fill">
@@ -1064,7 +1139,7 @@
                 android:value=".ExampleOverviewActivity" />
         </activity>
         <activity
-            android:name=".examples.featurestate.FeatureStateActivity"
+            android:name=".examples.coroutines.featurestate.FeatureStateActivity"
             android:description="@string/description_feature_state"
             android:exported="true"
             android:label="@string/activity_feature_state">
@@ -1111,8 +1186,9 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".ExampleOverviewActivity" />
         </activity>
+        <!-- View annotations -->
         <activity
-            android:name=".examples.markersandcallouts.ViewAnnotationShowcaseActivity"
+            android:name=".examples.markersandcallouts.viewannotation.ViewAnnotationShowcaseActivity"
             android:description="@string/description_view_annotation"
             android:exported="true"
             android:label="@string/activity_view_annotations">
@@ -1124,7 +1200,7 @@
                 android:value=".ExampleOverviewActivity" />
         </activity>
         <activity
-            android:name=".examples.markersandcallouts.ViewAnnotationBasicAddActivity"
+            android:name=".examples.markersandcallouts.viewannotation.ViewAnnotationBasicAddActivity"
             android:description="@string/description_view_annotation_basic"
             android:exported="true"
             android:label="@string/activity_view_annotations_basic">
@@ -1136,7 +1212,7 @@
                 android:value=".ExampleOverviewActivity" />
         </activity>
         <activity
-            android:name=".examples.markersandcallouts.ViewAnnotationAnimationActivity"
+            android:name=".examples.markersandcallouts.viewannotation.ViewAnnotationAnimationActivity"
             android:description="@string/description_view_annotation_animation"
             android:exported="true"
             android:label="@string/activity_view_annotations_animation">
@@ -1147,6 +1223,31 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".ExampleOverviewActivity" />
         </activity>
+        <activity
+            android:name=".examples.markersandcallouts.viewannotation.ViewAnnotationWithPointAnnotationActivity"
+            android:description="@string/description_view_annotation_point_annotation"
+            android:exported="true"
+            android:label="@string/activity_view_annotations_point_annotation">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_markers_and_callouts" />
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".ExampleOverviewActivity" />
+        </activity>
+        <activity
+            android:name=".examples.markersandcallouts.viewannotation.DynamicViewAnnotationActivity"
+            android:description="@string/description_dynamic_view_annotations"
+            android:exported="true"
+            android:label="@string/activity_dynamic_view_annotations">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_markers_and_callouts" />
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".ExampleOverviewActivity" />
+        </activity>
+        <!-- -->
         <activity
             android:name=".examples.viewport.ViewportShowcaseActivity"
             android:description="@string/description_viewport"
@@ -1167,18 +1268,6 @@
             <meta-data
                 android:name="@string/category"
                 android:value="@string/category_viewport" />
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value=".ExampleOverviewActivity" />
-        </activity>
-        <activity
-            android:name=".examples.markersandcallouts.ViewAnnotationWithPointAnnotationActivity"
-            android:description="@string/description_view_annotation_point_annotation"
-            android:exported="true"
-            android:label="@string/activity_view_annotations_point_annotation">
-            <meta-data
-                android:name="@string/category"
-                android:value="@string/category_markers_and_callouts" />
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".ExampleOverviewActivity" />
@@ -1211,13 +1300,29 @@
             android:name=".TestMapActivity"
             android:exported="true" />
         <activity
+            android:name=".EmptyFragmentActivity"
+            android:theme="@android:style/Theme.Material.Light"
+            android:exported="true" />
+        <activity
             android:name=".examples.SecondaryDisplayPresentationActivity"
-            android:description="@string/description_simple_map"
+            android:description="@string/description_secondary_display_presentation"
             android:exported="true"
-            android:label="@string/activity_simple_map">
+            android:label="@string/activity_secondary_display_presentation">
             <meta-data
                 android:name="@string/category"
-                android:value="@string/category_basic" />
+                android:value="@string/category_lab" />
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".ExampleOverviewActivity" />
+        </activity>
+        <activity
+            android:name=".examples.style.RasterColorizationActivity"
+            android:description="@string/description_raster_colorization"
+            android:exported="true"
+            android:label="@string/activity_raster_colorization">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_styles" />
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".ExampleOverviewActivity" />
@@ -1225,5 +1330,113 @@
         <meta-data
             android:name="com.mapbox.maps.ThreadChecker"
             android:value="true" />
+        <activity
+            android:name=".examples.terrain3D.ModelLayerActivity"
+            android:description="@string/description_model_layer"
+            android:exported="true"
+            android:label="@string/activity_model_layer">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_3D" />
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".ExampleOverviewActivity" />
+        </activity>
+        <activity
+            android:name=".examples.style.CustomRasterSourceActivity"
+            android:description="@string/description_custom_raster_source"
+            android:exported="true"
+            android:label="@string/activity_custom_raster_source">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_styles" />
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".ExampleOverviewActivity" />
+        </activity>
+        <activity
+            android:name=".examples.SlotLayerActivity"
+            android:description="@string/description_slot_layer"
+            android:exported="true"
+            android:label="@string/actvity_slot_layer">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_styles" />
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".ExampleOverviewActivity" />
+        </activity>
+        <activity
+            android:name=".examples.style.RasterParticlesActivity"
+            android:description="@string/description_raster_particles"
+            android:exported="true"
+            android:label="@string/activity_raster_particles">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_styles" />
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".ExampleOverviewActivity" />
+        </activity>
+        <activity
+            android:name=".examples.ClipLayerActivity"
+            android:description="@string/description_clip_layer"
+            android:exported="true"
+            android:label="@string/activity_clip_layer">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_styles" />
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".ExampleOverviewActivity" />
+        </activity>
+        <activity
+            android:name=".examples.StandardStyleInteractionsActivity"
+            android:description="@string/description_standard_interactions"
+            android:exported="true"
+            android:label="@string/activity_standard_interactions">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_styles" />
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".ExampleOverviewActivity" />
+        </activity>
+        <activity
+            android:name=".examples.LocationComponentModelAnimationActivity"
+            android:description="@string/description_location_component_model_animation"
+            android:exported="true"
+            android:label="@string/activity_location_component_model_animation">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_location" />
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".ExampleOverviewActivity" />
+        </activity>
+        <activity
+            android:name=".examples.style.PrecipitationActivity"
+            android:description="@string/description_precipitation"
+            android:exported="true"
+            android:label="@string/activity_precipitation">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_styles" />
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".ExampleOverviewActivity" />
+        </activity>
+        <activity
+            android:name=".examples.style.ColorThemeActivity"
+            android:description="@string/description_color_theme"
+            android:exported="true"
+            android:label="@string/activity_color_theme">
+            <meta-data
+                android:name="@string/category"
+                android:value="@string/category_styles" />
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".ExampleOverviewActivity" />
+        </activity>
     </application>
 </manifest>

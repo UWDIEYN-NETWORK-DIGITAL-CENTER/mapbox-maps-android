@@ -6,6 +6,11 @@ import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import com.mapbox.geojson.Point
 import com.mapbox.maps.*
+import com.mapbox.maps.dsl.cameraOptions
+import com.mapbox.maps.extension.style.layers.CustomLayer
+import com.mapbox.maps.extension.style.layers.addLayerBelow
+import com.mapbox.maps.extension.style.layers.customLayer
+import com.mapbox.maps.extension.style.style
 import com.mapbox.maps.testapp.R
 import com.mapbox.maps.testapp.databinding.ActivityCustomLayerBinding
 
@@ -20,12 +25,25 @@ class CustomLayerActivity : AppCompatActivity() {
     super.onCreate(savedInstanceState)
     binding = ActivityCustomLayerBinding.inflate(layoutInflater)
     setContentView(binding.root)
-    mapboxMap = binding.mapView.getMapboxMap()
-    mapboxMap.loadStyleUri(
-      Style.MAPBOX_STREETS
+    mapboxMap = binding.mapView.mapboxMap
+    mapboxMap.loadStyle(
+      style(Style.MAPBOX_STREETS) {
+        +layerAtPosition(
+          customLayer(
+            layerId = CUSTOM_LAYER_ID,
+            host = ExampleCustomLayer()
+          ),
+          below = "building"
+        )
+      }
     ) {
       mapboxMap.setCamera(
-        CameraOptions.Builder().center(Point.fromLngLat(116.39053, 39.91448)).zoom(10.0).build()
+        cameraOptions {
+          center(Point.fromLngLat(116.39053, 39.91448))
+          pitch(0.0)
+          bearing(0.0)
+          zoom(10.0)
+        }
       )
       initFab()
     }
@@ -38,19 +56,15 @@ class CustomLayerActivity : AppCompatActivity() {
   }
 
   private fun swapCustomLayer() {
-    mapboxMap.getStyle()?.let { style ->
+    mapboxMap.style?.let { style ->
       if (style.styleLayerExists(CUSTOM_LAYER_ID)) {
         style.removeStyleLayer(CUSTOM_LAYER_ID)
         binding.fab.setImageResource(R.drawable.ic_layers)
       } else {
-        val expected = style.addStyleCustomLayer(
-          layerId = CUSTOM_LAYER_ID,
-          ExampleCustomLayer(),
-          LayerPosition(null, "building", null)
+        style.addLayerBelow(
+          CustomLayer(CUSTOM_LAYER_ID, ExampleCustomLayer()),
+          below = "building"
         )
-        expected.error?.let {
-          logE(TAG, "Add custom layer exception $it")
-        }
         binding.fab.setImageResource(R.drawable.ic_layers_clear)
       }
     }
@@ -71,24 +85,27 @@ class CustomLayerActivity : AppCompatActivity() {
         updateLayer()
         true
       }
+
       R.id.action_set_color_red -> {
         ExampleCustomLayer.color = floatArrayOf(1.0f, 0.0f, 0.0f, 1.0f)
         true
       }
+
       R.id.action_set_color_green -> {
         ExampleCustomLayer.color = floatArrayOf(0.0f, 1.0f, 0.0f, 1.0f)
         true
       }
+
       R.id.action_set_color_blue -> {
         ExampleCustomLayer.color = floatArrayOf(0.0f, 0.0f, 1.0f, 1.0f)
         true
       }
+
       else -> super.onOptionsItemSelected(item)
     }
   }
 
   companion object {
-    private const val CUSTOM_LAYER_ID = "custom"
-    private const val TAG = "CustomLayerActivity"
+    private const val CUSTOM_LAYER_ID = "customId"
   }
 }

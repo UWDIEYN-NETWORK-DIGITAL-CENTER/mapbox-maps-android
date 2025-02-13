@@ -25,7 +25,7 @@ class ThirdPartyVectorSourceActivity : AppCompatActivity() {
     super.onCreate(savedInstanceState)
     val mapView = MapView(this)
     setContentView(mapView)
-    mapboxMap = mapView.getMapboxMap()
+    mapboxMap = mapView.mapboxMap
 
     mapboxMap.setCamera(
       CameraOptions.Builder()
@@ -34,7 +34,7 @@ class ThirdPartyVectorSourceActivity : AppCompatActivity() {
         .build()
     )
 
-    mapboxMap.loadStyleUri(Style.LIGHT) {
+    mapboxMap.loadStyle(Style.LIGHT) {
       it.addSource(
         vectorSource(SOURCE_ID) {
           tiles(listOf("https://tiles.mapillary.com/maps/vtp/mly1_public/2/{z}/{x}/{y}?access_token=MLY|4142433049200173|72206abe5035850d6743b23a49c41333"))
@@ -61,6 +61,6 @@ class ThirdPartyVectorSourceActivity : AppCompatActivity() {
     const val LAYER_ID = SOURCE_ID
     const val TAG = SOURCE_ID
     const val SOURCE_LAYER_ID = "sequence"
-    const val BELOW_LAYER_ID = "road-label"
+    const val BELOW_LAYER_ID = "road-label-simple"
   }
 }

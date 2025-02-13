@@ -10,6 +10,7 @@ import com.mapbox.geojson.Feature
 import com.mapbox.geojson.Point
 import com.mapbox.maps.MapboxAnnotationException
 import com.mapbox.maps.extension.style.layers.properties.generated.IconAnchor
+import com.mapbox.maps.extension.style.layers.properties.generated.IconTextFit
 import com.mapbox.maps.extension.style.layers.properties.generated.TextAnchor
 import com.mapbox.maps.extension.style.layers.properties.generated.TextJustify
 import com.mapbox.maps.extension.style.layers.properties.generated.TextTransform
@@ -42,14 +43,14 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
   }
 
   /**
-   * Part of the icon placed closest to the anchor.
+   * Part of the icon placed closest to the anchor. Default value: "center".
    */
   var iconAnchor: IconAnchor? = null
 
   /**
    * Set icon-anchor to initialise the pointAnnotation with.
    *
-   * Part of the icon placed closest to the anchor.
+   * Part of the icon placed closest to the anchor. Default value: "center".
    *
    * @param iconAnchor the icon-anchor value
    * @return this
@@ -78,14 +79,14 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
   }
 
   /**
-   * Offset distance of icon from its anchor. Positive values indicate right and down, while negative values indicate left and up. Each component is multiplied by the value of `icon-size` to obtain the final offset in pixels. When combined with `icon-rotate` the offset will be as if the rotated direction was up.
+   * Offset distance of icon from its anchor. Positive values indicate right and down, while negative values indicate left and up. Each component is multiplied by the value of `icon-size` to obtain the final offset in pixels. When combined with `icon-rotate` the offset will be as if the rotated direction was up. Default value: [0,0].
    */
   var iconOffset: List<Double>? = null
 
   /**
    * Set icon-offset to initialise the pointAnnotation with.
    *
-   * Offset distance of icon from its anchor. Positive values indicate right and down, while negative values indicate left and up. Each component is multiplied by the value of {@link PropertyFactory#iconSize} to obtain the final offset in density-independent pixels. When combined with {@link PropertyFactory#iconRotate} the offset will be as if the rotated direction was up.
+   * Offset distance of icon from its anchor. Positive values indicate right and down, while negative values indicate left and up. Each component is multiplied by the value of `icon-size` to obtain the final offset in pixels. When combined with `icon-rotate` the offset will be as if the rotated direction was up. Default value: [0,0].
    *
    * @param iconOffset the icon-offset value
    * @return this
@@ -96,14 +97,14 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
   }
 
   /**
-   * Rotates the icon clockwise.
+   * Rotates the icon clockwise. Default value: 0. The unit of iconRotate is in degrees.
    */
   var iconRotate: Double? = null
 
   /**
    * Set icon-rotate to initialise the pointAnnotation with.
    *
-   * Rotates the icon clockwise.
+   * Rotates the icon clockwise. Default value: 0. The unit of iconRotate is in degrees.
    *
    * @param iconRotate the icon-rotate value
    * @return this
@@ -114,14 +115,14 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
   }
 
   /**
-   * Scales the original size of the icon by the provided factor. The new pixel size of the image will be the original pixel size multiplied by `icon-size`. 1 is the original size; 3 triples the size of the image.
+   * Scales the original size of the icon by the provided factor. The new pixel size of the image will be the original pixel size multiplied by `icon-size`. 1 is the original size; 3 triples the size of the image. Default value: 1. Minimum value: 0. The unit of iconSize is in factor of the original icon size.
    */
   var iconSize: Double? = null
 
   /**
    * Set icon-size to initialise the pointAnnotation with.
    *
-   * Scales the original size of the icon by the provided factor. The new pixel size of the image will be the original pixel size multiplied by {@link PropertyFactory#iconSize}. 1 is the original size; 3 triples the size of the image.
+   * Scales the original size of the icon by the provided factor. The new pixel size of the image will be the original pixel size multiplied by `icon-size`. 1 is the original size; 3 triples the size of the image. Default value: 1. Minimum value: 0. The unit of iconSize is in factor of the original icon size.
    *
    * @param iconSize the icon-size value
    * @return this
@@ -132,14 +133,50 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
   }
 
   /**
-   * Sorts features in ascending order based on this value. Features with lower sort keys are drawn and placed first.  When `icon-allow-overlap` or `text-allow-overlap` is `false`, features with a lower sort key will have priority during placement. When `icon-allow-overlap` or `text-allow-overlap` is set to `true`, features with a higher sort key will overlap over features with a lower sort key.
+   * Scales the icon to fit around the associated text. Default value: "none".
+   */
+  var iconTextFit: IconTextFit? = null
+
+  /**
+   * Set icon-text-fit to initialise the pointAnnotation with.
+   *
+   * Scales the icon to fit around the associated text. Default value: "none".
+   *
+   * @param iconTextFit the icon-text-fit value
+   * @return this
+   */
+  fun withIconTextFit(iconTextFit: IconTextFit): PointAnnotationOptions {
+    this.iconTextFit = iconTextFit
+    return this
+  }
+
+  /**
+   * Size of the additional area added to dimensions determined by `icon-text-fit`, in clockwise order: top, right, bottom, left. Default value: [0,0,0,0]. The unit of iconTextFitPadding is in pixels.
+   */
+  var iconTextFitPadding: List<Double>? = null
+
+  /**
+   * Set icon-text-fit-padding to initialise the pointAnnotation with.
+   *
+   * Size of the additional area added to dimensions determined by `icon-text-fit`, in clockwise order: top, right, bottom, left. Default value: [0,0,0,0]. The unit of iconTextFitPadding is in pixels.
+   *
+   * @param iconTextFitPadding the icon-text-fit-padding value
+   * @return this
+   */
+  fun withIconTextFitPadding(iconTextFitPadding: List<Double>): PointAnnotationOptions {
+    this.iconTextFitPadding = iconTextFitPadding
+    return this
+  }
+
+  /**
+   * Sorts features in ascending order based on this value. Features with lower sort keys are drawn and placed first. When `icon-allow-overlap` or `text-allow-overlap` is `false`, features with a lower sort key will have priority during placement. When `icon-allow-overlap` or `text-allow-overlap` is set to `true`, features with a higher sort key will overlap over features with a lower sort key.
    */
   var symbolSortKey: Double? = null
 
   /**
    * Set symbol-sort-key to initialise the pointAnnotation with.
    *
-   * Sorts features in ascending order based on this value. Features with lower sort keys are drawn and placed first.  When {@link PropertyFactory#iconAllowOverlap} or {@link PropertyFactory#textAllowOverlap} is `false`, features with a lower sort key will have priority during placement. When {@link PropertyFactory#iconAllowOverlap} or {@link PropertyFactory#textAllowOverlap} is set to `true`, features with a higher sort key will overlap over features with a lower sort key.
+   * Sorts features in ascending order based on this value. Features with lower sort keys are drawn and placed first. When `icon-allow-overlap` or `text-allow-overlap` is `false`, features with a lower sort key will have priority during placement. When `icon-allow-overlap` or `text-allow-overlap` is set to `true`, features with a higher sort key will overlap over features with a lower sort key.
    *
    * @param symbolSortKey the symbol-sort-key value
    * @return this
@@ -150,14 +187,14 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
   }
 
   /**
-   * Part of the text placed closest to the anchor.
+   * Part of the text placed closest to the anchor. Default value: "center".
    */
   var textAnchor: TextAnchor? = null
 
   /**
    * Set text-anchor to initialise the pointAnnotation with.
    *
-   * Part of the text placed closest to the anchor.
+   * Part of the text placed closest to the anchor. Default value: "center".
    *
    * @param textAnchor the text-anchor value
    * @return this
@@ -168,14 +205,14 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
   }
 
   /**
-   * Value to use for a text label. If a plain `string` is provided, it will be treated as a `formatted` with default/inherited formatting options. SDF images are not supported in formatted text and will be ignored.
+   * Value to use for a text label. If a plain `string` is provided, it will be treated as a `formatted` with default/inherited formatting options. SDF images are not supported in formatted text and will be ignored. Default value: "".
    */
   var textField: String? = null
 
   /**
    * Set text-field to initialise the pointAnnotation with.
    *
-   * Value to use for a text label. If a plain `string` is provided, it will be treated as a `formatted` with default/inherited formatting options. SDF images are not supported in formatted text and will be ignored.
+   * Value to use for a text label. If a plain `string` is provided, it will be treated as a `formatted` with default/inherited formatting options. SDF images are not supported in formatted text and will be ignored. Default value: "".
    *
    * @param textField the text-field value
    * @return this
@@ -186,14 +223,14 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
   }
 
   /**
-   * Text justification options.
+   * Text justification options. Default value: "center".
    */
   var textJustify: TextJustify? = null
 
   /**
    * Set text-justify to initialise the pointAnnotation with.
    *
-   * Text justification options.
+   * Text justification options. Default value: "center".
    *
    * @param textJustify the text-justify value
    * @return this
@@ -204,14 +241,14 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
   }
 
   /**
-   * Text tracking amount.
+   * Text tracking amount. Default value: 0. The unit of textLetterSpacing is in ems.
    */
   var textLetterSpacing: Double? = null
 
   /**
    * Set text-letter-spacing to initialise the pointAnnotation with.
    *
-   * Text tracking amount.
+   * Text tracking amount. Default value: 0. The unit of textLetterSpacing is in ems.
    *
    * @param textLetterSpacing the text-letter-spacing value
    * @return this
@@ -222,14 +259,14 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
   }
 
   /**
-   * Text leading value for multi-line text.
+   * Text leading value for multi-line text. Default value: 1.2. The unit of textLineHeight is in ems.
    */
   var textLineHeight: Double? = null
 
   /**
    * Set text-line-height to initialise the pointAnnotation with.
    *
-   * Text leading value for multi-line text.
+   * Text leading value for multi-line text. Default value: 1.2. The unit of textLineHeight is in ems.
    *
    * @param textLineHeight the text-line-height value
    * @return this
@@ -240,14 +277,14 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
   }
 
   /**
-   * The maximum line width for text wrapping.
+   * The maximum line width for text wrapping. Default value: 10. Minimum value: 0. The unit of textMaxWidth is in ems.
    */
   var textMaxWidth: Double? = null
 
   /**
    * Set text-max-width to initialise the pointAnnotation with.
    *
-   * The maximum line width for text wrapping.
+   * The maximum line width for text wrapping. Default value: 10. Minimum value: 0. The unit of textMaxWidth is in ems.
    *
    * @param textMaxWidth the text-max-width value
    * @return this
@@ -258,14 +295,14 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
   }
 
   /**
-   * Offset distance of text from its anchor. Positive values indicate right and down, while negative values indicate left and up. If used with text-variable-anchor, input values will be taken as absolute values. Offsets along the x- and y-axis will be applied automatically based on the anchor position.
+   * Offset distance of text from its anchor. Positive values indicate right and down, while negative values indicate left and up. If used with text-variable-anchor, input values will be taken as absolute values. Offsets along the x- and y-axis will be applied automatically based on the anchor position. Default value: [0,0]. The unit of textOffset is in ems.
    */
   var textOffset: List<Double>? = null
 
   /**
    * Set text-offset to initialise the pointAnnotation with.
    *
-   * Offset distance of text from its anchor. Positive values indicate right and down, while negative values indicate left and up. If used with text-variable-anchor, input values will be taken as absolute values. Offsets along the x- and y-axis will be applied automatically based on the anchor position.
+   * Offset distance of text from its anchor. Positive values indicate right and down, while negative values indicate left and up. If used with text-variable-anchor, input values will be taken as absolute values. Offsets along the x- and y-axis will be applied automatically based on the anchor position. Default value: [0,0]. The unit of textOffset is in ems.
    *
    * @param textOffset the text-offset value
    * @return this
@@ -276,14 +313,14 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
   }
 
   /**
-   * Radial offset of text, in the direction of the symbol's anchor. Useful in combination with `text-variable-anchor`, which defaults to using the two-dimensional `text-offset` if present.
+   * Radial offset of text, in the direction of the symbol's anchor. Useful in combination with `text-variable-anchor`, which defaults to using the two-dimensional `text-offset` if present. Default value: 0. The unit of textRadialOffset is in ems.
    */
   var textRadialOffset: Double? = null
 
   /**
    * Set text-radial-offset to initialise the pointAnnotation with.
    *
-   * Radial offset of text, in the direction of the symbol's anchor. Useful in combination with {@link PropertyFactory#textVariableAnchor}, which defaults to using the two-dimensional {@link PropertyFactory#textOffset} if present.
+   * Radial offset of text, in the direction of the symbol's anchor. Useful in combination with `text-variable-anchor`, which defaults to using the two-dimensional `text-offset` if present. Default value: 0. The unit of textRadialOffset is in ems.
    *
    * @param textRadialOffset the text-radial-offset value
    * @return this
@@ -294,14 +331,14 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
   }
 
   /**
-   * Rotates the text clockwise.
+   * Rotates the text clockwise. Default value: 0. The unit of textRotate is in degrees.
    */
   var textRotate: Double? = null
 
   /**
    * Set text-rotate to initialise the pointAnnotation with.
    *
-   * Rotates the text clockwise.
+   * Rotates the text clockwise. Default value: 0. The unit of textRotate is in degrees.
    *
    * @param textRotate the text-rotate value
    * @return this
@@ -312,14 +349,14 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
   }
 
   /**
-   * Font size.
+   * Font size. Default value: 16. Minimum value: 0. The unit of textSize is in pixels.
    */
   var textSize: Double? = null
 
   /**
    * Set text-size to initialise the pointAnnotation with.
    *
-   * Font size.
+   * Font size. Default value: 16. Minimum value: 0. The unit of textSize is in pixels.
    *
    * @param textSize the text-size value
    * @return this
@@ -330,14 +367,14 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
   }
 
   /**
-   * Specifies how to capitalize text, similar to the CSS `text-transform` property.
+   * Specifies how to capitalize text, similar to the CSS `text-transform` property. Default value: "none".
    */
   var textTransform: TextTransform? = null
 
   /**
    * Set text-transform to initialise the pointAnnotation with.
    *
-   * Specifies how to capitalize text, similar to the CSS {@link PropertyFactory#textTransform} property.
+   * Specifies how to capitalize text, similar to the CSS `text-transform` property. Default value: "none".
    *
    * @param textTransform the text-transform value
    * @return this
@@ -348,14 +385,14 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
   }
 
   /**
-   * The color of the icon. This can only be used with [SDF icons](/help/troubleshooting/using-recolorable-images-in-mapbox-maps/).
+   * The color of the icon. This can only be used with [SDF icons](/help/troubleshooting/using-recolorable-images-in-mapbox-maps/). Default value: "#000000".
    */
   var iconColor: String? = null
 
   /**
    * Set icon-color to initialise the pointAnnotation with.
    *
-   * The color of the icon. This can only be used with [SDF icons](/help/troubleshooting/using-recolorable-images-in-mapbox-maps/).
+   * The color of the icon. This can only be used with [SDF icons](/help/troubleshooting/using-recolorable-images-in-mapbox-maps/). Default value: "#000000".
    *
    * @param iconColor the icon-color value
    * @return this
@@ -368,7 +405,7 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
   /**
    * Set icon-color to initialise the pointAnnotation with.
    *
-   * The color of the icon. This can only be used with [SDF icons](/help/troubleshooting/using-recolorable-images-in-mapbox-maps/).
+   * The color of the icon. This can only be used with [SDF icons](/help/troubleshooting/using-recolorable-images-in-mapbox-maps/). Default value: "#000000".
    *
    * @param iconColor the icon-color value with ColorInt format
    * @return this
@@ -379,14 +416,32 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
   }
 
   /**
-   * Fade out the halo towards the outside.
+   * Controls the intensity of light emitted on the source features. Default value: 1. Minimum value: 0. The unit of iconEmissiveStrength is in intensity.
+   */
+  var iconEmissiveStrength: Double? = null
+
+  /**
+   * Set icon-emissive-strength to initialise the pointAnnotation with.
+   *
+   * Controls the intensity of light emitted on the source features. Default value: 1. Minimum value: 0. The unit of iconEmissiveStrength is in intensity.
+   *
+   * @param iconEmissiveStrength the icon-emissive-strength value
+   * @return this
+   */
+  fun withIconEmissiveStrength(iconEmissiveStrength: Double): PointAnnotationOptions {
+    this.iconEmissiveStrength = iconEmissiveStrength
+    return this
+  }
+
+  /**
+   * Fade out the halo towards the outside. Default value: 0. Minimum value: 0. The unit of iconHaloBlur is in pixels.
    */
   var iconHaloBlur: Double? = null
 
   /**
    * Set icon-halo-blur to initialise the pointAnnotation with.
    *
-   * Fade out the halo towards the outside.
+   * Fade out the halo towards the outside. Default value: 0. Minimum value: 0. The unit of iconHaloBlur is in pixels.
    *
    * @param iconHaloBlur the icon-halo-blur value
    * @return this
@@ -397,14 +452,14 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
   }
 
   /**
-   * The color of the icon's halo. Icon halos can only be used with [SDF icons](/help/troubleshooting/using-recolorable-images-in-mapbox-maps/).
+   * The color of the icon's halo. Icon halos can only be used with [SDF icons](/help/troubleshooting/using-recolorable-images-in-mapbox-maps/). Default value: "rgba(0, 0, 0, 0)".
    */
   var iconHaloColor: String? = null
 
   /**
    * Set icon-halo-color to initialise the pointAnnotation with.
    *
-   * The color of the icon's halo. Icon halos can only be used with [SDF icons](/help/troubleshooting/using-recolorable-images-in-mapbox-maps/).
+   * The color of the icon's halo. Icon halos can only be used with [SDF icons](/help/troubleshooting/using-recolorable-images-in-mapbox-maps/). Default value: "rgba(0, 0, 0, 0)".
    *
    * @param iconHaloColor the icon-halo-color value
    * @return this
@@ -417,7 +472,7 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
   /**
    * Set icon-halo-color to initialise the pointAnnotation with.
    *
-   * The color of the icon's halo. Icon halos can only be used with [SDF icons](/help/troubleshooting/using-recolorable-images-in-mapbox-maps/).
+   * The color of the icon's halo. Icon halos can only be used with [SDF icons](/help/troubleshooting/using-recolorable-images-in-mapbox-maps/). Default value: "rgba(0, 0, 0, 0)".
    *
    * @param iconHaloColor the icon-halo-color value with ColorInt format
    * @return this
@@ -428,14 +483,14 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
   }
 
   /**
-   * Distance of halo to the icon outline.
+   * Distance of halo to the icon outline. Default value: 0. Minimum value: 0. The unit of iconHaloWidth is in pixels.
    */
   var iconHaloWidth: Double? = null
 
   /**
    * Set icon-halo-width to initialise the pointAnnotation with.
    *
-   * Distance of halo to the icon outline.
+   * Distance of halo to the icon outline. Default value: 0. Minimum value: 0. The unit of iconHaloWidth is in pixels.
    *
    * @param iconHaloWidth the icon-halo-width value
    * @return this
@@ -446,14 +501,50 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
   }
 
   /**
-   * The opacity at which the icon will be drawn.
+   * Controls the transition progress between the image variants of icon-image. Zero means the first variant is used, one is the second, and in between they are blended together. Default value: 0. Value range: [0, 1]
+   */
+  var iconImageCrossFade: Double? = null
+
+  /**
+   * Set icon-image-cross-fade to initialise the pointAnnotation with.
+   *
+   * Controls the transition progress between the image variants of icon-image. Zero means the first variant is used, one is the second, and in between they are blended together. Default value: 0. Value range: [0, 1]
+   *
+   * @param iconImageCrossFade the icon-image-cross-fade value
+   * @return this
+   */
+  fun withIconImageCrossFade(iconImageCrossFade: Double): PointAnnotationOptions {
+    this.iconImageCrossFade = iconImageCrossFade
+    return this
+  }
+
+  /**
+   * The opacity at which the icon will be drawn in case of being depth occluded. Absent value means full occlusion against terrain only. Default value: 0. Value range: [0, 1]
+   */
+  var iconOcclusionOpacity: Double? = null
+
+  /**
+   * Set icon-occlusion-opacity to initialise the pointAnnotation with.
+   *
+   * The opacity at which the icon will be drawn in case of being depth occluded. Absent value means full occlusion against terrain only. Default value: 0. Value range: [0, 1]
+   *
+   * @param iconOcclusionOpacity the icon-occlusion-opacity value
+   * @return this
+   */
+  fun withIconOcclusionOpacity(iconOcclusionOpacity: Double): PointAnnotationOptions {
+    this.iconOcclusionOpacity = iconOcclusionOpacity
+    return this
+  }
+
+  /**
+   * The opacity at which the icon will be drawn. Default value: 1. Value range: [0, 1]
    */
   var iconOpacity: Double? = null
 
   /**
    * Set icon-opacity to initialise the pointAnnotation with.
    *
-   * The opacity at which the icon will be drawn.
+   * The opacity at which the icon will be drawn. Default value: 1. Value range: [0, 1]
    *
    * @param iconOpacity the icon-opacity value
    * @return this
@@ -464,14 +555,32 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
   }
 
   /**
-   * The color with which the text will be drawn.
+   * Specifies an uniform elevation from the ground, in meters. Default value: 0. Minimum value: 0.
+   */
+  var symbolZOffset: Double? = null
+
+  /**
+   * Set symbol-z-offset to initialise the pointAnnotation with.
+   *
+   * Specifies an uniform elevation from the ground, in meters. Default value: 0. Minimum value: 0.
+   *
+   * @param symbolZOffset the symbol-z-offset value
+   * @return this
+   */
+  fun withSymbolZOffset(symbolZOffset: Double): PointAnnotationOptions {
+    this.symbolZOffset = symbolZOffset
+    return this
+  }
+
+  /**
+   * The color with which the text will be drawn. Default value: "#000000".
    */
   var textColor: String? = null
 
   /**
    * Set text-color to initialise the pointAnnotation with.
    *
-   * The color with which the text will be drawn.
+   * The color with which the text will be drawn. Default value: "#000000".
    *
    * @param textColor the text-color value
    * @return this
@@ -484,7 +593,7 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
   /**
    * Set text-color to initialise the pointAnnotation with.
    *
-   * The color with which the text will be drawn.
+   * The color with which the text will be drawn. Default value: "#000000".
    *
    * @param textColor the text-color value with ColorInt format
    * @return this
@@ -495,14 +604,32 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
   }
 
   /**
-   * The halo's fadeout distance towards the outside.
+   * Controls the intensity of light emitted on the source features. Default value: 1. Minimum value: 0. The unit of textEmissiveStrength is in intensity.
+   */
+  var textEmissiveStrength: Double? = null
+
+  /**
+   * Set text-emissive-strength to initialise the pointAnnotation with.
+   *
+   * Controls the intensity of light emitted on the source features. Default value: 1. Minimum value: 0. The unit of textEmissiveStrength is in intensity.
+   *
+   * @param textEmissiveStrength the text-emissive-strength value
+   * @return this
+   */
+  fun withTextEmissiveStrength(textEmissiveStrength: Double): PointAnnotationOptions {
+    this.textEmissiveStrength = textEmissiveStrength
+    return this
+  }
+
+  /**
+   * The halo's fadeout distance towards the outside. Default value: 0. Minimum value: 0. The unit of textHaloBlur is in pixels.
    */
   var textHaloBlur: Double? = null
 
   /**
    * Set text-halo-blur to initialise the pointAnnotation with.
    *
-   * The halo's fadeout distance towards the outside.
+   * The halo's fadeout distance towards the outside. Default value: 0. Minimum value: 0. The unit of textHaloBlur is in pixels.
    *
    * @param textHaloBlur the text-halo-blur value
    * @return this
@@ -513,14 +640,14 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
   }
 
   /**
-   * The color of the text's halo, which helps it stand out from backgrounds.
+   * The color of the text's halo, which helps it stand out from backgrounds. Default value: "rgba(0, 0, 0, 0)".
    */
   var textHaloColor: String? = null
 
   /**
    * Set text-halo-color to initialise the pointAnnotation with.
    *
-   * The color of the text's halo, which helps it stand out from backgrounds.
+   * The color of the text's halo, which helps it stand out from backgrounds. Default value: "rgba(0, 0, 0, 0)".
    *
    * @param textHaloColor the text-halo-color value
    * @return this
@@ -533,7 +660,7 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
   /**
    * Set text-halo-color to initialise the pointAnnotation with.
    *
-   * The color of the text's halo, which helps it stand out from backgrounds.
+   * The color of the text's halo, which helps it stand out from backgrounds. Default value: "rgba(0, 0, 0, 0)".
    *
    * @param textHaloColor the text-halo-color value with ColorInt format
    * @return this
@@ -544,14 +671,14 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
   }
 
   /**
-   * Distance of halo to the font outline. Max text halo width is 1/4 of the font-size.
+   * Distance of halo to the font outline. Max text halo width is 1/4 of the font-size. Default value: 0. Minimum value: 0. The unit of textHaloWidth is in pixels.
    */
   var textHaloWidth: Double? = null
 
   /**
    * Set text-halo-width to initialise the pointAnnotation with.
    *
-   * Distance of halo to the font outline. Max text halo width is 1/4 of the font-size.
+   * Distance of halo to the font outline. Max text halo width is 1/4 of the font-size. Default value: 0. Minimum value: 0. The unit of textHaloWidth is in pixels.
    *
    * @param textHaloWidth the text-halo-width value
    * @return this
@@ -562,14 +689,32 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
   }
 
   /**
-   * The opacity at which the text will be drawn.
+   * The opacity at which the text will be drawn in case of being depth occluded. Absent value means full occlusion against terrain only. Default value: 0. Value range: [0, 1]
+   */
+  var textOcclusionOpacity: Double? = null
+
+  /**
+   * Set text-occlusion-opacity to initialise the pointAnnotation with.
+   *
+   * The opacity at which the text will be drawn in case of being depth occluded. Absent value means full occlusion against terrain only. Default value: 0. Value range: [0, 1]
+   *
+   * @param textOcclusionOpacity the text-occlusion-opacity value
+   * @return this
+   */
+  fun withTextOcclusionOpacity(textOcclusionOpacity: Double): PointAnnotationOptions {
+    this.textOcclusionOpacity = textOcclusionOpacity
+    return this
+  }
+
+  /**
+   * The opacity at which the text will be drawn. Default value: 1. Value range: [0, 1]
    */
   var textOpacity: Double? = null
 
   /**
    * Set text-opacity to initialise the pointAnnotation with.
    *
-   * The opacity at which the text will be drawn.
+   * The opacity at which the text will be drawn. Default value: 1. Value range: [0, 1]
    *
    * @param textOpacity the text-opacity value
    * @return this
@@ -631,6 +776,8 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
   /**
    * Set whether this pointAnnotation should be draggable,
    * meaning it can be dragged across the screen when touched and moved.
+   * Note: If this param is used when pointAnnotation is also part of the cluster, then once pointAnnotation is dragged,
+   * it moves out of the cluster and can't be added back to it and is rendered as a separate pointAnnotation.
    *
    * @param draggable should be draggable
    */
@@ -667,7 +814,7 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
    * @return the annotation that is built
    */
   override fun build(
-    id: Long,
+    id: String,
     annotationManager: AnnotationManager<Point, PointAnnotation, *, *, *, *, *>
   ): PointAnnotation {
     if (geometry == null) {
@@ -688,6 +835,12 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
     }
     iconSize?.let {
       jsonObject.addProperty(PROPERTY_ICON_SIZE, it)
+    }
+    iconTextFit?.let {
+      jsonObject.addProperty(PROPERTY_ICON_TEXT_FIT, it.value)
+    }
+    iconTextFitPadding?.let {
+      jsonObject.add(PROPERTY_ICON_TEXT_FIT_PADDING, convertDoubleArray(it))
     }
     symbolSortKey?.let {
       jsonObject.addProperty(PROPERTY_SYMBOL_SORT_KEY, it)
@@ -728,6 +881,9 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
     iconColor?.let {
       jsonObject.addProperty(PROPERTY_ICON_COLOR, it)
     }
+    iconEmissiveStrength?.let {
+      jsonObject.addProperty(PROPERTY_ICON_EMISSIVE_STRENGTH, it)
+    }
     iconHaloBlur?.let {
       jsonObject.addProperty(PROPERTY_ICON_HALO_BLUR, it)
     }
@@ -737,11 +893,23 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
     iconHaloWidth?.let {
       jsonObject.addProperty(PROPERTY_ICON_HALO_WIDTH, it)
     }
+    iconImageCrossFade?.let {
+      jsonObject.addProperty(PROPERTY_ICON_IMAGE_CROSS_FADE, it)
+    }
+    iconOcclusionOpacity?.let {
+      jsonObject.addProperty(PROPERTY_ICON_OCCLUSION_OPACITY, it)
+    }
     iconOpacity?.let {
       jsonObject.addProperty(PROPERTY_ICON_OPACITY, it)
     }
+    symbolZOffset?.let {
+      jsonObject.addProperty(PROPERTY_SYMBOL_Z_OFFSET, it)
+    }
     textColor?.let {
       jsonObject.addProperty(PROPERTY_TEXT_COLOR, it)
+    }
+    textEmissiveStrength?.let {
+      jsonObject.addProperty(PROPERTY_TEXT_EMISSIVE_STRENGTH, it)
     }
     textHaloBlur?.let {
       jsonObject.addProperty(PROPERTY_TEXT_HALO_BLUR, it)
@@ -751,6 +919,9 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
     }
     textHaloWidth?.let {
       jsonObject.addProperty(PROPERTY_TEXT_HALO_WIDTH, it)
+    }
+    textOcclusionOpacity?.let {
+      jsonObject.addProperty(PROPERTY_TEXT_OCCLUSION_OPACITY, it)
     }
     textOpacity?.let {
       jsonObject.addProperty(PROPERTY_TEXT_OPACITY, it)
@@ -783,6 +954,12 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
 
     /** The property for icon-size */
     const val PROPERTY_ICON_SIZE = "icon-size"
+
+    /** The property for icon-text-fit */
+    const val PROPERTY_ICON_TEXT_FIT = "icon-text-fit"
+
+    /** The property for icon-text-fit-padding */
+    const val PROPERTY_ICON_TEXT_FIT_PADDING = "icon-text-fit-padding"
 
     /** The property for symbol-sort-key */
     const val PROPERTY_SYMBOL_SORT_KEY = "symbol-sort-key"
@@ -823,6 +1000,9 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
     /** The property for icon-color */
     const val PROPERTY_ICON_COLOR = "icon-color"
 
+    /** The property for icon-emissive-strength */
+    const val PROPERTY_ICON_EMISSIVE_STRENGTH = "icon-emissive-strength"
+
     /** The property for icon-halo-blur */
     const val PROPERTY_ICON_HALO_BLUR = "icon-halo-blur"
 
@@ -832,11 +1012,23 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
     /** The property for icon-halo-width */
     const val PROPERTY_ICON_HALO_WIDTH = "icon-halo-width"
 
+    /** The property for icon-image-cross-fade */
+    const val PROPERTY_ICON_IMAGE_CROSS_FADE = "icon-image-cross-fade"
+
+    /** The property for icon-occlusion-opacity */
+    const val PROPERTY_ICON_OCCLUSION_OPACITY = "icon-occlusion-opacity"
+
     /** The property for icon-opacity */
     const val PROPERTY_ICON_OPACITY = "icon-opacity"
 
+    /** The property for symbol-z-offset */
+    const val PROPERTY_SYMBOL_Z_OFFSET = "symbol-z-offset"
+
     /** The property for text-color */
     const val PROPERTY_TEXT_COLOR = "text-color"
+
+    /** The property for text-emissive-strength */
+    const val PROPERTY_TEXT_EMISSIVE_STRENGTH = "text-emissive-strength"
 
     /** The property for text-halo-blur */
     const val PROPERTY_TEXT_HALO_BLUR = "text-halo-blur"
@@ -846,6 +1038,9 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
 
     /** The property for text-halo-width */
     const val PROPERTY_TEXT_HALO_WIDTH = "text-halo-width"
+
+    /** The property for text-occlusion-opacity */
+    const val PROPERTY_TEXT_OCCLUSION_OPACITY = "text-occlusion-opacity"
 
     /** The property for text-opacity */
     const val PROPERTY_TEXT_OPACITY = "text-opacity"
@@ -883,6 +1078,12 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
       }
       if (feature.hasProperty(PROPERTY_ICON_SIZE)) {
         options.iconSize = feature.getProperty(PROPERTY_ICON_SIZE).asDouble
+      }
+      if (feature.hasProperty(PROPERTY_ICON_TEXT_FIT)) {
+        options.iconTextFit = IconTextFit.valueOf(feature.getProperty(PROPERTY_ICON_TEXT_FIT).asString)
+      }
+      if (feature.hasProperty(PROPERTY_ICON_TEXT_FIT_PADDING)) {
+        options.iconTextFitPadding = toDoubleArray(feature.getProperty(PROPERTY_ICON_TEXT_FIT_PADDING).asJsonArray)
       }
       if (feature.hasProperty(PROPERTY_SYMBOL_SORT_KEY)) {
         options.symbolSortKey = feature.getProperty(PROPERTY_SYMBOL_SORT_KEY).asDouble
@@ -923,6 +1124,9 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
       if (feature.hasProperty(PROPERTY_ICON_COLOR)) {
         options.iconColor = feature.getProperty(PROPERTY_ICON_COLOR).asString
       }
+      if (feature.hasProperty(PROPERTY_ICON_EMISSIVE_STRENGTH)) {
+        options.iconEmissiveStrength = feature.getProperty(PROPERTY_ICON_EMISSIVE_STRENGTH).asDouble
+      }
       if (feature.hasProperty(PROPERTY_ICON_HALO_BLUR)) {
         options.iconHaloBlur = feature.getProperty(PROPERTY_ICON_HALO_BLUR).asDouble
       }
@@ -932,11 +1136,23 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
       if (feature.hasProperty(PROPERTY_ICON_HALO_WIDTH)) {
         options.iconHaloWidth = feature.getProperty(PROPERTY_ICON_HALO_WIDTH).asDouble
       }
+      if (feature.hasProperty(PROPERTY_ICON_IMAGE_CROSS_FADE)) {
+        options.iconImageCrossFade = feature.getProperty(PROPERTY_ICON_IMAGE_CROSS_FADE).asDouble
+      }
+      if (feature.hasProperty(PROPERTY_ICON_OCCLUSION_OPACITY)) {
+        options.iconOcclusionOpacity = feature.getProperty(PROPERTY_ICON_OCCLUSION_OPACITY).asDouble
+      }
       if (feature.hasProperty(PROPERTY_ICON_OPACITY)) {
         options.iconOpacity = feature.getProperty(PROPERTY_ICON_OPACITY).asDouble
       }
+      if (feature.hasProperty(PROPERTY_SYMBOL_Z_OFFSET)) {
+        options.symbolZOffset = feature.getProperty(PROPERTY_SYMBOL_Z_OFFSET).asDouble
+      }
       if (feature.hasProperty(PROPERTY_TEXT_COLOR)) {
         options.textColor = feature.getProperty(PROPERTY_TEXT_COLOR).asString
+      }
+      if (feature.hasProperty(PROPERTY_TEXT_EMISSIVE_STRENGTH)) {
+        options.textEmissiveStrength = feature.getProperty(PROPERTY_TEXT_EMISSIVE_STRENGTH).asDouble
       }
       if (feature.hasProperty(PROPERTY_TEXT_HALO_BLUR)) {
         options.textHaloBlur = feature.getProperty(PROPERTY_TEXT_HALO_BLUR).asDouble
@@ -946,6 +1162,9 @@ class PointAnnotationOptions : AnnotationOptions<Point, PointAnnotation> {
       }
       if (feature.hasProperty(PROPERTY_TEXT_HALO_WIDTH)) {
         options.textHaloWidth = feature.getProperty(PROPERTY_TEXT_HALO_WIDTH).asDouble
+      }
+      if (feature.hasProperty(PROPERTY_TEXT_OCCLUSION_OPACITY)) {
+        options.textOcclusionOpacity = feature.getProperty(PROPERTY_TEXT_OCCLUSION_OPACITY).asDouble
       }
       if (feature.hasProperty(PROPERTY_TEXT_OPACITY)) {
         options.textOpacity = feature.getProperty(PROPERTY_TEXT_OPACITY).asDouble

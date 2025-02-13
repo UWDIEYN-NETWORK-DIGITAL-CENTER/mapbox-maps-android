@@ -6,6 +6,11 @@ import com.google.gson.annotations.SerializedName
  * Describes source data type for response in resource-request event.
  * @param value String value of this enum
  */
+@Deprecated(
+  message = "This enum class is deprecated, and will be removed in next major release.",
+  replaceWith = ReplaceWith("ResponseSourceType"),
+  level = DeprecationLevel.WARNING
+)
 enum class ResponseSourceType(val value: String) {
   /**
    * source type as network.

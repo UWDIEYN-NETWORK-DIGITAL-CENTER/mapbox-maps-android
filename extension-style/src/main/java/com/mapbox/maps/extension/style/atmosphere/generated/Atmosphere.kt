@@ -5,9 +5,10 @@ import android.util.Log
 import androidx.annotation.ColorInt
 import androidx.annotation.UiThread
 import com.mapbox.bindgen.Value
+import com.mapbox.maps.MapboxExperimental
 import com.mapbox.maps.MapboxStyleException
+import com.mapbox.maps.MapboxStyleManager
 import com.mapbox.maps.extension.style.StyleContract
-import com.mapbox.maps.extension.style.StyleInterface
 import com.mapbox.maps.extension.style.expressions.generated.Expression
 import com.mapbox.maps.extension.style.layers.properties.PropertyValue
 import com.mapbox.maps.extension.style.types.AtmosphereDsl
@@ -24,15 +25,15 @@ import com.mapbox.maps.extension.style.utils.unwrap
  */
 @UiThread
 class Atmosphere : AtmosphereDslReceiver, StyleContract.StyleAtmosphereExtension {
-  internal var delegate: StyleInterface? = null
+  internal var delegate: MapboxStyleManager? = null
   private val properties = HashMap<String, PropertyValue<*>>()
 
   /**
-   * The color of the atmosphere region immediately below the horizon and within the `range` and above the horizon and within `horizon-blend`. Using opacity is recommended only for smoothly transitioning fog on/off as anything less than 100% opacity results in more tiles loaded and drawn.
+   * The color of the atmosphere region immediately below the horizon and within the `range` and above the horizon and within `horizon-blend`. Using opacity is recommended only for smoothly transitioning fog on/off as anything less than 100% opacity results in more tiles loaded and drawn. Default value: "#ffffff".
    */
   val colorAsColorInt: Int?
     /**
-     * The color of the atmosphere region immediately below the horizon and within the `range` and above the horizon and within `horizon-blend`. Using opacity is recommended only for smoothly transitioning fog on/off as anything less than 100% opacity results in more tiles loaded and drawn.
+     * The color of the atmosphere region immediately below the horizon and within the `range` and above the horizon and within `horizon-blend`. Using opacity is recommended only for smoothly transitioning fog on/off as anything less than 100% opacity results in more tiles loaded and drawn. Default value: "#ffffff".
      *
      * @return color as int
      */
@@ -44,20 +45,20 @@ class Atmosphere : AtmosphereDslReceiver, StyleContract.StyleAtmosphereExtension
       return null
     }
   /**
-   * The color of the atmosphere region immediately below the horizon and within the `range` and above the horizon and within `horizon-blend`. Using opacity is recommended only for smoothly transitioning fog on/off as anything less than 100% opacity results in more tiles loaded and drawn.
+   * The color of the atmosphere region immediately below the horizon and within the `range` and above the horizon and within `horizon-blend`. Using opacity is recommended only for smoothly transitioning fog on/off as anything less than 100% opacity results in more tiles loaded and drawn. Default value: "#ffffff".
    *
    * @param color as int
    */
-  override fun color(@ColorInt color: Int) = apply {
+  override fun color(@ColorInt color: Int): Atmosphere = apply {
     val propertyValue = PropertyValue("color", colorIntToRgbaExpression(color))
     setProperty(propertyValue)
   }
   /**
-   * The color of the atmosphere region immediately below the horizon and within the `range` and above the horizon and within `horizon-blend`. Using opacity is recommended only for smoothly transitioning fog on/off as anything less than 100% opacity results in more tiles loaded and drawn.
+   * The color of the atmosphere region immediately below the horizon and within the `range` and above the horizon and within `horizon-blend`. Using opacity is recommended only for smoothly transitioning fog on/off as anything less than 100% opacity results in more tiles loaded and drawn. Default value: "#ffffff".
    */
   val color: String?
     /**
-     * The color of the atmosphere region immediately below the horizon and within the `range` and above the horizon and within `horizon-blend`. Using opacity is recommended only for smoothly transitioning fog on/off as anything less than 100% opacity results in more tiles loaded and drawn.
+     * The color of the atmosphere region immediately below the horizon and within the `range` and above the horizon and within `horizon-blend`. Using opacity is recommended only for smoothly transitioning fog on/off as anything less than 100% opacity results in more tiles loaded and drawn. Default value: "#ffffff".
      *
      * @return color as String
      */
@@ -69,11 +70,11 @@ class Atmosphere : AtmosphereDslReceiver, StyleContract.StyleAtmosphereExtension
     }
 
   /**
-   * The color of the atmosphere region immediately below the horizon and within the `range` and above the horizon and within `horizon-blend`. Using opacity is recommended only for smoothly transitioning fog on/off as anything less than 100% opacity results in more tiles loaded and drawn.
+   * The color of the atmosphere region immediately below the horizon and within the `range` and above the horizon and within `horizon-blend`. Using opacity is recommended only for smoothly transitioning fog on/off as anything less than 100% opacity results in more tiles loaded and drawn. Default value: "#ffffff".
    *
    * @param color as String
    */
-  override fun color(color: String) = apply {
+  override fun color(color: String): Atmosphere = apply {
     setProperty(PropertyValue("color", color))
   }
 
@@ -95,7 +96,7 @@ class Atmosphere : AtmosphereDslReceiver, StyleContract.StyleAtmosphereExtension
    *
    * @param options transition options for color
    */
-  override fun colorTransition(options: StyleTransition) = apply {
+  override fun colorTransition(options: StyleTransition): Atmosphere = apply {
     val propertyValue = PropertyValue("color-transition", options)
     setProperty(propertyValue)
   }
@@ -103,18 +104,18 @@ class Atmosphere : AtmosphereDslReceiver, StyleContract.StyleAtmosphereExtension
   /**
    * DSL for [colorTransition].
    */
-  override fun colorTransition(block: StyleTransition.Builder.() -> Unit) = apply {
+  override fun colorTransition(block: StyleTransition.Builder.() -> Unit): Atmosphere = apply {
     colorTransition(StyleTransition.Builder().apply(block).build())
   }
 
   /**
-   * The color of the atmosphere region immediately below the horizon and within the `range` and above the horizon and within `horizon-blend`. Using opacity is recommended only for smoothly transitioning fog on/off as anything less than 100% opacity results in more tiles loaded and drawn.
+   * The color of the atmosphere region immediately below the horizon and within the `range` and above the horizon and within `horizon-blend`. Using opacity is recommended only for smoothly transitioning fog on/off as anything less than 100% opacity results in more tiles loaded and drawn. Default value: "#ffffff".
    *
    * This is an Expression representation of "color".
    */
   val colorAsExpression: Expression?
     /**
-     * The color of the atmosphere region immediately below the horizon and within the `range` and above the horizon and within `horizon-blend`. Using opacity is recommended only for smoothly transitioning fog on/off as anything less than 100% opacity results in more tiles loaded and drawn.
+     * The color of the atmosphere region immediately below the horizon and within the `range` and above the horizon and within `horizon-blend`. Using opacity is recommended only for smoothly transitioning fog on/off as anything less than 100% opacity results in more tiles loaded and drawn. Default value: "#ffffff".
      *
      * Get the color property as an Expression
      *
@@ -127,20 +128,46 @@ class Atmosphere : AtmosphereDslReceiver, StyleContract.StyleAtmosphereExtension
       return null
     }
   /**
-   * The color of the atmosphere region immediately below the horizon and within the `range` and above the horizon and within `horizon-blend`. Using opacity is recommended only for smoothly transitioning fog on/off as anything less than 100% opacity results in more tiles loaded and drawn.
+   * The color of the atmosphere region immediately below the horizon and within the `range` and above the horizon and within `horizon-blend`. Using opacity is recommended only for smoothly transitioning fog on/off as anything less than 100% opacity results in more tiles loaded and drawn. Default value: "#ffffff".
    *
    * @param color value of color as Expression
    */
-  override fun color(color: Expression) = apply {
+  override fun color(color: Expression): Atmosphere = apply {
     val propertyValue = PropertyValue("color", color)
     setProperty(propertyValue)
   }
+
   /**
-   * The color of the atmosphere region above the horizon, `high-color` extends further above the horizon than the `color` property and its spread can be controlled with `horizon-blend`. The opacity can be set to `0` to remove the high atmosphere color contribution.
+   * Сolor theme override for [color].
+   */
+  @MapboxExperimental
+  val colorUseTheme: String?
+    /**
+     * Get the ColorUseTheme property
+     *
+     * @return current ColorUseTheme property as String
+     */
+    get() {
+      return getPropertyValue("color-use-theme")
+    }
+
+  /**
+   * Set the ColorUseTheme as String
+   *
+   * @param colorUseTheme theme value for color. Overrides applying of color theme if "none" string value is set. To follow default theme "default" sting value should be set.
+   */
+  @MapboxExperimental
+  override fun colorUseTheme(colorUseTheme: String): Atmosphere = apply {
+    val propertyValue = PropertyValue("color-use-theme", colorUseTheme)
+    setProperty(propertyValue)
+  }
+
+  /**
+   * The color of the atmosphere region above the horizon, `high-color` extends further above the horizon than the `color` property and its spread can be controlled with `horizon-blend`. The opacity can be set to `0` to remove the high atmosphere color contribution. Default value: "#245cdf".
    */
   val highColorAsColorInt: Int?
     /**
-     * The color of the atmosphere region above the horizon, `high-color` extends further above the horizon than the `color` property and its spread can be controlled with `horizon-blend`. The opacity can be set to `0` to remove the high atmosphere color contribution.
+     * The color of the atmosphere region above the horizon, `high-color` extends further above the horizon than the `color` property and its spread can be controlled with `horizon-blend`. The opacity can be set to `0` to remove the high atmosphere color contribution. Default value: "#245cdf".
      *
      * @return highColor as int
      */
@@ -152,20 +179,20 @@ class Atmosphere : AtmosphereDslReceiver, StyleContract.StyleAtmosphereExtension
       return null
     }
   /**
-   * The color of the atmosphere region above the horizon, `high-color` extends further above the horizon than the `color` property and its spread can be controlled with `horizon-blend`. The opacity can be set to `0` to remove the high atmosphere color contribution.
+   * The color of the atmosphere region above the horizon, `high-color` extends further above the horizon than the `color` property and its spread can be controlled with `horizon-blend`. The opacity can be set to `0` to remove the high atmosphere color contribution. Default value: "#245cdf".
    *
    * @param highColor as int
    */
-  override fun highColor(@ColorInt highColor: Int) = apply {
+  override fun highColor(@ColorInt highColor: Int): Atmosphere = apply {
     val propertyValue = PropertyValue("high-color", colorIntToRgbaExpression(highColor))
     setProperty(propertyValue)
   }
   /**
-   * The color of the atmosphere region above the horizon, `high-color` extends further above the horizon than the `color` property and its spread can be controlled with `horizon-blend`. The opacity can be set to `0` to remove the high atmosphere color contribution.
+   * The color of the atmosphere region above the horizon, `high-color` extends further above the horizon than the `color` property and its spread can be controlled with `horizon-blend`. The opacity can be set to `0` to remove the high atmosphere color contribution. Default value: "#245cdf".
    */
   val highColor: String?
     /**
-     * The color of the atmosphere region above the horizon, `high-color` extends further above the horizon than the `color` property and its spread can be controlled with `horizon-blend`. The opacity can be set to `0` to remove the high atmosphere color contribution.
+     * The color of the atmosphere region above the horizon, `high-color` extends further above the horizon than the `color` property and its spread can be controlled with `horizon-blend`. The opacity can be set to `0` to remove the high atmosphere color contribution. Default value: "#245cdf".
      *
      * @return high-color as String
      */
@@ -177,11 +204,11 @@ class Atmosphere : AtmosphereDslReceiver, StyleContract.StyleAtmosphereExtension
     }
 
   /**
-   * The color of the atmosphere region above the horizon, `high-color` extends further above the horizon than the `color` property and its spread can be controlled with `horizon-blend`. The opacity can be set to `0` to remove the high atmosphere color contribution.
+   * The color of the atmosphere region above the horizon, `high-color` extends further above the horizon than the `color` property and its spread can be controlled with `horizon-blend`. The opacity can be set to `0` to remove the high atmosphere color contribution. Default value: "#245cdf".
    *
    * @param highColor as String
    */
-  override fun highColor(highColor: String) = apply {
+  override fun highColor(highColor: String): Atmosphere = apply {
     setProperty(PropertyValue("high-color", highColor))
   }
 
@@ -203,7 +230,7 @@ class Atmosphere : AtmosphereDslReceiver, StyleContract.StyleAtmosphereExtension
    *
    * @param options transition options for high-color
    */
-  override fun highColorTransition(options: StyleTransition) = apply {
+  override fun highColorTransition(options: StyleTransition): Atmosphere = apply {
     val propertyValue = PropertyValue("high-color-transition", options)
     setProperty(propertyValue)
   }
@@ -211,18 +238,18 @@ class Atmosphere : AtmosphereDslReceiver, StyleContract.StyleAtmosphereExtension
   /**
    * DSL for [highColorTransition].
    */
-  override fun highColorTransition(block: StyleTransition.Builder.() -> Unit) = apply {
+  override fun highColorTransition(block: StyleTransition.Builder.() -> Unit): Atmosphere = apply {
     highColorTransition(StyleTransition.Builder().apply(block).build())
   }
 
   /**
-   * The color of the atmosphere region above the horizon, `high-color` extends further above the horizon than the `color` property and its spread can be controlled with `horizon-blend`. The opacity can be set to `0` to remove the high atmosphere color contribution.
+   * The color of the atmosphere region above the horizon, `high-color` extends further above the horizon than the `color` property and its spread can be controlled with `horizon-blend`. The opacity can be set to `0` to remove the high atmosphere color contribution. Default value: "#245cdf".
    *
    * This is an Expression representation of "high-color".
    */
   val highColorAsExpression: Expression?
     /**
-     * The color of the atmosphere region above the horizon, `high-color` extends further above the horizon than the `color` property and its spread can be controlled with `horizon-blend`. The opacity can be set to `0` to remove the high atmosphere color contribution.
+     * The color of the atmosphere region above the horizon, `high-color` extends further above the horizon than the `color` property and its spread can be controlled with `horizon-blend`. The opacity can be set to `0` to remove the high atmosphere color contribution. Default value: "#245cdf".
      *
      * Get the highColor property as an Expression
      *
@@ -235,20 +262,46 @@ class Atmosphere : AtmosphereDslReceiver, StyleContract.StyleAtmosphereExtension
       return null
     }
   /**
-   * The color of the atmosphere region above the horizon, `high-color` extends further above the horizon than the `color` property and its spread can be controlled with `horizon-blend`. The opacity can be set to `0` to remove the high atmosphere color contribution.
+   * The color of the atmosphere region above the horizon, `high-color` extends further above the horizon than the `color` property and its spread can be controlled with `horizon-blend`. The opacity can be set to `0` to remove the high atmosphere color contribution. Default value: "#245cdf".
    *
    * @param highColor value of highColor as Expression
    */
-  override fun highColor(highColor: Expression) = apply {
+  override fun highColor(highColor: Expression): Atmosphere = apply {
     val propertyValue = PropertyValue("high-color", highColor)
     setProperty(propertyValue)
   }
+
   /**
-   * Horizon blend applies a smooth fade from the color of the atmosphere to the color of space. A value of zero leaves a sharp transition from atmosphere to space. Increasing the value blends the color of atmosphere into increasingly high angles of the sky.
+   * Сolor theme override for [highColor].
+   */
+  @MapboxExperimental
+  val highColorUseTheme: String?
+    /**
+     * Get the HighColorUseTheme property
+     *
+     * @return current HighColorUseTheme property as String
+     */
+    get() {
+      return getPropertyValue("high-color-use-theme")
+    }
+
+  /**
+   * Set the HighColorUseTheme as String
+   *
+   * @param highColorUseTheme theme value for highColor. Overrides applying of color theme if "none" string value is set. To follow default theme "default" sting value should be set.
+   */
+  @MapboxExperimental
+  override fun highColorUseTheme(highColorUseTheme: String): Atmosphere = apply {
+    val propertyValue = PropertyValue("high-color-use-theme", highColorUseTheme)
+    setProperty(propertyValue)
+  }
+
+  /**
+   * Horizon blend applies a smooth fade from the color of the atmosphere to the color of space. A value of zero leaves a sharp transition from atmosphere to space. Increasing the value blends the color of atmosphere into increasingly high angles of the sky. Default value: "["interpolate",["linear"],["zoom"],4,0.2,7,0.1]". Value range: [0, 1]
    */
   val horizonBlend: Double?
     /**
-     * Horizon blend applies a smooth fade from the color of the atmosphere to the color of space. A value of zero leaves a sharp transition from atmosphere to space. Increasing the value blends the color of atmosphere into increasingly high angles of the sky.
+     * Horizon blend applies a smooth fade from the color of the atmosphere to the color of space. A value of zero leaves a sharp transition from atmosphere to space. Increasing the value blends the color of atmosphere into increasingly high angles of the sky. Default value: "["interpolate",["linear"],["zoom"],4,0.2,7,0.1]". Value range: [0, 1]
      *
      * @return horizon-blend as Double
      */
@@ -257,11 +310,11 @@ class Atmosphere : AtmosphereDslReceiver, StyleContract.StyleAtmosphereExtension
     }
 
   /**
-   * Horizon blend applies a smooth fade from the color of the atmosphere to the color of space. A value of zero leaves a sharp transition from atmosphere to space. Increasing the value blends the color of atmosphere into increasingly high angles of the sky.
+   * Horizon blend applies a smooth fade from the color of the atmosphere to the color of space. A value of zero leaves a sharp transition from atmosphere to space. Increasing the value blends the color of atmosphere into increasingly high angles of the sky. Default value: "["interpolate",["linear"],["zoom"],4,0.2,7,0.1]". Value range: [0, 1]
    *
    * @param horizonBlend as Double
    */
-  override fun horizonBlend(horizonBlend: Double) = apply {
+  override fun horizonBlend(horizonBlend: Double): Atmosphere = apply {
     setProperty(PropertyValue("horizon-blend", horizonBlend))
   }
 
@@ -283,7 +336,7 @@ class Atmosphere : AtmosphereDslReceiver, StyleContract.StyleAtmosphereExtension
    *
    * @param options transition options for horizon-blend
    */
-  override fun horizonBlendTransition(options: StyleTransition) = apply {
+  override fun horizonBlendTransition(options: StyleTransition): Atmosphere = apply {
     val propertyValue = PropertyValue("horizon-blend-transition", options)
     setProperty(propertyValue)
   }
@@ -291,18 +344,18 @@ class Atmosphere : AtmosphereDslReceiver, StyleContract.StyleAtmosphereExtension
   /**
    * DSL for [horizonBlendTransition].
    */
-  override fun horizonBlendTransition(block: StyleTransition.Builder.() -> Unit) = apply {
+  override fun horizonBlendTransition(block: StyleTransition.Builder.() -> Unit): Atmosphere = apply {
     horizonBlendTransition(StyleTransition.Builder().apply(block).build())
   }
 
   /**
-   * Horizon blend applies a smooth fade from the color of the atmosphere to the color of space. A value of zero leaves a sharp transition from atmosphere to space. Increasing the value blends the color of atmosphere into increasingly high angles of the sky.
+   * Horizon blend applies a smooth fade from the color of the atmosphere to the color of space. A value of zero leaves a sharp transition from atmosphere to space. Increasing the value blends the color of atmosphere into increasingly high angles of the sky. Default value: "["interpolate",["linear"],["zoom"],4,0.2,7,0.1]". Value range: [0, 1]
    *
    * This is an Expression representation of "horizon-blend".
    */
   val horizonBlendAsExpression: Expression?
     /**
-     * Horizon blend applies a smooth fade from the color of the atmosphere to the color of space. A value of zero leaves a sharp transition from atmosphere to space. Increasing the value blends the color of atmosphere into increasingly high angles of the sky.
+     * Horizon blend applies a smooth fade from the color of the atmosphere to the color of space. A value of zero leaves a sharp transition from atmosphere to space. Increasing the value blends the color of atmosphere into increasingly high angles of the sky. Default value: "["interpolate",["linear"],["zoom"],4,0.2,7,0.1]". Value range: [0, 1]
      *
      * Get the horizonBlend property as an Expression
      *
@@ -318,20 +371,20 @@ class Atmosphere : AtmosphereDslReceiver, StyleContract.StyleAtmosphereExtension
       return null
     }
   /**
-   * Horizon blend applies a smooth fade from the color of the atmosphere to the color of space. A value of zero leaves a sharp transition from atmosphere to space. Increasing the value blends the color of atmosphere into increasingly high angles of the sky.
+   * Horizon blend applies a smooth fade from the color of the atmosphere to the color of space. A value of zero leaves a sharp transition from atmosphere to space. Increasing the value blends the color of atmosphere into increasingly high angles of the sky. Default value: "["interpolate",["linear"],["zoom"],4,0.2,7,0.1]". Value range: [0, 1]
    *
    * @param horizonBlend value of horizonBlend as Expression
    */
-  override fun horizonBlend(horizonBlend: Expression) = apply {
+  override fun horizonBlend(horizonBlend: Expression): Atmosphere = apply {
     val propertyValue = PropertyValue("horizon-blend", horizonBlend)
     setProperty(propertyValue)
   }
   /**
-   * The start and end distance range in which fog fades from fully transparent to fully opaque. The distance to the point at the center of the map is defined as zero, so that negative range values are closer to the camera, and positive values are farther away.
+   * The start and end distance range in which fog fades from fully transparent to fully opaque. The distance to the point at the center of the map is defined as zero, so that negative range values are closer to the camera, and positive values are farther away. Default value: [0.5,10]. Value range: [-20, 20]
    */
   val range: List<Double>?
     /**
-     * The start and end distance range in which fog fades from fully transparent to fully opaque. The distance to the point at the center of the map is defined as zero, so that negative range values are closer to the camera, and positive values are farther away.
+     * The start and end distance range in which fog fades from fully transparent to fully opaque. The distance to the point at the center of the map is defined as zero, so that negative range values are closer to the camera, and positive values are farther away. Default value: [0.5,10]. Value range: [-20, 20]
      *
      * @return range as List<Double>
      */
@@ -340,11 +393,11 @@ class Atmosphere : AtmosphereDslReceiver, StyleContract.StyleAtmosphereExtension
     }
 
   /**
-   * The start and end distance range in which fog fades from fully transparent to fully opaque. The distance to the point at the center of the map is defined as zero, so that negative range values are closer to the camera, and positive values are farther away.
+   * The start and end distance range in which fog fades from fully transparent to fully opaque. The distance to the point at the center of the map is defined as zero, so that negative range values are closer to the camera, and positive values are farther away. Default value: [0.5,10]. Value range: [-20, 20]
    *
    * @param range as List<Double>
    */
-  override fun range(range: List<Double>) = apply {
+  override fun range(range: List<Double>): Atmosphere = apply {
     setProperty(PropertyValue("range", range))
   }
 
@@ -366,7 +419,7 @@ class Atmosphere : AtmosphereDslReceiver, StyleContract.StyleAtmosphereExtension
    *
    * @param options transition options for range
    */
-  override fun rangeTransition(options: StyleTransition) = apply {
+  override fun rangeTransition(options: StyleTransition): Atmosphere = apply {
     val propertyValue = PropertyValue("range-transition", options)
     setProperty(propertyValue)
   }
@@ -374,18 +427,18 @@ class Atmosphere : AtmosphereDslReceiver, StyleContract.StyleAtmosphereExtension
   /**
    * DSL for [rangeTransition].
    */
-  override fun rangeTransition(block: StyleTransition.Builder.() -> Unit) = apply {
+  override fun rangeTransition(block: StyleTransition.Builder.() -> Unit): Atmosphere = apply {
     rangeTransition(StyleTransition.Builder().apply(block).build())
   }
 
   /**
-   * The start and end distance range in which fog fades from fully transparent to fully opaque. The distance to the point at the center of the map is defined as zero, so that negative range values are closer to the camera, and positive values are farther away.
+   * The start and end distance range in which fog fades from fully transparent to fully opaque. The distance to the point at the center of the map is defined as zero, so that negative range values are closer to the camera, and positive values are farther away. Default value: [0.5,10]. Value range: [-20, 20]
    *
    * This is an Expression representation of "range".
    */
   val rangeAsExpression: Expression?
     /**
-     * The start and end distance range in which fog fades from fully transparent to fully opaque. The distance to the point at the center of the map is defined as zero, so that negative range values are closer to the camera, and positive values are farther away.
+     * The start and end distance range in which fog fades from fully transparent to fully opaque. The distance to the point at the center of the map is defined as zero, so that negative range values are closer to the camera, and positive values are farther away. Default value: [0.5,10]. Value range: [-20, 20]
      *
      * Get the range property as an Expression
      *
@@ -401,20 +454,20 @@ class Atmosphere : AtmosphereDslReceiver, StyleContract.StyleAtmosphereExtension
       return null
     }
   /**
-   * The start and end distance range in which fog fades from fully transparent to fully opaque. The distance to the point at the center of the map is defined as zero, so that negative range values are closer to the camera, and positive values are farther away.
+   * The start and end distance range in which fog fades from fully transparent to fully opaque. The distance to the point at the center of the map is defined as zero, so that negative range values are closer to the camera, and positive values are farther away. Default value: [0.5,10]. Value range: [-20, 20]
    *
    * @param range value of range as Expression
    */
-  override fun range(range: Expression) = apply {
+  override fun range(range: Expression): Atmosphere = apply {
     val propertyValue = PropertyValue("range", range)
     setProperty(propertyValue)
   }
   /**
-   * The color of the region above the horizon and after the end of the `horizon-blend` contribution. The opacity can be set to `0` to have a transparent background.
+   * The color of the region above the horizon and after the end of the `horizon-blend` contribution. The opacity can be set to `0` to have a transparent background. Default value: "["interpolate",["linear"],["zoom"],4,"#010b19",7,"#367ab9"]".
    */
   val spaceColorAsColorInt: Int?
     /**
-     * The color of the region above the horizon and after the end of the `horizon-blend` contribution. The opacity can be set to `0` to have a transparent background.
+     * The color of the region above the horizon and after the end of the `horizon-blend` contribution. The opacity can be set to `0` to have a transparent background. Default value: "["interpolate",["linear"],["zoom"],4,"#010b19",7,"#367ab9"]".
      *
      * @return spaceColor as int
      */
@@ -426,20 +479,20 @@ class Atmosphere : AtmosphereDslReceiver, StyleContract.StyleAtmosphereExtension
       return null
     }
   /**
-   * The color of the region above the horizon and after the end of the `horizon-blend` contribution. The opacity can be set to `0` to have a transparent background.
+   * The color of the region above the horizon and after the end of the `horizon-blend` contribution. The opacity can be set to `0` to have a transparent background. Default value: "["interpolate",["linear"],["zoom"],4,"#010b19",7,"#367ab9"]".
    *
    * @param spaceColor as int
    */
-  override fun spaceColor(@ColorInt spaceColor: Int) = apply {
+  override fun spaceColor(@ColorInt spaceColor: Int): Atmosphere = apply {
     val propertyValue = PropertyValue("space-color", colorIntToRgbaExpression(spaceColor))
     setProperty(propertyValue)
   }
   /**
-   * The color of the region above the horizon and after the end of the `horizon-blend` contribution. The opacity can be set to `0` to have a transparent background.
+   * The color of the region above the horizon and after the end of the `horizon-blend` contribution. The opacity can be set to `0` to have a transparent background. Default value: "["interpolate",["linear"],["zoom"],4,"#010b19",7,"#367ab9"]".
    */
   val spaceColor: String?
     /**
-     * The color of the region above the horizon and after the end of the `horizon-blend` contribution. The opacity can be set to `0` to have a transparent background.
+     * The color of the region above the horizon and after the end of the `horizon-blend` contribution. The opacity can be set to `0` to have a transparent background. Default value: "["interpolate",["linear"],["zoom"],4,"#010b19",7,"#367ab9"]".
      *
      * @return space-color as String
      */
@@ -451,11 +504,11 @@ class Atmosphere : AtmosphereDslReceiver, StyleContract.StyleAtmosphereExtension
     }
 
   /**
-   * The color of the region above the horizon and after the end of the `horizon-blend` contribution. The opacity can be set to `0` to have a transparent background.
+   * The color of the region above the horizon and after the end of the `horizon-blend` contribution. The opacity can be set to `0` to have a transparent background. Default value: "["interpolate",["linear"],["zoom"],4,"#010b19",7,"#367ab9"]".
    *
    * @param spaceColor as String
    */
-  override fun spaceColor(spaceColor: String) = apply {
+  override fun spaceColor(spaceColor: String): Atmosphere = apply {
     setProperty(PropertyValue("space-color", spaceColor))
   }
 
@@ -477,7 +530,7 @@ class Atmosphere : AtmosphereDslReceiver, StyleContract.StyleAtmosphereExtension
    *
    * @param options transition options for space-color
    */
-  override fun spaceColorTransition(options: StyleTransition) = apply {
+  override fun spaceColorTransition(options: StyleTransition): Atmosphere = apply {
     val propertyValue = PropertyValue("space-color-transition", options)
     setProperty(propertyValue)
   }
@@ -485,18 +538,18 @@ class Atmosphere : AtmosphereDslReceiver, StyleContract.StyleAtmosphereExtension
   /**
    * DSL for [spaceColorTransition].
    */
-  override fun spaceColorTransition(block: StyleTransition.Builder.() -> Unit) = apply {
+  override fun spaceColorTransition(block: StyleTransition.Builder.() -> Unit): Atmosphere = apply {
     spaceColorTransition(StyleTransition.Builder().apply(block).build())
   }
 
   /**
-   * The color of the region above the horizon and after the end of the `horizon-blend` contribution. The opacity can be set to `0` to have a transparent background.
+   * The color of the region above the horizon and after the end of the `horizon-blend` contribution. The opacity can be set to `0` to have a transparent background. Default value: "["interpolate",["linear"],["zoom"],4,"#010b19",7,"#367ab9"]".
    *
    * This is an Expression representation of "space-color".
    */
   val spaceColorAsExpression: Expression?
     /**
-     * The color of the region above the horizon and after the end of the `horizon-blend` contribution. The opacity can be set to `0` to have a transparent background.
+     * The color of the region above the horizon and after the end of the `horizon-blend` contribution. The opacity can be set to `0` to have a transparent background. Default value: "["interpolate",["linear"],["zoom"],4,"#010b19",7,"#367ab9"]".
      *
      * Get the spaceColor property as an Expression
      *
@@ -509,20 +562,46 @@ class Atmosphere : AtmosphereDslReceiver, StyleContract.StyleAtmosphereExtension
       return null
     }
   /**
-   * The color of the region above the horizon and after the end of the `horizon-blend` contribution. The opacity can be set to `0` to have a transparent background.
+   * The color of the region above the horizon and after the end of the `horizon-blend` contribution. The opacity can be set to `0` to have a transparent background. Default value: "["interpolate",["linear"],["zoom"],4,"#010b19",7,"#367ab9"]".
    *
    * @param spaceColor value of spaceColor as Expression
    */
-  override fun spaceColor(spaceColor: Expression) = apply {
+  override fun spaceColor(spaceColor: Expression): Atmosphere = apply {
     val propertyValue = PropertyValue("space-color", spaceColor)
     setProperty(propertyValue)
   }
+
   /**
-   * A value controlling the star intensity where `0` will show no stars and `1` will show stars at their maximum intensity.
+   * Сolor theme override for [spaceColor].
+   */
+  @MapboxExperimental
+  val spaceColorUseTheme: String?
+    /**
+     * Get the SpaceColorUseTheme property
+     *
+     * @return current SpaceColorUseTheme property as String
+     */
+    get() {
+      return getPropertyValue("space-color-use-theme")
+    }
+
+  /**
+   * Set the SpaceColorUseTheme as String
+   *
+   * @param spaceColorUseTheme theme value for spaceColor. Overrides applying of color theme if "none" string value is set. To follow default theme "default" sting value should be set.
+   */
+  @MapboxExperimental
+  override fun spaceColorUseTheme(spaceColorUseTheme: String): Atmosphere = apply {
+    val propertyValue = PropertyValue("space-color-use-theme", spaceColorUseTheme)
+    setProperty(propertyValue)
+  }
+
+  /**
+   * A value controlling the star intensity where `0` will show no stars and `1` will show stars at their maximum intensity. Default value: "["interpolate",["linear"],["zoom"],5,0.35,6,0]". Value range: [0, 1]
    */
   val starIntensity: Double?
     /**
-     * A value controlling the star intensity where `0` will show no stars and `1` will show stars at their maximum intensity.
+     * A value controlling the star intensity where `0` will show no stars and `1` will show stars at their maximum intensity. Default value: "["interpolate",["linear"],["zoom"],5,0.35,6,0]". Value range: [0, 1]
      *
      * @return star-intensity as Double
      */
@@ -531,11 +610,11 @@ class Atmosphere : AtmosphereDslReceiver, StyleContract.StyleAtmosphereExtension
     }
 
   /**
-   * A value controlling the star intensity where `0` will show no stars and `1` will show stars at their maximum intensity.
+   * A value controlling the star intensity where `0` will show no stars and `1` will show stars at their maximum intensity. Default value: "["interpolate",["linear"],["zoom"],5,0.35,6,0]". Value range: [0, 1]
    *
    * @param starIntensity as Double
    */
-  override fun starIntensity(starIntensity: Double) = apply {
+  override fun starIntensity(starIntensity: Double): Atmosphere = apply {
     setProperty(PropertyValue("star-intensity", starIntensity))
   }
 
@@ -557,7 +636,7 @@ class Atmosphere : AtmosphereDslReceiver, StyleContract.StyleAtmosphereExtension
    *
    * @param options transition options for star-intensity
    */
-  override fun starIntensityTransition(options: StyleTransition) = apply {
+  override fun starIntensityTransition(options: StyleTransition): Atmosphere = apply {
     val propertyValue = PropertyValue("star-intensity-transition", options)
     setProperty(propertyValue)
   }
@@ -565,18 +644,18 @@ class Atmosphere : AtmosphereDslReceiver, StyleContract.StyleAtmosphereExtension
   /**
    * DSL for [starIntensityTransition].
    */
-  override fun starIntensityTransition(block: StyleTransition.Builder.() -> Unit) = apply {
+  override fun starIntensityTransition(block: StyleTransition.Builder.() -> Unit): Atmosphere = apply {
     starIntensityTransition(StyleTransition.Builder().apply(block).build())
   }
 
   /**
-   * A value controlling the star intensity where `0` will show no stars and `1` will show stars at their maximum intensity.
+   * A value controlling the star intensity where `0` will show no stars and `1` will show stars at their maximum intensity. Default value: "["interpolate",["linear"],["zoom"],5,0.35,6,0]". Value range: [0, 1]
    *
    * This is an Expression representation of "star-intensity".
    */
   val starIntensityAsExpression: Expression?
     /**
-     * A value controlling the star intensity where `0` will show no stars and `1` will show stars at their maximum intensity.
+     * A value controlling the star intensity where `0` will show no stars and `1` will show stars at their maximum intensity. Default value: "["interpolate",["linear"],["zoom"],5,0.35,6,0]". Value range: [0, 1]
      *
      * Get the starIntensity property as an Expression
      *
@@ -592,12 +671,95 @@ class Atmosphere : AtmosphereDslReceiver, StyleContract.StyleAtmosphereExtension
       return null
     }
   /**
-   * A value controlling the star intensity where `0` will show no stars and `1` will show stars at their maximum intensity.
+   * A value controlling the star intensity where `0` will show no stars and `1` will show stars at their maximum intensity. Default value: "["interpolate",["linear"],["zoom"],5,0.35,6,0]". Value range: [0, 1]
    *
    * @param starIntensity value of starIntensity as Expression
    */
-  override fun starIntensity(starIntensity: Expression) = apply {
+  override fun starIntensity(starIntensity: Expression): Atmosphere = apply {
     val propertyValue = PropertyValue("star-intensity", starIntensity)
+    setProperty(propertyValue)
+  }
+  /**
+   * An array of two number values, specifying the vertical range, measured in meters, over which the fog should gradually fade out. When both parameters are set to zero, the fog will be rendered without any vertical constraints. Default value: [0,0]. Minimum value: 0.
+   */
+  val verticalRange: List<Double>?
+    /**
+     * An array of two number values, specifying the vertical range, measured in meters, over which the fog should gradually fade out. When both parameters are set to zero, the fog will be rendered without any vertical constraints. Default value: [0,0]. Minimum value: 0.
+     *
+     * @return vertical-range as List<Double>
+     */
+    get() {
+      return getPropertyValue("vertical-range")
+    }
+
+  /**
+   * An array of two number values, specifying the vertical range, measured in meters, over which the fog should gradually fade out. When both parameters are set to zero, the fog will be rendered without any vertical constraints. Default value: [0,0]. Minimum value: 0.
+   *
+   * @param verticalRange as List<Double>
+   */
+  override fun verticalRange(verticalRange: List<Double>): Atmosphere = apply {
+    setProperty(PropertyValue("vertical-range", verticalRange))
+  }
+
+  /**
+   * VerticalRange property transition options.
+   */
+  val verticalRangeTransition: StyleTransition?
+    /**
+     * Get the VerticalRange property transition options.
+     *
+     * @return transition options for vertical-range
+     */
+    get() {
+      return getTransitionProperty("vertical-range-transition")
+    }
+
+  /**
+   * Set the VerticalRange property transition options.
+   *
+   * @param options transition options for vertical-range
+   */
+  override fun verticalRangeTransition(options: StyleTransition): Atmosphere = apply {
+    val propertyValue = PropertyValue("vertical-range-transition", options)
+    setProperty(propertyValue)
+  }
+
+  /**
+   * DSL for [verticalRangeTransition].
+   */
+  override fun verticalRangeTransition(block: StyleTransition.Builder.() -> Unit): Atmosphere = apply {
+    verticalRangeTransition(StyleTransition.Builder().apply(block).build())
+  }
+
+  /**
+   * An array of two number values, specifying the vertical range, measured in meters, over which the fog should gradually fade out. When both parameters are set to zero, the fog will be rendered without any vertical constraints. Default value: [0,0]. Minimum value: 0.
+   *
+   * This is an Expression representation of "vertical-range".
+   */
+  val verticalRangeAsExpression: Expression?
+    /**
+     * An array of two number values, specifying the vertical range, measured in meters, over which the fog should gradually fade out. When both parameters are set to zero, the fog will be rendered without any vertical constraints. Default value: [0,0]. Minimum value: 0.
+     *
+     * Get the verticalRange property as an Expression
+     *
+     * @return List<Double>
+     */
+    get() {
+      getPropertyValue<Expression>("vertical-range")?.let {
+        return it
+      }
+      verticalRange?.let {
+        return Expression.literal(it)
+      }
+      return null
+    }
+  /**
+   * An array of two number values, specifying the vertical range, measured in meters, over which the fog should gradually fade out. When both parameters are set to zero, the fog will be rendered without any vertical constraints. Default value: [0,0]. Minimum value: 0.
+   *
+   * @param verticalRange value of verticalRange as Expression
+   */
+  override fun verticalRange(verticalRange: Expression): Atmosphere = apply {
+    val propertyValue = PropertyValue("vertical-range", verticalRange)
     setProperty(propertyValue)
   }
 
@@ -606,7 +768,7 @@ class Atmosphere : AtmosphereDslReceiver, StyleContract.StyleAtmosphereExtension
    *
    * @param delegate The map controller
    */
-  override fun bindTo(delegate: StyleInterface) {
+  override fun bindTo(delegate: MapboxStyleManager) {
     this.delegate = delegate
     val atmosphereParams = HashMap<String, Value>()
 
@@ -682,20 +844,20 @@ class Atmosphere : AtmosphereDslReceiver, StyleContract.StyleAtmosphereExtension
 @AtmosphereDsl
 interface AtmosphereDslReceiver {
   /**
-   * The color of the atmosphere region immediately below the horizon and within the `range` and above the horizon and within `horizon-blend`. Using opacity is recommended only for smoothly transitioning fog on/off as anything less than 100% opacity results in more tiles loaded and drawn.
+   * The color of the atmosphere region immediately below the horizon and within the `range` and above the horizon and within `horizon-blend`. Using opacity is recommended only for smoothly transitioning fog on/off as anything less than 100% opacity results in more tiles loaded and drawn. Default value: "#ffffff".
    *
    * @param color as int
    */
   fun color(@ColorInt color: Int): Atmosphere
   /**
-   * The color of the atmosphere region immediately below the horizon and within the `range` and above the horizon and within `horizon-blend`. Using opacity is recommended only for smoothly transitioning fog on/off as anything less than 100% opacity results in more tiles loaded and drawn.
+   * The color of the atmosphere region immediately below the horizon and within the `range` and above the horizon and within `horizon-blend`. Using opacity is recommended only for smoothly transitioning fog on/off as anything less than 100% opacity results in more tiles loaded and drawn. Default value: "#ffffff".
    *
    * @param color as String
    */
   fun color(color: String = "#ffffff"): Atmosphere
 
   /**
-   * The color of the atmosphere region immediately below the horizon and within the `range` and above the horizon and within `horizon-blend`. Using opacity is recommended only for smoothly transitioning fog on/off as anything less than 100% opacity results in more tiles loaded and drawn.
+   * The color of the atmosphere region immediately below the horizon and within the `range` and above the horizon and within `horizon-blend`. Using opacity is recommended only for smoothly transitioning fog on/off as anything less than 100% opacity results in more tiles loaded and drawn. Default value: "#ffffff".
    *
    * @param color value of color as Expression
    */
@@ -713,20 +875,28 @@ interface AtmosphereDslReceiver {
    */
   fun colorTransition(block: StyleTransition.Builder.() -> Unit): Atmosphere
   /**
-   * The color of the atmosphere region above the horizon, `high-color` extends further above the horizon than the `color` property and its spread can be controlled with `horizon-blend`. The opacity can be set to `0` to remove the high atmosphere color contribution.
+   * Set the colorUseTheme as String for [color].
+   *
+   * @param colorUseTheme overrides applying of color theme if "none" string value is set. To follow default theme "default" sting value should be set.
+   */
+  @MapboxExperimental
+  fun colorUseTheme(colorUseTheme: String): Atmosphere
+
+  /**
+   * The color of the atmosphere region above the horizon, `high-color` extends further above the horizon than the `color` property and its spread can be controlled with `horizon-blend`. The opacity can be set to `0` to remove the high atmosphere color contribution. Default value: "#245cdf".
    *
    * @param highColor as int
    */
   fun highColor(@ColorInt highColor: Int): Atmosphere
   /**
-   * The color of the atmosphere region above the horizon, `high-color` extends further above the horizon than the `color` property and its spread can be controlled with `horizon-blend`. The opacity can be set to `0` to remove the high atmosphere color contribution.
+   * The color of the atmosphere region above the horizon, `high-color` extends further above the horizon than the `color` property and its spread can be controlled with `horizon-blend`. The opacity can be set to `0` to remove the high atmosphere color contribution. Default value: "#245cdf".
    *
    * @param highColor as String
    */
   fun highColor(highColor: String = "#245cdf"): Atmosphere
 
   /**
-   * The color of the atmosphere region above the horizon, `high-color` extends further above the horizon than the `color` property and its spread can be controlled with `horizon-blend`. The opacity can be set to `0` to remove the high atmosphere color contribution.
+   * The color of the atmosphere region above the horizon, `high-color` extends further above the horizon than the `color` property and its spread can be controlled with `horizon-blend`. The opacity can be set to `0` to remove the high atmosphere color contribution. Default value: "#245cdf".
    *
    * @param highColor value of highColor as Expression
    */
@@ -744,14 +914,22 @@ interface AtmosphereDslReceiver {
    */
   fun highColorTransition(block: StyleTransition.Builder.() -> Unit): Atmosphere
   /**
-   * Horizon blend applies a smooth fade from the color of the atmosphere to the color of space. A value of zero leaves a sharp transition from atmosphere to space. Increasing the value blends the color of atmosphere into increasingly high angles of the sky.
+   * Set the highColorUseTheme as String for [highColor].
+   *
+   * @param highColorUseTheme overrides applying of color theme if "none" string value is set. To follow default theme "default" sting value should be set.
+   */
+  @MapboxExperimental
+  fun highColorUseTheme(highColorUseTheme: String): Atmosphere
+
+  /**
+   * Horizon blend applies a smooth fade from the color of the atmosphere to the color of space. A value of zero leaves a sharp transition from atmosphere to space. Increasing the value blends the color of atmosphere into increasingly high angles of the sky. Default value: "["interpolate",["linear"],["zoom"],4,0.2,7,0.1]". Value range: [0, 1]
    *
    * @param horizonBlend as Double
    */
   fun horizonBlend(horizonBlend: Double): Atmosphere
 
   /**
-   * Horizon blend applies a smooth fade from the color of the atmosphere to the color of space. A value of zero leaves a sharp transition from atmosphere to space. Increasing the value blends the color of atmosphere into increasingly high angles of the sky.
+   * Horizon blend applies a smooth fade from the color of the atmosphere to the color of space. A value of zero leaves a sharp transition from atmosphere to space. Increasing the value blends the color of atmosphere into increasingly high angles of the sky. Default value: "["interpolate",["linear"],["zoom"],4,0.2,7,0.1]". Value range: [0, 1]
    *
    * @param horizonBlend value of horizonBlend as Expression
    */
@@ -769,14 +947,14 @@ interface AtmosphereDslReceiver {
    */
   fun horizonBlendTransition(block: StyleTransition.Builder.() -> Unit): Atmosphere
   /**
-   * The start and end distance range in which fog fades from fully transparent to fully opaque. The distance to the point at the center of the map is defined as zero, so that negative range values are closer to the camera, and positive values are farther away.
+   * The start and end distance range in which fog fades from fully transparent to fully opaque. The distance to the point at the center of the map is defined as zero, so that negative range values are closer to the camera, and positive values are farther away. Default value: [0.5,10]. Value range: [-20, 20]
    *
    * @param range as List<Double>
    */
   fun range(range: List<Double> = listOf(0.5, 10.0)): Atmosphere
 
   /**
-   * The start and end distance range in which fog fades from fully transparent to fully opaque. The distance to the point at the center of the map is defined as zero, so that negative range values are closer to the camera, and positive values are farther away.
+   * The start and end distance range in which fog fades from fully transparent to fully opaque. The distance to the point at the center of the map is defined as zero, so that negative range values are closer to the camera, and positive values are farther away. Default value: [0.5,10]. Value range: [-20, 20]
    *
    * @param range value of range as Expression
    */
@@ -794,20 +972,20 @@ interface AtmosphereDslReceiver {
    */
   fun rangeTransition(block: StyleTransition.Builder.() -> Unit): Atmosphere
   /**
-   * The color of the region above the horizon and after the end of the `horizon-blend` contribution. The opacity can be set to `0` to have a transparent background.
+   * The color of the region above the horizon and after the end of the `horizon-blend` contribution. The opacity can be set to `0` to have a transparent background. Default value: "["interpolate",["linear"],["zoom"],4,"#010b19",7,"#367ab9"]".
    *
    * @param spaceColor as int
    */
   fun spaceColor(@ColorInt spaceColor: Int): Atmosphere
   /**
-   * The color of the region above the horizon and after the end of the `horizon-blend` contribution. The opacity can be set to `0` to have a transparent background.
+   * The color of the region above the horizon and after the end of the `horizon-blend` contribution. The opacity can be set to `0` to have a transparent background. Default value: "["interpolate",["linear"],["zoom"],4,"#010b19",7,"#367ab9"]".
    *
    * @param spaceColor as String
    */
   fun spaceColor(spaceColor: String): Atmosphere
 
   /**
-   * The color of the region above the horizon and after the end of the `horizon-blend` contribution. The opacity can be set to `0` to have a transparent background.
+   * The color of the region above the horizon and after the end of the `horizon-blend` contribution. The opacity can be set to `0` to have a transparent background. Default value: "["interpolate",["linear"],["zoom"],4,"#010b19",7,"#367ab9"]".
    *
    * @param spaceColor value of spaceColor as Expression
    */
@@ -825,14 +1003,22 @@ interface AtmosphereDslReceiver {
    */
   fun spaceColorTransition(block: StyleTransition.Builder.() -> Unit): Atmosphere
   /**
-   * A value controlling the star intensity where `0` will show no stars and `1` will show stars at their maximum intensity.
+   * Set the spaceColorUseTheme as String for [spaceColor].
+   *
+   * @param spaceColorUseTheme overrides applying of color theme if "none" string value is set. To follow default theme "default" sting value should be set.
+   */
+  @MapboxExperimental
+  fun spaceColorUseTheme(spaceColorUseTheme: String): Atmosphere
+
+  /**
+   * A value controlling the star intensity where `0` will show no stars and `1` will show stars at their maximum intensity. Default value: "["interpolate",["linear"],["zoom"],5,0.35,6,0]". Value range: [0, 1]
    *
    * @param starIntensity as Double
    */
   fun starIntensity(starIntensity: Double): Atmosphere
 
   /**
-   * A value controlling the star intensity where `0` will show no stars and `1` will show stars at their maximum intensity.
+   * A value controlling the star intensity where `0` will show no stars and `1` will show stars at their maximum intensity. Default value: "["interpolate",["linear"],["zoom"],5,0.35,6,0]". Value range: [0, 1]
    *
    * @param starIntensity value of starIntensity as Expression
    */
@@ -849,6 +1035,31 @@ interface AtmosphereDslReceiver {
    * DSL for [starIntensityTransition].
    */
   fun starIntensityTransition(block: StyleTransition.Builder.() -> Unit): Atmosphere
+  /**
+   * An array of two number values, specifying the vertical range, measured in meters, over which the fog should gradually fade out. When both parameters are set to zero, the fog will be rendered without any vertical constraints. Default value: [0,0]. Minimum value: 0.
+   *
+   * @param verticalRange as List<Double>
+   */
+  fun verticalRange(verticalRange: List<Double> = listOf(0.0, 0.0)): Atmosphere
+
+  /**
+   * An array of two number values, specifying the vertical range, measured in meters, over which the fog should gradually fade out. When both parameters are set to zero, the fog will be rendered without any vertical constraints. Default value: [0,0]. Minimum value: 0.
+   *
+   * @param verticalRange value of verticalRange as Expression
+   */
+  fun verticalRange(verticalRange: Expression): Atmosphere
+
+  /**
+   * Set the VerticalRange property transition options.
+   *
+   * @param options transition options for vertical-range
+   */
+  fun verticalRangeTransition(options: StyleTransition): Atmosphere
+
+  /**
+   * DSL for [verticalRangeTransition].
+   */
+  fun verticalRangeTransition(block: StyleTransition.Builder.() -> Unit): Atmosphere
 }
 
 /**

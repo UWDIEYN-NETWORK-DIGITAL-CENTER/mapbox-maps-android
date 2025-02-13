@@ -3,19 +3,24 @@ package com.mapbox.maps.plugin.locationcomponent
 import android.animation.ValueAnimator
 import android.content.Context
 import android.util.AttributeSet
+import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
-import androidx.annotation.VisibleForTesting.PRIVATE
+import androidx.annotation.VisibleForTesting.Companion.PRIVATE
+import com.mapbox.common.location.LocationError
 import com.mapbox.geojson.Point
+import com.mapbox.maps.MapboxExperimental
 import com.mapbox.maps.MapboxLocationComponentException
+import com.mapbox.maps.MapboxStyleManager
 import com.mapbox.maps.RenderedQueryGeometry
 import com.mapbox.maps.RenderedQueryOptions
-import com.mapbox.maps.extension.style.StyleInterface
 import com.mapbox.maps.plugin.delegates.MapDelegateProvider
 import com.mapbox.maps.plugin.locationcomponent.LocationComponentConstants.LOCATION_INDICATOR_LAYER
 import com.mapbox.maps.plugin.locationcomponent.LocationComponentConstants.MODEL_LAYER
 import com.mapbox.maps.plugin.locationcomponent.animators.PuckAnimatorManager
-import com.mapbox.maps.plugin.locationcomponent.generated.*
 import com.mapbox.maps.plugin.locationcomponent.generated.LocationComponentAttributeParser
+import com.mapbox.maps.plugin.locationcomponent.generated.LocationComponentSettings
+import com.mapbox.maps.plugin.locationcomponent.generated.LocationComponentSettingsBase
+import com.mapbox.maps.plugin.locationcomponent.model.AnimatableModel
 import java.lang.ref.WeakReference
 import java.util.concurrent.CopyOnWriteArraySet
 
@@ -23,11 +28,12 @@ import java.util.concurrent.CopyOnWriteArraySet
  * Default implementation of the LocationComponentPlugin, it renders the configured location puck
  * to the user's current location.
  */
-class LocationComponentPluginImpl : LocationComponentPlugin2, LocationConsumer2,
-  LocationComponentSettingsBase2() {
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+internal class LocationComponentPluginImpl : LocationComponentPlugin, LocationConsumer,
+  LocationComponentSettingsBase() {
   private lateinit var delegateProvider: MapDelegateProvider
 
-  private lateinit var context: WeakReference<Context>
+  private lateinit var weakContext: WeakReference<Context>
 
   @VisibleForTesting(otherwise = PRIVATE)
   internal var locationPuckManager: LocationPuckManager? = null
@@ -199,34 +205,32 @@ class LocationComponentPluginImpl : LocationComponentPlugin2, LocationConsumer2,
 
   private fun activateLocationComponent() {
     if (internalSettings.enabled) {
-      delegateProvider.getStyle { style ->
-        if (locationPuckManager?.isLayerInitialised() == true && isLocationComponentActivated) {
-          return@getStyle
-        }
-        if (locationPuckManager == null) {
-          locationPuckManager = LocationPuckManager(
-            settings = internalSettings,
-            settings2 = internalSettings2,
-            delegateProvider = delegateProvider,
-            positionManager = LocationComponentPositionManager(
-              style,
-              internalSettings.layerAbove,
-              internalSettings.layerBelow
-            ),
-            layerSourceProvider = LayerSourceProvider(),
-            animationManager = PuckAnimatorManager(
-              indicatorPositionChangedListener,
-              indicatorBearingChangedListener,
-              indicatorAccuracyRadiusChangedListener,
-              style.pixelRatio
-            )
-          )
-        }
-        locationPuckManager?.initialize(style)
-        locationPuckManager?.onStart()
-        locationProvider?.registerLocationConsumer(this)
-        isLocationComponentActivated = true
+      val style = delegateProvider.mapStyleManagerDelegate
+      if (locationPuckManager?.isLayerInitialised() == true && isLocationComponentActivated) {
+        return
       }
+      if (locationPuckManager == null) {
+        locationPuckManager = LocationPuckManager(
+          settings = internalSettings,
+          weakContext = weakContext,
+          delegateProvider = delegateProvider,
+          positionManager = LocationComponentPositionManager(
+            style,
+            internalSettings.layerAbove,
+            internalSettings.layerBelow
+          ),
+          animationManager = PuckAnimatorManager(
+            indicatorPositionChangedListener,
+            indicatorBearingChangedListener,
+            indicatorAccuracyRadiusChangedListener,
+            style.pixelRatio
+          )
+        )
+      }
+      locationPuckManager?.initialize(style)
+      locationPuckManager?.onStart()
+      locationProvider?.registerLocationConsumer(this)
+      isLocationComponentActivated = true
     }
   }
 
@@ -256,15 +260,13 @@ class LocationComponentPluginImpl : LocationComponentPlugin2, LocationConsumer2,
    * @return View that will be added to the MapView
    */
   override fun bind(context: Context, attrs: AttributeSet?, pixelRatio: Float) {
-    this.context = WeakReference(context)
+    this.weakContext = WeakReference(context)
     internalSettings =
       LocationComponentAttributeParser.parseLocationComponentSettings(context, attrs, pixelRatio)
-    internalSettings2 =
-      LocationComponentAttributeParser2.parseLocationComponentSettings2(context, attrs, pixelRatio)
 
     if (internalSettings.enabled && locationProvider == null) {
       locationProvider = DefaultLocationProvider(context.applicationContext).apply {
-        updatePuckBearingSource(internalSettings2.puckBearingSource)
+        updatePuckBearingSettings(internalSettings)
       }
     }
   }
@@ -277,11 +279,9 @@ class LocationComponentPluginImpl : LocationComponentPlugin2, LocationConsumer2,
     locationProvider: LocationProvider,
     locationPuckManager: LocationPuckManager
   ) {
-    this.context = WeakReference(context)
+    this.weakContext = WeakReference(context)
     this.internalSettings =
       LocationComponentAttributeParser.parseLocationComponentSettings(context, attrs, pixelRatio)
-    this.internalSettings2 =
-      LocationComponentAttributeParser2.parseLocationComponentSettings2(context, attrs, pixelRatio)
     this.locationProvider = locationProvider
     this.locationPuckManager = locationPuckManager
   }
@@ -309,17 +309,17 @@ class LocationComponentPluginImpl : LocationComponentPlugin2, LocationConsumer2,
   }
 
   /**
-   * Called whenever the accuracy radius is updated.
+   * Called whenever the horizontal accuracy radius is updated.
    * @param radius - supports multiple radius value to create more complex animations with intermediate points.
    *  Last [radius] value will always be the animator target for next animation.
    * @param options - if specified explicitly will apply current animator option to radius animation.
    *  Otherwise default animator options will be used.
    */
-  override fun onAccuracyRadiusUpdated(
+  override fun onHorizontalAccuracyRadiusUpdated(
     vararg radius: Double,
     options: (ValueAnimator.() -> Unit)?
   ) {
-    locationPuckManager?.updateAccuracyRadius(*radius, options = options)
+    locationPuckManager?.updateHorizontalAccuracyRadius(*radius, options = options)
   }
 
   /**
@@ -336,6 +336,14 @@ class LocationComponentPluginImpl : LocationComponentPlugin2, LocationConsumer2,
    */
   override fun onPuckBearingAnimatorDefaultOptionsUpdated(options: ValueAnimator.() -> Unit) {
     locationPuckManager?.updateBearingAnimator(options)
+  }
+
+  /**
+   * Called whenever there is an error with the location provider.
+   * @param error The actual [LocationError]
+   */
+  override fun onError(error: LocationError) {
+    locationPuckManager?.onLocationError(error)
   }
 
   /**
@@ -356,10 +364,10 @@ class LocationComponentPluginImpl : LocationComponentPlugin2, LocationConsumer2,
   /**
    * Called when a new Style is loaded.
    *
-   * @param styleDelegate
+   * @param style
    */
-  override fun onStyleChanged(styleDelegate: StyleInterface) {
-    locationPuckManager?.updateStyle(styleDelegate)
+  override fun onStyleChanged(style: MapboxStyleManager) {
+    locationPuckManager?.updateStyle(style)
   }
 
   override lateinit var internalSettings: LocationComponentSettings
@@ -369,7 +377,7 @@ class LocationComponentPluginImpl : LocationComponentPlugin2, LocationConsumer2,
    */
   override fun applySettings() {
     if (internalSettings.enabled && !isLocationComponentActivated) {
-      context.get()?.let {
+      weakContext.get()?.let {
         if (locationProvider == null) {
           locationProvider = DefaultLocationProvider(it)
         }
@@ -378,17 +386,20 @@ class LocationComponentPluginImpl : LocationComponentPlugin2, LocationConsumer2,
     }
     if (internalSettings.enabled) {
       locationPuckManager?.updateSettings(internalSettings)
+      (locationProvider as? DefaultLocationProvider)?.updatePuckBearingSettings(internalSettings)
     } else {
       deactivateLocationComponent()
     }
   }
 
-  override lateinit var internalSettings2: LocationComponentSettings2
+  private fun DefaultLocationProvider.updatePuckBearingSettings(internalSettings: LocationComponentSettings) {
+    val puckBearingSource =
+      internalSettings.puckBearing.takeIf { internalSettings.puckBearingEnabled }
+    updatePuckBearing(puckBearingSource)
+  }
 
-  override fun applySettings2() {
-    if (internalSettings.enabled) {
-      locationPuckManager?.updateSettings2(internalSettings2)
-      (locationProvider as? DefaultLocationProvider)?.updatePuckBearingSource(internalSettings2.puckBearingSource)
-    }
+  @OptIn(MapboxExperimental::class)
+  internal fun bindToAnimatableModel(animatableModel: AnimatableModel) {
+    animatableModel.bindTo(delegateProvider.mapFeatureStateDelegate)
   }
 }

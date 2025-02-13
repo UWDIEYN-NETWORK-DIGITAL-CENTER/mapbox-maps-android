@@ -8,6 +8,11 @@ import com.mapbox.maps.extension.observable.model.Response
 /**
  *The data class for event data in Observer
  */
+@Deprecated(
+  message = "This data class is deprecated, and will be removed in next major release.",
+  replaceWith = ReplaceWith("ResourceRequest"),
+  level = DeprecationLevel.WARNING
+)
 data class ResourceEventData(
   /**
    * Representing timestamp taken at the time of an event creation, in microseconds, since the epoch.

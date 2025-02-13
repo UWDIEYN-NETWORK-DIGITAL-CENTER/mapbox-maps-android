@@ -6,6 +6,7 @@ import com.mapbox.maps.extension.style.expressions.generated.Expression
 import com.mapbox.maps.extension.style.utils.ColorUtils
 import com.mapbox.maps.extension.style.utils.unwrapToTyped
 import java.lang.StringBuilder
+import java.util.ArrayList
 
 /**
  * Represents a string broken into sections annotated with separate formatting options.
@@ -91,6 +92,7 @@ class Formatted : ArrayList<FormattedSection>() {
                   "text-font" -> {
                     val textFontExpressionList = optionsMap[key] as ArrayList<*>
                     if (textFontExpressionList.removeFirst() == "literal") {
+                      @Suppress("UNCHECKED_CAST")
                       formattedSection.fontStack =
                         textFontExpressionList.last() as ArrayList<String>
                     }

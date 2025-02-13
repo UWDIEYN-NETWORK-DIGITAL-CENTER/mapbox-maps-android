@@ -4,9 +4,9 @@ package com.mapbox.maps.plugin.annotation.generated
 
 import android.graphics.Color
 import android.graphics.PointF
+import com.google.gson.JsonObject
 import com.mapbox.android.gestures.MoveDistancesObject
 import com.mapbox.android.gestures.MoveGestureDetector
-import com.mapbox.bindgen.Expected
 import com.mapbox.bindgen.ExpectedFactory
 import com.mapbox.common.Cancelable
 import com.mapbox.geojson.Feature
@@ -14,7 +14,6 @@ import com.mapbox.geojson.FeatureCollection
 import com.mapbox.geojson.Point
 import com.mapbox.geojson.Polygon
 import com.mapbox.maps.*
-import com.mapbox.maps.extension.style.StyleInterface
 import com.mapbox.maps.extension.style.expressions.generated.Expression
 import com.mapbox.maps.extension.style.layers.addPersistentLayer
 import com.mapbox.maps.extension.style.layers.generated.FillLayer
@@ -22,12 +21,12 @@ import com.mapbox.maps.extension.style.sources.addSource
 import com.mapbox.maps.extension.style.sources.generated.GeoJsonSource
 import com.mapbox.maps.extension.style.sources.getSource
 import com.mapbox.maps.extension.style.utils.ColorUtils
+import com.mapbox.maps.interactions.FeatureState
+import com.mapbox.maps.interactions.FeaturesetFeature
+import com.mapbox.maps.interactions.TypedFeaturesetDescriptor
 import com.mapbox.maps.plugin.annotation.*
 import com.mapbox.maps.plugin.delegates.*
 import com.mapbox.maps.plugin.gestures.GesturesPlugin
-import com.mapbox.maps.plugin.gestures.OnMapClickListener
-import com.mapbox.maps.plugin.gestures.OnMapLongClickListener
-import com.mapbox.maps.plugin.gestures.OnMoveListener
 import io.mockk.*
 import org.junit.After
 import org.junit.Assert.*
@@ -37,26 +36,21 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
+@OptIn(MapboxExperimental::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(shadows = [ShadowProjection::class])
 class PolygonAnnotationManagerTest {
   private val delegateProvider: MapDelegateProvider = mockk()
-  private val style: StyleInterface = mockk()
+  private val style: MapboxStyleManager = mockk()
   private val mapCameraManagerDelegate: MapCameraManagerDelegate = mockk()
-  private val mapFeatureQueryDelegate: MapFeatureQueryDelegate = mockk()
-  private val mapListenerDelegate: MapListenerDelegate = mockk()
+  private val mapInteractionDelegate: MapInteractionDelegate = mockk()
   private val gesturesPlugin: GesturesPlugin = mockk()
+  private val moveGestureDetector: MoveGestureDetector = mockk()
   private val layer: FillLayer = mockk()
   private val source: GeoJsonSource = mockk()
   private val dragLayer: FillLayer = mockk()
   private val dragSource: GeoJsonSource = mockk()
-  private val queriedFeatures = mockk<Expected<String, List<QueriedFeature>>>()
-  private val queriedFeature = mockk<QueriedFeature>()
-  private val cancelable = mockk<Cancelable>()
   private val feature = mockk<Feature>()
-  private val queriedFeatureList = listOf(queriedFeature)
-  private val querySlot = slot<QueryFeaturesCallback>()
-  private val executeQuerySlot = slot<Runnable>()
 
   private lateinit var manager: PolygonAnnotationManager
   @Before
@@ -66,55 +60,29 @@ class PolygonAnnotationManagerTest {
     mockkStatic(Projection::class)
     mockkStatic("com.mapbox.maps.MapboxLogger")
     every { logE(any(), any()) } just Runs
-    val captureCallback = slot<(StyleInterface) -> Unit>()
-    every { delegateProvider.getStyle(capture(captureCallback)) } answers {
-      captureCallback.captured.invoke(style)
-    }
-    val styleStateDelegate = mockk<MapStyleStateDelegate>()
-    every { delegateProvider.styleStateDelegate } returns styleStateDelegate
+    every { delegateProvider.mapStyleManagerDelegate } returns style
     every { style.addSource(any()) } just Runs
     every { style.getSource(any()) } returns null
     every { style.addPersistentStyleLayer(any(), any()) } returns ExpectedFactory.createNone()
     every { style.addPersistentLayer(any(), any()) } just Runs
+    every { style.setStyleLayerProperty(any(), any(), any()) } returns mockk()
     every { style.styleSourceExists(any()) } returns false
     every { style.styleLayerExists(any()) } returns false
     every { style.removeStyleLayer(any()) } returns mockk()
     every { style.removeStyleSource(any()) } returns mockk()
     every { style.pixelRatio } returns 1.0f
-    every { gesturesPlugin.addOnMapClickListener(any()) } just Runs
-    every { gesturesPlugin.addOnMapLongClickListener(any()) } just Runs
-    every { gesturesPlugin.addOnMoveListener(any()) } just Runs
-    every { gesturesPlugin.removeOnMoveListener(any()) } just Runs
-    every { gesturesPlugin.removeOnMapClickListener(any()) } just Runs
-    every { gesturesPlugin.removeOnMapLongClickListener(any()) } just Runs
     every { delegateProvider.mapPluginProviderDelegate.getPlugin<GesturesPlugin>(any()) } returns gesturesPlugin
     every { delegateProvider.mapCameraManagerDelegate } returns mapCameraManagerDelegate
-    every { delegateProvider.mapFeatureQueryDelegate } returns mapFeatureQueryDelegate
-    every { delegateProvider.mapListenerDelegate } returns mapListenerDelegate
-    every { mapListenerDelegate.addOnMapIdleListener(any()) } just Runs
+    every { delegateProvider.mapInteractionDelegate } returns mapInteractionDelegate
+    every { delegateProvider.mapFeatureQueryDelegate } returns mockk()
+    every { mapInteractionDelegate.addInteraction(any()) } returns Cancelable { }
+    every { gesturesPlugin.getGesturesManager().moveGestureDetector } returns moveGestureDetector
     every { mapCameraManagerDelegate.coordinateForPixel(any()) } returns Point.fromLngLat(0.0, 0.0)
     every { mapCameraManagerDelegate.pixelForCoordinate(any()) } returns ScreenCoordinate(1.0, 1.0)
     every { mapCameraManagerDelegate.cameraState } returns mockk(relaxed = true)
     every { layer.layerId } returns "layer0"
     every { source.sourceId } returns "source0"
     every { source.featureCollection(any()) } answers { source }
-
-    every { queriedFeature.feature } returns feature
-    every { queriedFeatures.value } returns queriedFeatureList
-    every { feature.getProperty(any()).asLong } returns 0L
-    every { mapFeatureQueryDelegate.executeOnRenderThread(capture(executeQuerySlot)) } answers {
-      executeQuerySlot.captured.run()
-    }
-    every {
-      mapFeatureQueryDelegate.queryRenderedFeatures(
-        any<RenderedQueryGeometry>(),
-        any(),
-        capture(querySlot)
-      )
-    } answers {
-      querySlot.captured.run(queriedFeatures)
-      cancelable
-    }
 
     manager = PolygonAnnotationManager(delegateProvider)
     manager.layer = layer
@@ -131,6 +99,8 @@ class PolygonAnnotationManagerTest {
     every { dragLayer.fillOutlineColor(any<Expression>()) } answers { dragLayer }
     every { layer.fillPattern(any<Expression>()) } answers { layer }
     every { dragLayer.fillPattern(any<Expression>()) } answers { dragLayer }
+    every { layer.fillZOffset(any<Expression>()) } answers { layer }
+    every { dragLayer.fillZOffset(any<Expression>()) } answers { dragLayer }
   }
 
   @After
@@ -140,9 +110,9 @@ class PolygonAnnotationManagerTest {
 
   @Test
   fun initialize() {
-    verify { gesturesPlugin.addOnMapClickListener(any()) }
-    verify { gesturesPlugin.addOnMapLongClickListener(any()) }
-    verify { gesturesPlugin.addOnMoveListener(any()) }
+    verify(exactly = 2) { mapInteractionDelegate.addInteraction(ofType(ClickInteraction::class)) }
+    verify(exactly = 2) { mapInteractionDelegate.addInteraction(ofType(LongClickInteraction::class)) }
+    verify(exactly = 2) { mapInteractionDelegate.addInteraction(ofType(DragInteraction::class)) }
     assertEquals(PolygonAnnotation.ID_KEY, manager.getAnnotationIdKey())
     verify { style.addPersistentLayer(any(), null) }
     every { style.styleLayerExists("test_layer") } returns true
@@ -161,9 +131,6 @@ class PolygonAnnotationManagerTest {
     manager.onDestroy()
     verify { style.removeStyleLayer(any()) }
     verify { style.removeStyleSource(any()) }
-    verify { gesturesPlugin.removeOnMapClickListener(any()) }
-    verify { gesturesPlugin.removeOnMapLongClickListener(any()) }
-    verify { gesturesPlugin.removeOnMoveListener(any()) }
     assertTrue(manager.dragListeners.isEmpty())
     assertTrue(manager.clickListeners.isEmpty())
     assertTrue(manager.longClickListeners.isEmpty())
@@ -172,11 +139,11 @@ class PolygonAnnotationManagerTest {
   @Test
   fun initializeBeforeStyleLoad() {
     every { style.styleLayerExists("test_layer") } returns true
-    val captureCallback = slot<(StyleInterface) -> Unit>()
+    val captureCallback = slot<(MapboxStyleManager) -> Unit>()
     every { delegateProvider.getStyle(capture(captureCallback)) } just Runs
     manager = PolygonAnnotationManager(delegateProvider, AnnotationConfig("test_layer"))
-    // Style is not loaded, can't create and add layer to style
-    verify(exactly = 0) { style.addPersistentLayer(any(), LayerPosition(null, "test_layer", null)) }
+    // Style is not loaded, still create and add layer to style as it's persistent layer
+    verify(exactly = 1) { style.addPersistentLayer(any(), LayerPosition(null, "test_layer", null)) }
     every { delegateProvider.getStyle(capture(captureCallback)) } answers {
       captureCallback.captured.invoke(style)
     }
@@ -283,6 +250,11 @@ class PolygonAnnotationManagerTest {
     assertEquals("pedestrian-polygon", annotation.fillPattern)
     annotation.fillPattern = null
     assertNull(annotation.fillPattern)
+
+    annotation.fillZOffset = 0.0
+    assertEquals(0.0, annotation.fillZOffset)
+    annotation.fillZOffset = null
+    assertNull(annotation.fillZOffset)
   }
 
   @Test
@@ -342,32 +314,85 @@ class PolygonAnnotationManagerTest {
 
   @Test
   fun clickWithNoAnnotation() {
-    val captureSlot = slot<OnMapClickListener>()
-    every { gesturesPlugin.addOnMapClickListener(capture(captureSlot)) } just Runs
-    val manager = PolygonAnnotationManager(delegateProvider)
+    mockkObject(ClickInteraction.Companion)
+    val onClickLayerIdSlot = slot<((FeaturesetFeature<FeatureState>, InteractionContext) -> Boolean)>()
+    val customLayerId = "customLayerId"
+    every {
+      ClickInteraction.layer(id = customLayerId, filter = any(), onClick = capture(onClickLayerIdSlot))
+    } answers {
+      mockk()
+    }
+    every {
+      ClickInteraction.layer(
+        id = any(),
+        filter = any(),
+        onClick = { _, _ -> return@layer false }
+      )
+    } returns mockk()
+    val manager = PolygonAnnotationManager(
+      delegateProvider,
+      annotationConfig = AnnotationConfig(layerId = customLayerId)
+    )
 
     val listener = mockk<OnPolygonAnnotationClickListener>()
     every { listener.onAnnotationClick(any()) } returns false
     manager.addClickListener(listener)
 
-    every { feature.getProperty(any()) } returns null
-    captureSlot.captured.onMapClick(Point.fromLngLat(0.0, 0.0))
+    every { feature.properties() } returns JsonObject().apply {
+      addProperty(PolygonAnnotation.ID_KEY, "incorrectId")
+    }
+    every { feature.id() } returns "featureId"
+    every { feature.geometry() } returns Point.fromLngLat(0.0, 0.0)
+
+    onClickLayerIdSlot.captured.invoke(
+      FeaturesetFeature(
+        id = FeaturesetFeatureId(feature.id()!!, null),
+        descriptor = TypedFeaturesetDescriptor.Layer(customLayerId),
+        originalFeature = feature,
+        state = FeatureState { }
+      ),
+      InteractionContext(
+        CoordinateInfo(
+          Point.fromLngLat(0.0, 0.0),
+          true
+        ),
+        ScreenCoordinate(0.0, 0.0)
+      )
+    )
     verify(exactly = 0) { listener.onAnnotationClick(any()) }
+    unmockkObject(ClickInteraction.Companion)
   }
 
   @Test
   fun click() {
-    val captureSlot = slot<OnMapClickListener>()
-    every { gesturesPlugin.addOnMapClickListener(capture(captureSlot)) } just Runs
-    val manager = PolygonAnnotationManager(delegateProvider)
+    mockkObject(ClickInteraction.Companion)
+    val onClickLayerIdSlot = slot<((FeaturesetFeature<FeatureState>, InteractionContext) -> Boolean)>()
+    val customLayerId = "customLayerId"
+    every {
+      ClickInteraction.layer(id = customLayerId, filter = any(), onClick = capture(onClickLayerIdSlot))
+    } answers {
+      mockk()
+    }
+    every {
+      ClickInteraction.layer(
+        id = any(),
+        filter = any(),
+        onClick = { _, _ -> return@layer false }
+      )
+    } returns mockk()
+    val manager = PolygonAnnotationManager(
+      delegateProvider,
+      annotationConfig = AnnotationConfig(layerId = customLayerId)
+    )
     val annotation = manager.create(
       PolygonAnnotationOptions()
         .withPoints(listOf(listOf(Point.fromLngLat(0.0, 0.0), Point.fromLngLat(1.0, 1.0))))
     )
     assertEquals(annotation, manager.annotations[0])
+    every { feature.getProperty(any()).asString } returns annotation.id
 
     val listener = mockk<OnPolygonAnnotationClickListener>()
-    every { listener.onAnnotationClick(any()) } returns false
+    every { listener.onAnnotationClick(any()) } returns true
     manager.addClickListener(listener)
 
     val interactionListener = mockk<OnPolygonAnnotationInteractionListener>()
@@ -375,45 +400,152 @@ class PolygonAnnotationManagerTest {
     every { interactionListener.onDeselectAnnotation(any()) } just Runs
     manager.addInteractionListener(interactionListener)
 
-    captureSlot.captured.onMapClick(Point.fromLngLat(0.0, 0.0))
+    every { feature.properties() } returns JsonObject().apply {
+      addProperty(PolygonAnnotation.ID_KEY, annotation.id)
+    }
+    every { feature.id() } returns "featureId"
+    every { feature.geometry() } returns Point.fromLngLat(0.0, 0.0)
+
+   onClickLayerIdSlot.captured.invoke(
+      FeaturesetFeature(
+        id = FeaturesetFeatureId(feature.id()!!, null),
+        descriptor = TypedFeaturesetDescriptor.Layer(customLayerId),
+        originalFeature = feature,
+        state = FeatureState { }
+      ),
+      InteractionContext(
+        CoordinateInfo(
+          Point.fromLngLat(0.0, 0.0),
+          true
+        ),
+        ScreenCoordinate(0.0, 0.0)
+      )
+    )
     verify { listener.onAnnotationClick(annotation) }
     verify { interactionListener.onSelectAnnotation(annotation) }
-    captureSlot.captured.onMapClick(Point.fromLngLat(0.0, 0.0))
+
+    every { feature.properties() } returns JsonObject().apply {
+      addProperty(PolygonAnnotation.ID_KEY, annotation.id)
+    }
+    every { feature.id() } returns "featureId"
+    every { feature.geometry() } returns Point.fromLngLat(0.0, 0.0)
+
+    onClickLayerIdSlot.captured.invoke(
+      FeaturesetFeature(
+        id = FeaturesetFeatureId(feature.id()!!, null),
+        descriptor = TypedFeaturesetDescriptor.Layer(annotation.id),
+        originalFeature = feature,
+        state = FeatureState { }
+      ),
+      InteractionContext(
+        CoordinateInfo(
+          Point.fromLngLat(0.0, 0.0),
+          true
+        ),
+        ScreenCoordinate(0.0, 0.0)
+      )
+    )
     verify { interactionListener.onDeselectAnnotation(annotation) }
 
     manager.removeClickListener(listener)
     assertTrue(manager.clickListeners.isEmpty())
     manager.removeInteractionListener(interactionListener)
     assertTrue(manager.interactionListener.isEmpty())
+    unmockkObject(ClickInteraction.Companion)
   }
 
   @Test
   fun longClick() {
-    val captureSlot = slot<OnMapLongClickListener>()
-    every { gesturesPlugin.addOnMapLongClickListener(capture(captureSlot)) } just Runs
-    val manager = PolygonAnnotationManager(delegateProvider)
+    mockkObject(LongClickInteraction.Companion)
+    val onLongClickLayerIdSlot = slot<((FeaturesetFeature<FeatureState>, InteractionContext) -> Boolean)>()
+    val customLayerId = "customLayerId"
+    every {
+      LongClickInteraction.layer(id = customLayerId, filter = any(), onLongClick = capture(onLongClickLayerIdSlot))
+    } answers {
+      mockk()
+    }
+    every {
+      LongClickInteraction.layer(
+        id = any(),
+        filter = any(),
+        onLongClick = { _, _ -> return@layer false }
+      )
+    } returns mockk()
+    val manager = PolygonAnnotationManager(
+      delegateProvider,
+      annotationConfig = AnnotationConfig(layerId = customLayerId)
+    )
 
     val annotation = manager.create(
       PolygonAnnotationOptions()
         .withPoints(listOf(listOf(Point.fromLngLat(0.0, 0.0), Point.fromLngLat(1.0, 1.0))))
     )
     assertEquals(annotation, manager.annotations[0])
+    every { feature.getProperty(any()).asString } returns annotation.id
 
     val listener = mockk<OnPolygonAnnotationLongClickListener>()
     every { listener.onAnnotationLongClick(any()) } returns false
     manager.addLongClickListener(listener)
-    captureSlot.captured.onMapLongClick(Point.fromLngLat(0.0, 0.0))
+
+    every { feature.properties() } returns JsonObject().apply {
+      addProperty(PolygonAnnotation.ID_KEY, annotation.id)
+    }
+    every { feature.id() } returns "featureId"
+    every { feature.geometry() } returns Point.fromLngLat(0.0, 0.0)
+
+    onLongClickLayerIdSlot.captured.invoke(
+      FeaturesetFeature(
+        id = FeaturesetFeatureId(feature.id()!!, null),
+        descriptor = TypedFeaturesetDescriptor.Layer(customLayerId),
+        originalFeature = feature,
+        state = FeatureState { }
+      ),
+      InteractionContext(
+        CoordinateInfo(
+          Point.fromLngLat(0.0, 0.0),
+          true
+        ),
+        ScreenCoordinate(0.0, 0.0)
+      )
+    )
     verify { listener.onAnnotationLongClick(annotation) }
 
     manager.removeLongClickListener(listener)
     assertTrue(manager.longClickListeners.isEmpty())
+    unmockkObject(LongClickInteraction.Companion)
   }
 
   @Test
   fun drag() {
-    val captureSlot = slot<OnMoveListener>()
-    every { gesturesPlugin.addOnMoveListener(capture(captureSlot)) } just Runs
-    val manager = PolygonAnnotationManager(delegateProvider)
+    mockkObject(DragInteraction.Companion)
+    val onDragBeginLayerIdSlot = slot<((FeaturesetFeature<FeatureState>, InteractionContext) -> Boolean)>()
+    val onDragSlot = slot<((InteractionContext) -> Unit)>()
+    val onDragEndSlot = slot<((InteractionContext) -> Unit)>()
+    val customLayerId = "customLayerId"
+    every {
+      DragInteraction.layer(
+        id = customLayerId,
+        filter = any(),
+        onDragBegin = capture(onDragBeginLayerIdSlot),
+        onDrag = capture(onDragSlot),
+        onDragEnd = capture(onDragEndSlot)
+      )
+    } answers {
+      mockk()
+    }
+    every {
+      DragInteraction.layer(
+        id = any(),
+        filter = any(),
+        onDragBegin = { _, _ -> return@layer false },
+        onDrag = { },
+        onDragEnd = { }
+      )
+    } returns mockk()
+    val manager = PolygonAnnotationManager(
+      delegateProvider,
+      annotationConfig = AnnotationConfig(layerId = customLayerId)
+    )
     manager.onSizeChanged(100, 100)
     val annotation = manager.create(
       PolygonAnnotationOptions()
@@ -421,18 +553,37 @@ class PolygonAnnotationManagerTest {
     )
     assertEquals(annotation, manager.annotations[0])
 
-    every { feature.getProperty(any()).asLong } returns 0L
+    every { feature.getProperty(any()).asString } returns annotation.id
 
     val listener = mockk<OnPolygonAnnotationDragListener>(relaxed = true)
     manager.addDragListener(listener)
 
     annotation.isDraggable = true
-    val moveGestureDetector = mockk<MoveGestureDetector>()
     val pointF = PointF(0f, 0f)
     every { moveGestureDetector.pointersCount } returns 1
     every { moveGestureDetector.focalPoint } returns pointF
 
-    captureSlot.captured.onMoveBegin(moveGestureDetector)
+    every { feature.properties() } returns JsonObject().apply {
+      addProperty(PolygonAnnotation.ID_KEY, annotation.id)
+    }
+    every { feature.id() } returns "featureId"
+    every { feature.geometry() } returns Point.fromLngLat(0.0, 0.0)
+
+    onDragBeginLayerIdSlot.captured.invoke(
+      FeaturesetFeature(
+        id = FeaturesetFeatureId(feature.id()!!, null),
+        descriptor = TypedFeaturesetDescriptor.Layer(customLayerId),
+        originalFeature = feature,
+        state = FeatureState { }
+      ),
+      InteractionContext(
+        CoordinateInfo(
+          Point.fromLngLat(0.0, 0.0),
+          true
+        ),
+        ScreenCoordinate(0.0, 0.0)
+      )
+    )
     verify { listener.onAnnotationDragStarted(annotation) }
     assertEquals(1, manager.annotations.size)
 
@@ -442,11 +593,27 @@ class PolygonAnnotationManagerTest {
     every { moveDistancesObject.distanceXSinceLast } returns 1f
     every { moveDistancesObject.distanceYSinceLast } returns 1f
     every { moveGestureDetector.getMoveObject(any()) } returns moveDistancesObject
-    captureSlot.captured.onMove(moveGestureDetector)
+    onDragSlot.captured.invoke(
+      InteractionContext(
+        CoordinateInfo(
+          Point.fromLngLat(0.0, 0.0),
+          true
+        ),
+        ScreenCoordinate(0.0, 0.0)
+      )
+    )
     verify { listener.onAnnotationDrag(annotation) }
     assertEquals(1, manager.annotations.size)
 
-    captureSlot.captured.onMoveEnd(moveGestureDetector)
+    onDragEndSlot.captured.invoke(
+      InteractionContext(
+        CoordinateInfo(
+          Point.fromLngLat(0.0, 0.0),
+          true
+        ),
+        ScreenCoordinate(0.0, 0.0)
+      )
+    )
     verify { listener.onAnnotationDragFinished(annotation) }
 
     manager.removeDragListener(listener)
@@ -461,113 +628,208 @@ class PolygonAnnotationManagerTest {
     // Verify delete after drag
     manager.delete(annotation)
     assertTrue(manager.annotations.isEmpty())
+    unmockkObject(DragInteraction.Companion)
   }
 
   @Test
   fun testFillSortKeyLayerProperty() {
     every { style.styleSourceExists(any()) } returns true
     every { style.styleLayerExists(any()) } returns true
-    verify(exactly = 0) { manager.layer?.fillSortKey(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_SORT_KEY)) }
+    verify(exactly = 0) { manager.layer.fillSortKey(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_SORT_KEY)) }
     val options = PolygonAnnotationOptions()
       .withPoints(listOf(listOf(Point.fromLngLat(0.0, 0.0), Point.fromLngLat(1.0, 1.0))))
       .withFillSortKey(1.0)
     manager.create(options)
-    verify(exactly = 1) { manager.layer?.fillSortKey(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_SORT_KEY)) }
-    verify(exactly = 1) { manager.dragLayer?.fillSortKey(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_SORT_KEY)) }
+    verify(exactly = 1) { manager.layer.fillSortKey(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_SORT_KEY)) }
+    verify(exactly = 1) { manager.dragLayer.fillSortKey(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_SORT_KEY)) }
     manager.create(options)
-    verify(exactly = 1) { manager.layer?.fillSortKey(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_SORT_KEY)) }
-    verify(exactly = 1) { manager.dragLayer?.fillSortKey(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_SORT_KEY)) }
+    verify(exactly = 1) { manager.layer.fillSortKey(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_SORT_KEY)) }
+    verify(exactly = 1) { manager.dragLayer.fillSortKey(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_SORT_KEY)) }
+  }
+
+  @Test
+  fun testFillSortKeyInAnnotationManager() {
+    every { style.styleSourceExists(any()) } returns true
+    every { style.styleLayerExists(any()) } returns true
+    verify(exactly = 0) { manager.layer.fillSortKey(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_SORT_KEY)) }
+    val options = PolygonAnnotationOptions()
+      .withPoints(listOf(listOf(Point.fromLngLat(0.0, 0.0), Point.fromLngLat(1.0, 1.0))))
+    manager.fillSortKey = 1.0
+    manager.create(options)
+    verify(exactly = 1) { manager.layer.fillSortKey(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_SORT_KEY)) }
+    verify(exactly = 1) { manager.dragLayer.fillSortKey(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_SORT_KEY)) }
   }
 
   @Test
   fun testFillColorIntLayerProperty() {
     every { style.styleSourceExists(any()) } returns true
     every { style.styleLayerExists(any()) } returns true
-    verify(exactly = 0) { manager.layer?.fillColor(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_COLOR)) }
+    verify(exactly = 0) { manager.layer.fillColor(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_COLOR)) }
     val options = PolygonAnnotationOptions()
       .withPoints(listOf(listOf(Point.fromLngLat(0.0, 0.0), Point.fromLngLat(1.0, 1.0))))
       .withFillColor(Color.YELLOW)
     manager.create(options)
-    verify(exactly = 1) { manager.layer?.fillColor(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_COLOR)) }
+    verify(exactly = 1) { manager.layer.fillColor(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_COLOR)) }
     manager.create(options)
-    verify(exactly = 1) { manager.layer?.fillColor(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_COLOR)) }
+    verify(exactly = 1) { manager.layer.fillColor(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_COLOR)) }
   }
 
   @Test
   fun testFillColorLayerProperty() {
     every { style.styleSourceExists(any()) } returns true
     every { style.styleLayerExists(any()) } returns true
-    verify(exactly = 0) { manager.layer?.fillColor(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_COLOR)) }
+    verify(exactly = 0) { manager.layer.fillColor(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_COLOR)) }
     val options = PolygonAnnotationOptions()
       .withPoints(listOf(listOf(Point.fromLngLat(0.0, 0.0), Point.fromLngLat(1.0, 1.0))))
       .withFillColor("rgba(0, 0, 0, 1)")
     manager.create(options)
-    verify(exactly = 1) { manager.layer?.fillColor(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_COLOR)) }
-    verify(exactly = 1) { manager.dragLayer?.fillColor(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_COLOR)) }
+    verify(exactly = 1) { manager.layer.fillColor(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_COLOR)) }
+    verify(exactly = 1) { manager.dragLayer.fillColor(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_COLOR)) }
     manager.create(options)
-    verify(exactly = 1) { manager.layer?.fillColor(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_COLOR)) }
-    verify(exactly = 1) { manager.dragLayer?.fillColor(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_COLOR)) }
+    verify(exactly = 1) { manager.layer.fillColor(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_COLOR)) }
+    verify(exactly = 1) { manager.dragLayer.fillColor(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_COLOR)) }
+  }
+
+  @Test
+  fun testFillColorInAnnotationManager() {
+    every { style.styleSourceExists(any()) } returns true
+    every { style.styleLayerExists(any()) } returns true
+    verify(exactly = 0) { manager.layer.fillColor(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_COLOR)) }
+    val options = PolygonAnnotationOptions()
+      .withPoints(listOf(listOf(Point.fromLngLat(0.0, 0.0), Point.fromLngLat(1.0, 1.0))))
+    manager.fillColorString = "rgba(0, 0, 0, 1)"
+    manager.create(options)
+    verify(exactly = 1) { manager.layer.fillColor(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_COLOR)) }
+    verify(exactly = 1) { manager.dragLayer.fillColor(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_COLOR)) }
   }
 
   @Test
   fun testFillOpacityLayerProperty() {
     every { style.styleSourceExists(any()) } returns true
     every { style.styleLayerExists(any()) } returns true
-    verify(exactly = 0) { manager.layer?.fillOpacity(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_OPACITY)) }
+    verify(exactly = 0) { manager.layer.fillOpacity(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_OPACITY)) }
     val options = PolygonAnnotationOptions()
       .withPoints(listOf(listOf(Point.fromLngLat(0.0, 0.0), Point.fromLngLat(1.0, 1.0))))
       .withFillOpacity(1.0)
     manager.create(options)
-    verify(exactly = 1) { manager.layer?.fillOpacity(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_OPACITY)) }
-    verify(exactly = 1) { manager.dragLayer?.fillOpacity(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_OPACITY)) }
+    verify(exactly = 1) { manager.layer.fillOpacity(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_OPACITY)) }
+    verify(exactly = 1) { manager.dragLayer.fillOpacity(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_OPACITY)) }
     manager.create(options)
-    verify(exactly = 1) { manager.layer?.fillOpacity(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_OPACITY)) }
-    verify(exactly = 1) { manager.dragLayer?.fillOpacity(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_OPACITY)) }
+    verify(exactly = 1) { manager.layer.fillOpacity(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_OPACITY)) }
+    verify(exactly = 1) { manager.dragLayer.fillOpacity(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_OPACITY)) }
+  }
+
+  @Test
+  fun testFillOpacityInAnnotationManager() {
+    every { style.styleSourceExists(any()) } returns true
+    every { style.styleLayerExists(any()) } returns true
+    verify(exactly = 0) { manager.layer.fillOpacity(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_OPACITY)) }
+    val options = PolygonAnnotationOptions()
+      .withPoints(listOf(listOf(Point.fromLngLat(0.0, 0.0), Point.fromLngLat(1.0, 1.0))))
+    manager.fillOpacity = 1.0
+    manager.create(options)
+    verify(exactly = 1) { manager.layer.fillOpacity(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_OPACITY)) }
+    verify(exactly = 1) { manager.dragLayer.fillOpacity(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_OPACITY)) }
   }
 
   @Test
   fun testFillOutlineColorIntLayerProperty() {
     every { style.styleSourceExists(any()) } returns true
     every { style.styleLayerExists(any()) } returns true
-    verify(exactly = 0) { manager.layer?.fillOutlineColor(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_OUTLINE_COLOR)) }
+    verify(exactly = 0) { manager.layer.fillOutlineColor(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_OUTLINE_COLOR)) }
     val options = PolygonAnnotationOptions()
       .withPoints(listOf(listOf(Point.fromLngLat(0.0, 0.0), Point.fromLngLat(1.0, 1.0))))
       .withFillOutlineColor(Color.YELLOW)
     manager.create(options)
-    verify(exactly = 1) { manager.layer?.fillOutlineColor(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_OUTLINE_COLOR)) }
+    verify(exactly = 1) { manager.layer.fillOutlineColor(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_OUTLINE_COLOR)) }
     manager.create(options)
-    verify(exactly = 1) { manager.layer?.fillOutlineColor(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_OUTLINE_COLOR)) }
+    verify(exactly = 1) { manager.layer.fillOutlineColor(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_OUTLINE_COLOR)) }
   }
 
   @Test
   fun testFillOutlineColorLayerProperty() {
     every { style.styleSourceExists(any()) } returns true
     every { style.styleLayerExists(any()) } returns true
-    verify(exactly = 0) { manager.layer?.fillOutlineColor(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_OUTLINE_COLOR)) }
+    verify(exactly = 0) { manager.layer.fillOutlineColor(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_OUTLINE_COLOR)) }
     val options = PolygonAnnotationOptions()
       .withPoints(listOf(listOf(Point.fromLngLat(0.0, 0.0), Point.fromLngLat(1.0, 1.0))))
       .withFillOutlineColor("rgba(0, 0, 0, 1)")
     manager.create(options)
-    verify(exactly = 1) { manager.layer?.fillOutlineColor(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_OUTLINE_COLOR)) }
-    verify(exactly = 1) { manager.dragLayer?.fillOutlineColor(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_OUTLINE_COLOR)) }
+    verify(exactly = 1) { manager.layer.fillOutlineColor(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_OUTLINE_COLOR)) }
+    verify(exactly = 1) { manager.dragLayer.fillOutlineColor(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_OUTLINE_COLOR)) }
     manager.create(options)
-    verify(exactly = 1) { manager.layer?.fillOutlineColor(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_OUTLINE_COLOR)) }
-    verify(exactly = 1) { manager.dragLayer?.fillOutlineColor(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_OUTLINE_COLOR)) }
+    verify(exactly = 1) { manager.layer.fillOutlineColor(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_OUTLINE_COLOR)) }
+    verify(exactly = 1) { manager.dragLayer.fillOutlineColor(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_OUTLINE_COLOR)) }
+  }
+
+  @Test
+  fun testFillOutlineColorInAnnotationManager() {
+    every { style.styleSourceExists(any()) } returns true
+    every { style.styleLayerExists(any()) } returns true
+    verify(exactly = 0) { manager.layer.fillOutlineColor(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_OUTLINE_COLOR)) }
+    val options = PolygonAnnotationOptions()
+      .withPoints(listOf(listOf(Point.fromLngLat(0.0, 0.0), Point.fromLngLat(1.0, 1.0))))
+    manager.fillOutlineColorString = "rgba(0, 0, 0, 1)"
+    manager.create(options)
+    verify(exactly = 1) { manager.layer.fillOutlineColor(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_OUTLINE_COLOR)) }
+    verify(exactly = 1) { manager.dragLayer.fillOutlineColor(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_OUTLINE_COLOR)) }
   }
 
   @Test
   fun testFillPatternLayerProperty() {
     every { style.styleSourceExists(any()) } returns true
     every { style.styleLayerExists(any()) } returns true
-    verify(exactly = 0) { manager.layer?.fillPattern(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_PATTERN)) }
+    verify(exactly = 0) { manager.layer.fillPattern(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_PATTERN)) }
     val options = PolygonAnnotationOptions()
       .withPoints(listOf(listOf(Point.fromLngLat(0.0, 0.0), Point.fromLngLat(1.0, 1.0))))
       .withFillPattern("pedestrian-polygon")
     manager.create(options)
-    verify(exactly = 1) { manager.layer?.fillPattern(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_PATTERN)) }
-    verify(exactly = 1) { manager.dragLayer?.fillPattern(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_PATTERN)) }
+    verify(exactly = 1) { manager.layer.fillPattern(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_PATTERN)) }
+    verify(exactly = 1) { manager.dragLayer.fillPattern(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_PATTERN)) }
     manager.create(options)
-    verify(exactly = 1) { manager.layer?.fillPattern(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_PATTERN)) }
-    verify(exactly = 1) { manager.dragLayer?.fillPattern(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_PATTERN)) }
+    verify(exactly = 1) { manager.layer.fillPattern(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_PATTERN)) }
+    verify(exactly = 1) { manager.dragLayer.fillPattern(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_PATTERN)) }
+  }
+
+  @Test
+  fun testFillPatternInAnnotationManager() {
+    every { style.styleSourceExists(any()) } returns true
+    every { style.styleLayerExists(any()) } returns true
+    verify(exactly = 0) { manager.layer.fillPattern(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_PATTERN)) }
+    val options = PolygonAnnotationOptions()
+      .withPoints(listOf(listOf(Point.fromLngLat(0.0, 0.0), Point.fromLngLat(1.0, 1.0))))
+    manager.fillPattern = "pedestrian-polygon"
+    manager.create(options)
+    verify(exactly = 1) { manager.layer.fillPattern(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_PATTERN)) }
+    verify(exactly = 1) { manager.dragLayer.fillPattern(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_PATTERN)) }
+  }
+
+  @Test
+  fun testFillZOffsetLayerProperty() {
+    every { style.styleSourceExists(any()) } returns true
+    every { style.styleLayerExists(any()) } returns true
+    verify(exactly = 0) { manager.layer.fillZOffset(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_Z_OFFSET)) }
+    val options = PolygonAnnotationOptions()
+      .withPoints(listOf(listOf(Point.fromLngLat(0.0, 0.0), Point.fromLngLat(1.0, 1.0))))
+      .withFillZOffset(0.0)
+    manager.create(options)
+    verify(exactly = 1) { manager.layer.fillZOffset(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_Z_OFFSET)) }
+    verify(exactly = 1) { manager.dragLayer.fillZOffset(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_Z_OFFSET)) }
+    manager.create(options)
+    verify(exactly = 1) { manager.layer.fillZOffset(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_Z_OFFSET)) }
+    verify(exactly = 1) { manager.dragLayer.fillZOffset(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_Z_OFFSET)) }
+  }
+
+  @Test
+  fun testFillZOffsetInAnnotationManager() {
+    every { style.styleSourceExists(any()) } returns true
+    every { style.styleLayerExists(any()) } returns true
+    verify(exactly = 0) { manager.layer.fillZOffset(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_Z_OFFSET)) }
+    val options = PolygonAnnotationOptions()
+      .withPoints(listOf(listOf(Point.fromLngLat(0.0, 0.0), Point.fromLngLat(1.0, 1.0))))
+    manager.fillZOffset = 0.0
+    manager.create(options)
+    verify(exactly = 1) { manager.layer.fillZOffset(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_Z_OFFSET)) }
+    verify(exactly = 1) { manager.dragLayer.fillZOffset(Expression.get(PolygonAnnotationOptions.PROPERTY_FILL_Z_OFFSET)) }
   }
 }

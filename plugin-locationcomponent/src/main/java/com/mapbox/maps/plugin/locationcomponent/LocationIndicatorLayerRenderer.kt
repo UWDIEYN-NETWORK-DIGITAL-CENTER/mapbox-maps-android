@@ -1,30 +1,36 @@
 package com.mapbox.maps.plugin.locationcomponent
 
+import android.content.Context
 import androidx.annotation.ColorInt
+import androidx.annotation.RestrictTo
 import com.mapbox.bindgen.Value
 import com.mapbox.geojson.Point
-import com.mapbox.maps.extension.style.StyleInterface
+import com.mapbox.maps.ImageHolder
+import com.mapbox.maps.MapboxStyleManager
+import com.mapbox.maps.logE
 import com.mapbox.maps.plugin.LocationPuck2D
 import com.mapbox.maps.plugin.locationcomponent.LocationComponentConstants.BEARING_ICON
 import com.mapbox.maps.plugin.locationcomponent.LocationComponentConstants.LOCATION_INDICATOR_LAYER
 import com.mapbox.maps.plugin.locationcomponent.LocationComponentConstants.SHADOW_ICON
 import com.mapbox.maps.plugin.locationcomponent.LocationComponentConstants.TOP_ICON
 import com.mapbox.maps.plugin.locationcomponent.utils.BitmapUtils
+import java.lang.ref.WeakReference
 import java.text.DecimalFormat
 import java.text.NumberFormat
 import java.util.Locale
 
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 internal class LocationIndicatorLayerRenderer(
   private val puckOptions: LocationPuck2D,
-  layerSourceProvider: LayerSourceProvider
+  private val weakContext: WeakReference<Context>,
+  private val layer: LocationIndicatorLayerWrapper = LayerSourceProvider.getLocationIndicatorLayer()
 ) : LocationLayerRenderer {
 
-  private var style: StyleInterface? = null
-  private var layer = layerSourceProvider.getLocationIndicatorLayer()
+  private var style: MapboxStyleManager? = null
 
-  override fun initializeComponents(style: StyleInterface) {
+  override fun initializeComponents(style: MapboxStyleManager) {
     this.style = style
-    setupBitmaps()
+    setupBitmaps(style)
   }
 
   override fun isRendererInitialised(): Boolean {
@@ -74,18 +80,38 @@ internal class LocationIndicatorLayerRenderer(
     layer.topImageSize(scaleExpression)
   }
 
-  private fun setupBitmaps() {
-    puckOptions.topImage?.let { BitmapUtils.getBitmapFromDrawable(it) }
-      ?.let { style?.addImage(TOP_ICON, it) }
-    puckOptions.bearingImage?.let { BitmapUtils.getBitmapFromDrawable(it) }
-      ?.let { style?.addImage(BEARING_ICON, it) }
+  override fun slot(slot: String?) {
+    layer.slot(slot)
+  }
 
-    puckOptions.shadowImage?.let { BitmapUtils.getBitmapFromDrawable(it) }
-      ?.let { style?.addImage(SHADOW_ICON, it) }
+  private fun setupBitmaps(style: MapboxStyleManager) {
+    addImageToStyle(style, TOP_ICON, puckOptions.topImage)
+    addImageToStyle(style, BEARING_ICON, puckOptions.bearingImage)
+    addImageToStyle(style, SHADOW_ICON, puckOptions.shadowImage)
     layer.topImage(TOP_ICON)
     layer.bearingImage(BEARING_ICON)
     layer.shadowImage(SHADOW_ICON)
     layer.opacity(puckOptions.opacity.toDouble())
+  }
+
+  private fun addImageToStyle(style: MapboxStyleManager, iconId: String, imageHolder: ImageHolder?) {
+    // First try to use the bitmap directly
+    imageHolder?.bitmap?.let { bitmap ->
+      style.addImage(iconId, bitmap)
+      return
+    }
+    // Otherwise, let's try to get the bitmap from the drawable resource ID
+    weakContext.get()?.let { context ->
+      imageHolder?.drawableId?.let { drawableRes ->
+        BitmapUtils.getBitmapFromDrawableRes(context, drawableRes)?.let { bitmap ->
+          style.addImage(iconId, bitmap)
+        }
+      } ?: logE(TAG, "No image holder data for $iconId!")
+    } ?: logE(
+      TAG,
+      "Could not set 2D puck image as drawable for $iconId" +
+        " because there is no Android Context!"
+    )
   }
 
   override fun clearBitmaps() {
@@ -94,7 +120,7 @@ internal class LocationIndicatorLayerRenderer(
     style?.removeStyleImage(SHADOW_ICON)
   }
 
-  override fun updateStyle(style: StyleInterface) {
+  override fun updateStyle(style: MapboxStyleManager) {
     this.style = style
     layer.updateStyle(style)
   }
@@ -137,6 +163,8 @@ internal class LocationIndicatorLayerRenderer(
   }
 
   companion object {
+
+    private const val TAG = "LocationPuck2D"
 
     fun buildRGBAExpression(colorArray: FloatArray): List<Value> {
       return arrayListOf(

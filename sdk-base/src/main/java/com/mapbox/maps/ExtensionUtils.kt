@@ -3,18 +3,22 @@
 package com.mapbox.maps
 
 import android.graphics.Bitmap
-import java.nio.ByteBuffer
+import com.mapbox.bindgen.DataRef
 
 /**
- * Extension function to obtain [Bitmap] from snapshotter converted from [Image].
+ * Convert [Bitmap] to rendering engine [Image] instance.
+ *
+ * Important: This will allocate native memory outside the JVM heap. If possible, avoid using it
+ * inside loops/animations.
  */
-fun MapSnapshotInterface.bitmap(): Bitmap {
-  val image = image()
-  val configBmp: Bitmap.Config = Bitmap.Config.ARGB_8888
-  val bitmap: Bitmap = Bitmap.createBitmap(image.width, image.height, configBmp)
-  val buffer: ByteBuffer = ByteBuffer.wrap(image.data)
-  bitmap.copyPixelsFromBuffer(buffer)
-  return bitmap
+@MapboxDelicateApi
+fun Bitmap.toMapboxImage(): Image {
+  if (config != Bitmap.Config.ARGB_8888) {
+    throw IllegalArgumentException("Only ARGB_8888 bitmap config is supported!")
+  }
+  val nativeDataRef = DataRef.allocateNative(byteCount)
+  copyPixelsToBuffer(nativeDataRef.buffer)
+  return Image(width, height, nativeDataRef)
 }
 
 /**

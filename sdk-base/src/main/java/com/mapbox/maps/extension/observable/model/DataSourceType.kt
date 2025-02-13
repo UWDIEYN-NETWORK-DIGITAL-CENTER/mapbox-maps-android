@@ -6,6 +6,11 @@ import com.google.gson.annotations.SerializedName
  * Describes data source of request for resource-request event.
  * @param value String value of this enum
  */
+@Deprecated(
+  message = "This eum class is deprecated, and will be removed in next major release.",
+  replaceWith = ReplaceWith("RequestDataSourceType"),
+  level = DeprecationLevel.WARNING
+)
 enum class DataSourceType(val value: String) {
   /**
    * data source as resource-loader.

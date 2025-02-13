@@ -1,26 +1,31 @@
 package com.mapbox.maps.plugin.locationcomponent
 
 import android.util.Log
+import androidx.annotation.RestrictTo
 import com.mapbox.bindgen.Value
 import com.mapbox.maps.MapboxLocationComponentException
-import com.mapbox.maps.StyleManagerInterface
-import com.mapbox.maps.extension.style.StyleInterface
-import com.mapbox.maps.logW
+import com.mapbox.maps.MapboxStyleManager
+import com.mapbox.maps.logE
 
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 internal class ModelSourceWrapper(
   val sourceId: String,
   private var url: String,
-  position: List<Double>
+  position: List<Double>,
+  materialOverrides: List<String>,
+  nodeOverrides: List<String>
 ) {
 
   private var sourceProperties = HashMap<String, Value>()
-  private var style: StyleManagerInterface? = null
+  private var style: MapboxStyleManager? = null
 
   init {
     val modelProperties = HashMap<String, Value>()
     modelProperties[URL] = Value(url)
     modelProperties[POSITION] = Value(position.map(::Value))
     modelProperties[ORIENTATION] = Value(listOf(0.0, 0.0, 0.0).map(::Value))
+    modelProperties[MATERIAL_OVERRIDES] = Value(materialOverrides.map(::Value))
+    modelProperties[NODE_OVERRIDES] = Value(nodeOverrides.map(::Value))
 
     val models = HashMap<String, Value>()
     models[DEFAULT_MODEL_NAME] = Value(modelProperties)
@@ -29,11 +34,11 @@ internal class ModelSourceWrapper(
     sourceProperties[MODELS] = Value(models)
   }
 
-  fun updateStyle(style: StyleInterface) {
+  fun updateStyle(style: MapboxStyleManager) {
     this.style = style
   }
 
-  fun bindTo(style: StyleManagerInterface) {
+  fun bindTo(style: MapboxStyleManager) {
     this.style = style
     val expected = style.addStyleSource(sourceId, toValue())
     expected.error?.let {
@@ -56,21 +61,14 @@ internal class ModelSourceWrapper(
 
   private fun updateProperty(propertyName: String, value: Value) {
     sourceProperties[propertyName] = value
-    style?.let { styleDelegate ->
-      if (styleDelegate.styleSourceExists(sourceId)) {
-        val expected = styleDelegate.setStyleSourceProperty(
-          sourceId,
-          propertyName,
-          value
-        )
-        expected.error?.let {
-          throw MapboxLocationComponentException("Set source property \"${propertyName}\" failed:\nError: $it\nValue set: $value")
-        }
-      } else {
-        logW(
-          TAG,
-          "Skip updating source property $propertyName, source $sourceId not ready yet."
-        )
+    style?.let { style ->
+      val expected = style.setStyleSourceProperty(
+        sourceId,
+        propertyName,
+        value
+      )
+      expected.error?.let {
+        logE(TAG, "Set source property \"${propertyName}\" failed:\nError: $it\nValue set: $value")
       }
     }
   }
@@ -93,6 +91,10 @@ internal class ModelSourceWrapper(
 
     /** The property key of orientation*/
     const val ORIENTATION = "orientation"
+
+    const val MATERIAL_OVERRIDES = "materialOverrides"
+
+    const val NODE_OVERRIDES = "nodeOverrides"
 
     private const val TAG = "Mbgl-ModelSourceWrapper"
   }

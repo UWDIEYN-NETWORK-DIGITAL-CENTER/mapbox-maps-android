@@ -5,6 +5,10 @@ import com.mapbox.maps.extension.observable.eventdata.StyleImageMissingEventData
 /**
  * Definition for listener invoked when the style has a missing image.
  */
+@Deprecated(
+  message = "This listener is deprecated, and will be removed in next major release. use StyleImageMissingCallback instead.",
+  replaceWith = ReplaceWith("StyleImageMissingCallback")
+)
 fun interface OnStyleImageMissingListener {
 
   /**

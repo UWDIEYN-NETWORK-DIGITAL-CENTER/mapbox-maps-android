@@ -1,6 +1,5 @@
 package com.mapbox.maps.plugin.animation
 
-import android.animation.Animator
 import android.animation.TimeInterpolator
 
 /**
@@ -26,10 +25,6 @@ class MapAnimationOptions private constructor(
    * If not set explicitly default interpolator will be taken (CameraAnimatorsFactory.DEFAULT_INTERPOLATOR if using plugin-animation).
    */
   val interpolator: TimeInterpolator?,
-  /**
-   * Animator start / cancel / end listener.
-   */
-  val animatorListener: Animator.AnimatorListener?
 ) {
 
   /**
@@ -58,41 +53,31 @@ class MapAnimationOptions private constructor(
     private var interpolator: TimeInterpolator? = null
 
     /**
-     * Animator start / cancel / end listener.
-     */
-    private var animatorListener: Animator.AnimatorListener? = null
-
-    /**
      * Set the owner or creator this animation.
      */
-    fun owner(owner: String) = apply { this.owner = owner }
+    fun owner(owner: String): Builder = apply { this.owner = owner }
 
     /**
      * Set the duration of the animation in milliseconds.
      */
-    fun duration(duration: Long) = apply { this.duration = duration }
+    fun duration(duration: Long): Builder = apply { this.duration = duration }
 
     /**
      * Set the start delay of the animation in milliseconds.
      */
-    fun startDelay(startDelay: Long) = apply { this.startDelay = startDelay }
+    fun startDelay(startDelay: Long): Builder = apply { this.startDelay = startDelay }
 
     /**
      * Set the animation interpolator.
      */
-    fun interpolator(interpolator: TimeInterpolator) = apply { this.interpolator = interpolator }
-
-    /**
-     * Set the animator start / cancel / end listener.
-     */
-    fun animatorListener(animatorListener: Animator.AnimatorListener) =
-      apply { this.animatorListener = animatorListener }
+    fun interpolator(interpolator: TimeInterpolator): Builder =
+      apply { this.interpolator = interpolator }
 
     /**
      * Build an actual [MapAnimationOptions] object.
      */
     fun build(): MapAnimationOptions =
-      MapAnimationOptions(owner, duration, startDelay, interpolator, animatorListener)
+      MapAnimationOptions(owner, duration, startDelay, interpolator)
   }
 
   /**
@@ -108,7 +93,6 @@ class MapAnimationOptions private constructor(
     if (duration != other.duration) return false
     if (startDelay != other.startDelay) return false
     if (interpolator != other.interpolator) return false
-    if (animatorListener != other.animatorListener) return false
 
     return true
   }
@@ -121,7 +105,6 @@ class MapAnimationOptions private constructor(
     result = 31 * result + (duration?.hashCode() ?: 0)
     result = 31 * result + (startDelay?.hashCode() ?: 0)
     result = 31 * result + (interpolator?.hashCode() ?: 0)
-    result = 31 * result + (animatorListener?.hashCode() ?: 0)
     return result
   }
 
@@ -132,6 +115,7 @@ class MapAnimationOptions private constructor(
     /**
      * Builder DSL function to create [MapAnimationOptions] object.
      */
-    inline fun mapAnimationOptions(block: Builder.() -> Unit) = Builder().apply(block).build()
+    inline fun mapAnimationOptions(block: Builder.() -> Unit): MapAnimationOptions =
+      Builder().apply(block).build()
   }
 }

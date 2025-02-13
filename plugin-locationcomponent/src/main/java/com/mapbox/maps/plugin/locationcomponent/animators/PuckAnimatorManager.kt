@@ -1,15 +1,16 @@
 package com.mapbox.maps.plugin.locationcomponent.animators
 
 import android.animation.ValueAnimator
+import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
-import androidx.annotation.VisibleForTesting.PRIVATE
+import androidx.annotation.VisibleForTesting.Companion.PRIVATE
 import com.mapbox.geojson.Point
 import com.mapbox.maps.plugin.locationcomponent.*
 import com.mapbox.maps.plugin.locationcomponent.LocationLayerRenderer
 import com.mapbox.maps.plugin.locationcomponent.generated.LocationComponentSettings
-import com.mapbox.maps.plugin.locationcomponent.generated.LocationComponentSettings2
 import com.mapbox.maps.util.MathUtils
 
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 internal class PuckAnimatorManager(
   indicatorPositionChangedListener: OnIndicatorPositionChangedListener,
   indicatorBearingChangedListener: OnIndicatorBearingChangedListener,
@@ -116,15 +117,7 @@ internal class PuckAnimatorManager(
     }
   }
 
-  fun applySettings2(settings2: LocationComponentSettings2) {
-    accuracyRadiusAnimator.apply {
-      enabled = settings2.showAccuracyRing
-      accuracyCircleColor = settings2.accuracyRingColor
-      accuracyCircleBorderColor = settings2.accuracyRingBorderColor
-    }
-  }
-
-  fun applyPulsingAnimationSettings(settings: LocationComponentSettings) {
+  fun applySettings(settings: LocationComponentSettings) {
     pulsingAnimator.apply {
       enabled = settings.pulsingEnabled
       maxRadius = settings.pulsingMaxRadius.toDouble()
@@ -134,6 +127,11 @@ internal class PuckAnimatorManager(
       } else {
         cancelRunning()
       }
+    }
+    accuracyRadiusAnimator.apply {
+      enabled = settings.showAccuracyRing
+      accuracyCircleColor = settings.accuracyRingColor
+      accuracyCircleBorderColor = settings.accuracyRingBorderColor
     }
   }
 

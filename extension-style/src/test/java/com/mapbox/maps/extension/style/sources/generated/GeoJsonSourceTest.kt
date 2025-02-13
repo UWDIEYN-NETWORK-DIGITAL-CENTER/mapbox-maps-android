@@ -10,14 +10,16 @@ import com.mapbox.bindgen.None
 import com.mapbox.bindgen.Value
 import com.mapbox.geojson.Feature
 import com.mapbox.geojson.FeatureCollection
-import com.mapbox.maps.GeoJSONSourceData
+import com.mapbox.maps.*
+import com.mapbox.maps.MapboxExperimental
+import com.mapbox.maps.MapboxStyleManager
 import com.mapbox.maps.StyleManager
 import com.mapbox.maps.StylePropertyValue
 import com.mapbox.maps.StylePropertyValueKind
+import com.mapbox.maps.TileCacheBudget
+import com.mapbox.maps.TileCacheBudgetInMegabytes
 import com.mapbox.maps.extension.style.ShadowStyleManager
-import com.mapbox.maps.extension.style.StyleInterface
 import com.mapbox.maps.extension.style.expressions.dsl.generated.get
-import com.mapbox.maps.extension.style.expressions.dsl.generated.literal
 import com.mapbox.maps.extension.style.expressions.dsl.generated.sum
 import com.mapbox.maps.extension.style.types.PromoteId
 import com.mapbox.maps.extension.style.utils.TypeUtils
@@ -34,10 +36,11 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 
+@OptIn(MapboxExperimental::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(shadows = [ShadowStyleManager::class])
 class GeoJsonSourceTest {
-  private val style = mockk<StyleInterface>(relaxUnitFun = true, relaxed = true)
+  private val style = mockk<MapboxStyleManager>(relaxUnitFun = true, relaxed = true)
   private val valueSlot = slot<Value>()
   private val jsonSlot = slot<GeoJSONSourceData>()
   private val expected = mockk<Expected<String, None>>(relaxUnitFun = true, relaxed = true)
@@ -46,13 +49,11 @@ class GeoJsonSourceTest {
 
   @Before
   fun prepareTest() {
-    every { style.addStyleSource(any(), any()) } returns expected
-    every { style.setStyleSourceProperty(any(), any(), any()) } returns expected
-    every { style.getStyleSourceProperty(any(), any()) } returns styleProperty
     every { expected.error } returns null
     every { expectedDelta.error } returns null
     every { styleProperty.kind } returns StylePropertyValueKind.CONSTANT
-    every { style.isValid() } returns true
+
+    mockkStyle(style)
 
     // For default property getters
     mockkStatic(StyleManager::class)
@@ -67,6 +68,12 @@ class GeoJsonSourceTest {
     }
   }
 
+  private fun mockkStyle(style: MapboxStyleManager) {
+    every { style.addStyleSource(any(), any()) } returns expected
+    every { style.setStyleSourceProperty(any(), any(), any()) } returns expected
+    every { style.getStyleSourceProperty(any(), any()) } returns styleProperty
+  }
+
   @Test
   fun getTypeTest() {
     val testSource = geoJsonSource("testId") {}
@@ -75,13 +82,28 @@ class GeoJsonSourceTest {
 
   @Test
   fun dataSet() {
+    Shadows.shadowOf(GeoJsonSource.workerThread.looper).pause()
     val testSource = geoJsonSource("testId") {
       data(TEST_GEOJSON)
     }
     testSource.bindTo(style)
+    Shadows.shadowOf(GeoJsonSource.workerThread.looper).idle()
 
-    verify { style.setStyleGeoJSONSourceData("testId", capture(jsonSlot)) }
-    assertTrue(jsonSlot.captured.string.toString().contains("{\"type\":\"FeatureCollection\",\"features\":[]}"))
+    verify { style.setStyleGeoJSONSourceData("testId", "", capture(jsonSlot)) }
+    assertTrue(jsonSlot.captured.string.contains("{\"type\":\"FeatureCollection\",\"features\":[]}"))
+  }
+
+  @Test
+  fun dataSetWithId() {
+    Shadows.shadowOf(GeoJsonSource.workerThread.looper).pause()
+    val testSource = geoJsonSource("testId") {
+      data(TEST_GEOJSON, DATA_ID)
+    }
+    testSource.bindTo(style)
+    Shadows.shadowOf(GeoJsonSource.workerThread.looper).idle()
+
+    verify { style.setStyleGeoJSONSourceData("testId", DATA_ID, capture(jsonSlot)) }
+    assertTrue(jsonSlot.captured.string.contains("{\"type\":\"FeatureCollection\",\"features\":[]}"))
   }
 
   @Test
@@ -94,8 +116,15 @@ class GeoJsonSourceTest {
     Shadows.shadowOf(GeoJsonSource.workerThread.looper).idle()
     Shadows.shadowOf(Looper.getMainLooper()).idle()
 
-    verify { style.setStyleGeoJSONSourceData("testId", capture(jsonSlot)) }
-    assertEquals(jsonSlot.captured.string.toString(), "{\"type\":\"FeatureCollection\",\"features\":[]}")
+    verify { style.setStyleGeoJSONSourceData("testId", "", capture(jsonSlot)) }
+    assertEquals(jsonSlot.captured.string, "{\"type\":\"FeatureCollection\",\"features\":[]}")
+
+    testSource.data(TEST_GEOJSON, DATA_ID)
+    Shadows.shadowOf(GeoJsonSource.workerThread.looper).idle()
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
+
+    verify { style.setStyleGeoJSONSourceData("testId", DATA_ID, capture(jsonSlot)) }
+    assertEquals(jsonSlot.captured.string, "{\"type\":\"FeatureCollection\",\"features\":[]}")
   }
 
   @Test
@@ -110,13 +139,15 @@ class GeoJsonSourceTest {
 
   @Test
   fun urlSetTest() {
+    Shadows.shadowOf(GeoJsonSource.workerThread.looper).pause()
     val testSource = geoJsonSource("testId") {
       url("testUrl")
     }
     testSource.bindTo(style)
+    Shadows.shadowOf(GeoJsonSource.workerThread.looper).idle()
 
-    verify { style.setStyleGeoJSONSourceData("testId", capture(jsonSlot)) }
-    assertEquals(jsonSlot.captured.string.toString(), "testUrl")
+    verify { style.setStyleGeoJSONSourceData("testId", "", capture(jsonSlot)) }
+    assertEquals(jsonSlot.captured.string, "testUrl")
   }
 
   @Test
@@ -129,8 +160,8 @@ class GeoJsonSourceTest {
     Shadows.shadowOf(GeoJsonSource.workerThread.looper).idle()
     Shadows.shadowOf(Looper.getMainLooper()).idle()
 
-    verify { style.setStyleGeoJSONSourceData("testId", capture(jsonSlot)) }
-    assertEquals(jsonSlot.captured.string.toString(), "testUrl")
+    verify { style.setStyleGeoJSONSourceData("testId", "", capture(jsonSlot)) }
+    assertEquals(jsonSlot.captured.string, "testUrl")
   }
 
   @Test
@@ -281,6 +312,27 @@ class GeoJsonSourceTest {
   }
 
   @Test
+  fun clusterMinPointsSet() {
+    val testSource = geoJsonSource("testId") {
+      clusterMinPoints(1L)
+    }
+    testSource.bindTo(style)
+
+    verify { style.addStyleSource("testId", capture(valueSlot)) }
+    assertTrue(valueSlot.captured.toString().contains("clusterMinPoints=1"))
+  }
+
+  @Test
+  fun clusterMinPointsGet() {
+    every { styleProperty.value } returns TypeUtils.wrapToValue(1L)
+    val testSource = geoJsonSource("testId") {}
+    testSource.bindTo(style)
+
+    assertEquals(1L.toString(), testSource.clusterMinPoints?.toString())
+    verify { style.getStyleSourceProperty("testId", "clusterMinPoints") }
+  }
+
+  @Test
   fun clusterPropertiesSet() {
     val testSource = geoJsonSource("testId") {
       clusterProperties((hashMapOf("key1" to "x", "key2" to "y") as HashMap<String, Any>))
@@ -300,6 +352,7 @@ class GeoJsonSourceTest {
     assertEquals((hashMapOf("key1" to "x", "key2" to "y") as HashMap<String, Any>).toString(), testSource.clusterProperties?.toString())
     verify { style.getStyleSourceProperty("testId", "clusterProperties") }
   }
+
   // Cluster Properties is not mutable so afterBind test is ignored
   @Test
   fun clusterPropertyTest() {
@@ -426,6 +479,27 @@ class GeoJsonSourceTest {
   }
 
   @Test
+  fun autoMaxZoomSet() {
+    val testSource = geoJsonSource("testId") {
+      autoMaxZoom(true)
+    }
+    testSource.bindTo(style)
+
+    verify { style.addStyleSource("testId", capture(valueSlot)) }
+    assertTrue(valueSlot.captured.toString().contains("autoMaxZoom=true"))
+  }
+
+  @Test
+  fun autoMaxZoomGet() {
+    every { styleProperty.value } returns TypeUtils.wrapToValue(true)
+    val testSource = geoJsonSource("testId") {}
+    testSource.bindTo(style)
+
+    assertEquals(true.toString(), testSource.autoMaxZoom?.toString())
+    verify { style.getStyleSourceProperty("testId", "autoMaxZoom") }
+  }
+
+  @Test
   fun prefetchZoomDeltaSet() {
     val testSource = geoJsonSource("testId") {
       prefetchZoomDelta(1L)
@@ -457,6 +531,39 @@ class GeoJsonSourceTest {
   }
 
   @Test
+  fun tileCacheBudgetSet() {
+    val testSource = geoJsonSource("testId") {
+      tileCacheBudget(TileCacheBudget(TileCacheBudgetInMegabytes(100)))
+    }
+    testSource.bindTo(style)
+
+    verify { style.setStyleSourceProperty("testId", "tile-cache-budget", capture(valueSlot)) }
+    assertEquals("{megabytes=100}", valueSlot.captured.toString())
+  }
+
+  @Test
+  fun tileCacheBudgetSetAfterBind() {
+    val testSource = geoJsonSource("testId") {}
+    testSource.bindTo(style)
+    testSource.tileCacheBudget(TileCacheBudget(TileCacheBudgetInMegabytes(100)))
+
+    verify { style.setStyleSourceProperty("testId", "tile-cache-budget", capture(valueSlot)) }
+    assertEquals(valueSlot.captured.toString(), "{megabytes=100}")
+  }
+
+  @Test
+  fun tileCacheBudgetGet() {
+    every { styleProperty.value } returns TypeUtils.wrapToValue(TileCacheBudget(TileCacheBudgetInMegabytes(100)))
+    val testSource = geoJsonSource("testId") {}
+    testSource.bindTo(style)
+
+    val tileCacheBudget = testSource.tileCacheBudget!!
+    assertEquals(TileCacheBudget.Type.TILE_CACHE_BUDGET_IN_MEGABYTES, tileCacheBudget.typeInfo)
+    assertEquals(100L, tileCacheBudget.tileCacheBudgetInMegabytes.size)
+    verify { style.getStyleSourceProperty("testId", "tile-cache-budget") }
+  }
+
+  @Test
   fun emptyDataTest() {
     val testSource = geoJsonSource("testId")
     testSource.bindTo(style)
@@ -466,112 +573,186 @@ class GeoJsonSourceTest {
   }
 
   @Test
+  fun dataSetBeforeBind() {
+    val testSource = geoJsonSource("testId") {}
+    Shadows.shadowOf(Looper.getMainLooper()).pause()
+    Shadows.shadowOf(GeoJsonSource.workerThread.looper).pause()
+    testSource.data(TEST_GEOJSON, DATA_ID)
+    Shadows.shadowOf(GeoJsonSource.workerThread.looper).idle()
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
+
+    Shadows.shadowOf(Looper.getMainLooper()).pause()
+    Shadows.shadowOf(GeoJsonSource.workerThread.looper).pause()
+    testSource.bindTo(style)
+    Shadows.shadowOf(GeoJsonSource.workerThread.looper).idle()
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
+
+    verify(exactly = 1) {
+      style.setStyleGeoJSONSourceData(
+        "testId",
+        DATA_ID,
+        capture(jsonSlot)
+      )
+    }
+    assertEquals(jsonSlot.captured.string, "{\"type\":\"FeatureCollection\",\"features\":[]}")
+  }
+
+  @Test
+  fun reuseDataWithAnotherStyle() {
+    val testSource = geoJsonSource("testId") {}
+    Shadows.shadowOf(Looper.getMainLooper()).pause()
+    Shadows.shadowOf(GeoJsonSource.workerThread.looper).pause()
+    testSource.data(TEST_GEOJSON, DATA_ID)
+    Shadows.shadowOf(GeoJsonSource.workerThread.looper).idle()
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
+
+    Shadows.shadowOf(Looper.getMainLooper()).pause()
+    Shadows.shadowOf(GeoJsonSource.workerThread.looper).pause()
+    testSource.bindTo(style)
+    Shadows.shadowOf(GeoJsonSource.workerThread.looper).idle()
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
+
+    val newStyle = mockk<MapboxStyleManager>(relaxUnitFun = true, relaxed = true)
+    mockkStyle(newStyle)
+    Shadows.shadowOf(Looper.getMainLooper()).pause()
+    Shadows.shadowOf(GeoJsonSource.workerThread.looper).pause()
+    testSource.bindTo(newStyle)
+    Shadows.shadowOf(GeoJsonSource.workerThread.looper).idle()
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
+
+    verify(exactly = 1) {
+      style.setStyleGeoJSONSourceData(
+        "testId",
+        DATA_ID,
+        capture(jsonSlot)
+      )
+    }
+    verify(exactly = 1) {
+      newStyle.setStyleGeoJSONSourceData(
+        "testId",
+        DATA_ID,
+        capture(jsonSlot)
+      )
+    }
+    assertEquals(jsonSlot.captured.string, "{\"type\":\"FeatureCollection\",\"features\":[]}")
+  }
+
+  @Test
   fun featureAfterBindTest() {
-    val feature = Feature.fromJson(
-      """
-        {
-          "type": "Feature",
-          "geometry": {
-            "type": "Point",
-            "coordinates": [102.0, 0.5]
-          },
-          "properties": {
-                  "prop0": "value0"
-                }
-        }
-      """.trimIndent()
-    )
     val testSource = geoJsonSource("testId") {}
     testSource.bindTo(style)
     Shadows.shadowOf(Looper.getMainLooper()).pause()
     Shadows.shadowOf(GeoJsonSource.workerThread.looper).pause()
-    testSource.feature(feature)
+    testSource.feature(FEATURE)
     Shadows.shadowOf(GeoJsonSource.workerThread.looper).idle()
     Shadows.shadowOf(Looper.getMainLooper()).idle()
-    verify { style.setStyleGeoJSONSourceData("testId", any()) }
+    verify { style.setStyleGeoJSONSourceData("testId", "", any()) }
+
+    testSource.feature(FEATURE, DATA_ID)
+    Shadows.shadowOf(GeoJsonSource.workerThread.looper).idle()
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
+    verify { style.setStyleGeoJSONSourceData("testId", DATA_ID, any()) }
   }
 
   @Test
   fun featureCollectionAfterBindTest() {
-    val featureCollection = FeatureCollection.fromJson(
-      """
-        {
-          "type": "FeatureCollection",
-          "features": [
-            {
-              "type": "Feature",
-              "geometry": {
-                "type": "Point",
-                "coordinates": [102.0, 0.5]
-              }
-            },
-            {
-              "type": "Feature",
-              "geometry": {
-                "type": "LineString",
-                "coordinates": [
-                  [102.0, 0.0], [103.0, 1.0], [104.0, 0.0], [105.0, 1.0]
-                ]
-              }
-            }
-          ]
-        }
-      """.trimIndent()
-    )
     val testSource = geoJsonSource("testId") {}
     testSource.bindTo(style)
     Shadows.shadowOf(Looper.getMainLooper()).pause()
     Shadows.shadowOf(GeoJsonSource.workerThread.looper).pause()
-    testSource.featureCollection(featureCollection)
+    testSource.featureCollection(FEATURE_COLLECTION)
     Shadows.shadowOf(GeoJsonSource.workerThread.looper).idle()
     Shadows.shadowOf(Looper.getMainLooper()).idle()
-    verify { style.setStyleGeoJSONSourceData("testId", any()) }
+    verify { style.setStyleGeoJSONSourceData("testId", "", any()) }
+
+    testSource.featureCollection(FEATURE_COLLECTION, DATA_ID)
+    Shadows.shadowOf(GeoJsonSource.workerThread.looper).idle()
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
+    verify { style.setStyleGeoJSONSourceData("testId", DATA_ID, any()) }
+  }
+
+  @Test
+  fun featureCollectionBeforeBindTest() {
+    val testSource = geoJsonSource("testId") {}
+    Shadows.shadowOf(Looper.getMainLooper()).pause()
+    Shadows.shadowOf(GeoJsonSource.workerThread.looper).pause()
+    testSource.featureCollection(FEATURE_COLLECTION, DATA_ID)
+    Shadows.shadowOf(GeoJsonSource.workerThread.looper).idle()
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
+    Shadows.shadowOf(Looper.getMainLooper()).pause()
+    Shadows.shadowOf(GeoJsonSource.workerThread.looper).pause()
+    testSource.bindTo(style)
+    Shadows.shadowOf(GeoJsonSource.workerThread.looper).idle()
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
+    verify(exactly = 1) {
+      style.setStyleGeoJSONSourceData(
+        "testId",
+        DATA_ID,
+        any()
+      )
+    }
+  }
+
+  @Test
+  fun reuseFeatureCollectionWithAnotherStyle() {
+    val testSource = geoJsonSource("testId") {}
+    Shadows.shadowOf(Looper.getMainLooper()).pause()
+    Shadows.shadowOf(GeoJsonSource.workerThread.looper).pause()
+    testSource.featureCollection(FEATURE_COLLECTION, DATA_ID)
+    Shadows.shadowOf(GeoJsonSource.workerThread.looper).idle()
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
+
+    Shadows.shadowOf(Looper.getMainLooper()).pause()
+    Shadows.shadowOf(GeoJsonSource.workerThread.looper).pause()
+    testSource.bindTo(style)
+    Shadows.shadowOf(GeoJsonSource.workerThread.looper).idle()
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
+
+    val newStyle = mockk<MapboxStyleManager>(relaxUnitFun = true, relaxed = true)
+    mockkStyle(newStyle)
+    Shadows.shadowOf(Looper.getMainLooper()).pause()
+    Shadows.shadowOf(GeoJsonSource.workerThread.looper).pause()
+    testSource.bindTo(newStyle)
+    Shadows.shadowOf(GeoJsonSource.workerThread.looper).idle()
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
+
+    verify(exactly = 1) {
+      style.setStyleGeoJSONSourceData(
+        "testId",
+        DATA_ID,
+        any()
+      )
+    }
+    verify(exactly = 1) {
+      newStyle.setStyleGeoJSONSourceData(
+        "testId",
+        DATA_ID,
+        any()
+      )
+    }
   }
 
   @Test
   fun geometryAfterBindTest() {
-    val feature = Feature.fromJson(
-      """
-        {
-          "type": "Feature",
-          "geometry": {
-            "type": "Point",
-            "coordinates": [102.0, 0.5]
-          },
-          "properties": {
-                  "prop0": "value0"
-                }
-        }
-      """.trimIndent()
-    )
     val testSource = geoJsonSource("testId") {}
     testSource.bindTo(style)
     Shadows.shadowOf(Looper.getMainLooper()).pause()
     Shadows.shadowOf(GeoJsonSource.workerThread.looper).pause()
-    testSource.geometry(feature.geometry()!!)
+    testSource.geometry(FEATURE.geometry()!!)
     Shadows.shadowOf(GeoJsonSource.workerThread.looper).idle()
     Shadows.shadowOf(Looper.getMainLooper()).idle()
-    verify { style.setStyleGeoJSONSourceData("testId", any()) }
+    verify { style.setStyleGeoJSONSourceData("testId", "", any()) }
+
+    testSource.geometry(FEATURE.geometry()!!, DATA_ID)
+    Shadows.shadowOf(GeoJsonSource.workerThread.looper).idle()
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
+    verify { style.setStyleGeoJSONSourceData("testId", DATA_ID, any()) }
   }
 
   @Test
   fun featureTest() {
-    val feature = Feature.fromJson(
-      """
-        {
-          "type": "Feature",
-          "geometry": {
-            "type": "Point",
-            "coordinates": [102.0, 0.5]
-          },
-          "properties": {
-                  "prop0": "value0"
-                }
-        }
-      """.trimIndent()
-    )
     val testSource = geoJsonSource("testId") {
-      feature(feature)
+      feature(FEATURE)
     }
     testSource.bindTo(style)
     verify { style.addStyleSource("testId", capture(valueSlot)) }
@@ -580,33 +761,8 @@ class GeoJsonSourceTest {
 
   @Test
   fun featureCollectionTest() {
-    val featureCollection = FeatureCollection.fromJson(
-      """
-        {
-          "type": "FeatureCollection",
-          "features": [
-            {
-              "type": "Feature",
-              "geometry": {
-                "type": "Point",
-                "coordinates": [102.0, 0.5]
-              }
-            },
-            {
-              "type": "Feature",
-              "geometry": {
-                "type": "LineString",
-                "coordinates": [
-                  [102.0, 0.0], [103.0, 1.0], [104.0, 0.0], [105.0, 1.0]
-                ]
-              }
-            }
-          ]
-        }
-      """.trimIndent()
-    )
     val testSource = geoJsonSource("testId") {
-      featureCollection(featureCollection)
+      featureCollection(FEATURE_COLLECTION)
     }
     testSource.bindTo(style)
     verify { style.addStyleSource("testId", capture(valueSlot)) }
@@ -615,22 +771,8 @@ class GeoJsonSourceTest {
 
   @Test
   fun geometryTest() {
-    val feature = Feature.fromJson(
-      """
-        {
-          "type": "Feature",
-          "geometry": {
-            "type": "Point",
-            "coordinates": [102.0, 0.5]
-          },
-          "properties": {
-                  "prop0": "value0"
-                }
-        }
-      """.trimIndent()
-    )
     val testSource = geoJsonSource("testId") {
-      geometry(feature.geometry()!!)
+      geometry(FEATURE.geometry()!!)
     }
     testSource.bindTo(style)
     verify { style.addStyleSource("testId", capture(valueSlot)) }
@@ -687,6 +829,14 @@ class GeoJsonSourceTest {
   }
 
   @Test
+  fun defaultClusterMinPointsGet() {
+    every { styleProperty.value } returns TypeUtils.wrapToValue(1L)
+
+    assertEquals(1L.toString(), GeoJsonSource.defaultClusterMinPoints?.toString())
+    verify { StyleManager.getStyleSourcePropertyDefaultValue("geojson", "clusterMinPoints") }
+  }
+
+  @Test
   fun defaultLineMetricsGet() {
     every { styleProperty.value } returns TypeUtils.wrapToValue(true)
 
@@ -726,6 +876,46 @@ class GeoJsonSourceTest {
 
   companion object {
     private val TEST_GEOJSON = FeatureCollection.fromFeatures(listOf()).toJson()
+    private val DATA_ID = "data-id"
+    private val FEATURE = Feature.fromJson(
+      """
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [102.0, 0.5]
+          },
+          "properties": {
+                  "prop0": "value0"
+                }
+        }
+      """.trimIndent()
+    )
+    private val FEATURE_COLLECTION = FeatureCollection.fromJson(
+      """
+        {
+          "type": "FeatureCollection",
+          "features": [
+            {
+              "type": "Feature",
+              "geometry": {
+                "type": "Point",
+                "coordinates": [102.0, 0.5]
+              }
+            },
+            {
+              "type": "Feature",
+              "geometry": {
+                "type": "LineString",
+                "coordinates": [
+                  [102.0, 0.0], [103.0, 1.0], [104.0, 0.0], [105.0, 1.0]
+                ]
+              }
+            }
+          ]
+        }
+      """.trimIndent()
+    )
   }
 }
 

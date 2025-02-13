@@ -1,46 +1,44 @@
 package com.mapbox.maps.testapp.examples
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import com.mapbox.maps.*
-import com.mapbox.maps.extension.observable.eventdata.MapLoadingErrorEventData
-import com.mapbox.maps.extension.observable.getResourceEventData
-import com.mapbox.maps.extension.observable.subscribeResourceRequest
+import com.google.android.material.snackbar.Snackbar
+import com.mapbox.common.Cancelable
+import com.mapbox.maps.MapboxExperimental
+import com.mapbox.maps.MapboxMap
+import com.mapbox.maps.PerformanceSamplerOptions
+import com.mapbox.maps.PerformanceStatisticsOptions
+import com.mapbox.maps.Style
+import com.mapbox.maps.debugoptions.MapViewDebugOptions
+import com.mapbox.maps.logE
+import com.mapbox.maps.logI
 import com.mapbox.maps.plugin.compass.compass
-import com.mapbox.maps.plugin.delegates.listeners.OnMapLoadErrorListener
 import com.mapbox.maps.testapp.R
 import com.mapbox.maps.testapp.databinding.ActivityDebugBinding
 
 /**
  * Example of enabling and visualizing some debug information for a map.
  */
+@OptIn(MapboxExperimental::class)
 class DebugModeActivity : AppCompatActivity() {
 
   private lateinit var mapboxMap: MapboxMap
-  private val debugOptions: MutableList<MapDebugOptions> = mutableListOf(
-    MapDebugOptions.TILE_BORDERS,
-    MapDebugOptions.PARSE_STATUS,
-    MapDebugOptions.TIMESTAMPS,
-    MapDebugOptions.COLLISION,
-    MapDebugOptions.STENCIL_CLIP,
-    MapDebugOptions.DEPTH_BUFFER
+  private val debugOptions: MutableSet<MapViewDebugOptions> = mutableSetOf(
+    MapViewDebugOptions.TILE_BORDERS,
+    MapViewDebugOptions.PARSE_STATUS,
+    MapViewDebugOptions.TIMESTAMPS,
+    MapViewDebugOptions.COLLISION,
+    MapViewDebugOptions.STENCIL_CLIP,
+    MapViewDebugOptions.DEPTH_BUFFER,
+    MapViewDebugOptions.CAMERA,
+    MapViewDebugOptions.PADDING,
   )
-  private val extensionObservable = Observer { event ->
-    val data = event.getResourceEventData()
-    logI(
-      TAG,
-      "extensionObservable DataSource: ${data.dataSource}\nRequest: ${data.request}\nResponse: ${data.response}\nCancelled: ${data.cancelled}"
-    )
-  }
-
-  private val observable = Observer { event ->
-    logI(
-      TAG,
-      "Type: ${event.type}\nValue: ${event.data.contents}"
-    )
-  }
+  private var resourceRequestCancelable: Cancelable? = null
+  private var untypedEventCancelable: Cancelable? = null
 
   private lateinit var binding: ActivityDebugBinding
 
@@ -49,68 +47,112 @@ class DebugModeActivity : AppCompatActivity() {
     binding = ActivityDebugBinding.inflate(layoutInflater)
     setContentView(binding.root)
 
-    mapboxMap = binding.mapView.getMapboxMap()
-    mapboxMap.subscribe(observable, listOf(MapEvents.RESOURCE_REQUEST))
-    // Using the extension method
-    mapboxMap.subscribeResourceRequest(extensionObservable)
-    mapboxMap.loadStyleUri(Style.MAPBOX_STREETS)
+    mapboxMap = binding.mapView.mapboxMap
+
+    mapboxMap.subscribeResourceRequest {
+      logI(
+        TAG,
+        "extensionObservable DataSource: ${it.source}\nRequest: ${it.request}\nResponse: ${it.response}\nCancelled: ${it.cancelled}"
+      )
+    }
+
+    mapboxMap.loadStyle(Style.STANDARD)
+    setupPerformanceStatisticsCollection()
     binding.mapView.compass.opacity = 0.5f
-    mapboxMap.setDebug(debugOptions, true)
+    binding.mapView.debugOptions = debugOptions
     registerListeners(mapboxMap)
   }
 
-  private fun registerListeners(mapboxMap: MapboxMap) {
-    mapboxMap.addOnStyleLoadedListener {
-      logI(TAG, "OnStyleLoadedListener: $it")
-    }
-    mapboxMap.addOnStyleDataLoadedListener {
-      logI(TAG, "OnStyleDataLoadedListener: $it")
-    }
-    mapboxMap.addOnStyleImageMissingListener {
-      logI(TAG, "OnStyleImageMissingListener: $it")
-    }
-    mapboxMap.addOnStyleImageUnusedListener {
-      logI(TAG, "OnStyleImageUnusedListener: $it")
-    }
-    mapboxMap.addOnMapIdleListener {
-      logI(TAG, "OnMapIdleListener: $it")
-    }
-    mapboxMap.addOnMapLoadErrorListener(object : OnMapLoadErrorListener {
-      override fun onMapLoadError(eventData: MapLoadingErrorEventData) {
-        logI(TAG, "OnMapLoadErrorListener: $eventData")
+  private fun setupPerformanceStatisticsCollection() {
+    binding.perfStatButton.setOnClickListener {
+      when (binding.perfStatButton.text) {
+        PERF_STAT_START_COLLECT_BUTTON -> {
+          mapboxMap.startPerformanceStatisticsCollection(
+            PerformanceStatisticsOptions.Builder()
+              .samplerOptions(
+                listOf(
+                  PerformanceSamplerOptions.PER_FRAME_RENDERING_STATS,
+                  PerformanceSamplerOptions.CUMULATIVE_RENDERING_STATS
+                )
+              )
+              // we should be collecting the results every 5 seconds
+              .samplingDurationMillis(5_000.0)
+              .build()
+          ) { performanceStatistics ->
+            logI(TAG_PERFORMANCE_STATISTICS, "Collection duration:\n ${performanceStatistics.collectionDurationMillis}")
+            logI(TAG_PERFORMANCE_STATISTICS, "Per frame performance statistics:\n ${performanceStatistics.perFrameStatistics}")
+            logI(TAG_PERFORMANCE_STATISTICS, "Cumulative performance statistics:\n ${performanceStatistics.cumulativeStatistics}")
+            logI(TAG_PERFORMANCE_STATISTICS, "Render duration statistics:\n ${performanceStatistics.mapRenderDurationStatistics}")
+            val mostExpensiveLayerData = performanceStatistics.perFrameStatistics?.topRenderLayers?.firstOrNull()
+            val snackBar = Snackbar.make(
+              binding.mapView,
+              "The most expensive layer to render is ${mostExpensiveLayerData?.name} " +
+                "(time ${mostExpensiveLayerData?.durationMillis} ms)",
+              Snackbar.LENGTH_LONG
+            )
+            snackBar.animationMode = Snackbar.ANIMATION_MODE_SLIDE
+            snackBar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text).maxLines = 5
+            snackBar.show()
+          }
+          @SuppressLint("SetTextI18n")
+          binding.perfStatButton.text = PERF_STAT_STOP_COLLECT_BUTTON
+        }
+        PERF_STAT_STOP_COLLECT_BUTTON -> {
+          mapboxMap.stopPerformanceStatisticsCollection()
+          @SuppressLint("SetTextI18n")
+          binding.perfStatButton.text = PERF_STAT_START_COLLECT_BUTTON
+        }
       }
-    })
-    mapboxMap.addOnMapLoadedListener {
-      logI(TAG, "OnMapLoadedListener: $it")
     }
-    mapboxMap.addOnCameraChangeListener {
-      logI(TAG, "OnCameraChangeListener: $it")
+  }
+
+  private fun registerListeners(mapboxMap: MapboxMap) {
+    mapboxMap.subscribeStyleLoaded {
+      logI(TAG, "StyleLoadedCallback: $it")
     }
-    mapboxMap.addOnRenderFrameStartedListener {
-      logI(TAG, "OnRenderFrameStartedListener: $it")
+    mapboxMap.subscribeStyleDataLoaded {
+      logI(TAG, "StyleDataLoadedCallback: $it")
     }
-    mapboxMap.addOnRenderFrameFinishedListener {
+    mapboxMap.subscribeStyleImageMissing {
+      logI(TAG, "StyleImageMissingCallback: $it")
+    }
+    mapboxMap.subscribeStyleImageRemoveUnused {
+      logI(TAG, "StyleImageRemoveUnusedCallback: $it")
+    }
+    mapboxMap.subscribeMapIdle {
+      logI(TAG, "MapIdleCallback: $it")
+    }
+    mapboxMap.subscribeMapLoadingError {
+      logE(TAG, "MapLoadingErrorCallback: $it")
+    }
+    mapboxMap.subscribeMapLoaded {
+      logI(TAG, "MapLoadedCallback: $it")
+    }
+    mapboxMap.subscribeCameraChanged {
+      logI(TAG, "CameraChangedCallback: $it")
+    }
+    mapboxMap.subscribeRenderFrameStarted {
+      logI(TAG, "RenderFrameStartedCallback: $it")
+    }
+    mapboxMap.subscribeRenderFrameFinished {
+      logI(TAG, "RenderFrameFinishedCallback: $it")
+    }
+    mapboxMap.subscribeSourceAdded {
       logI(
         TAG,
-        "OnRenderFrameFinishedListener: $it"
+        "SourceAddedCallback: $it"
       )
     }
-    mapboxMap.addOnSourceAddedListener {
+    mapboxMap.subscribeSourceDataLoaded {
       logI(
         TAG,
-        "OnSourceAddedListener: $it"
+        "SourceDataLoadedCallback: $it"
       )
     }
-    mapboxMap.addOnSourceDataLoadedListener {
+    mapboxMap.subscribeSourceRemoved {
       logI(
         TAG,
-        "OnSourceDataLoadedListener: $it"
-      )
-    }
-    mapboxMap.addOnSourceRemovedListener {
-      logI(
-        TAG,
-        "OnSourceRemovedListener: $it"
+        "SourceRemovedCallback: $it"
       )
     }
   }
@@ -123,25 +165,31 @@ class DebugModeActivity : AppCompatActivity() {
   override fun onOptionsItemSelected(item: MenuItem): Boolean {
     when (item.itemId) {
       R.id.menu_debug_mode_tile_borders -> {
-        item.isChecked = toggleDebugOptions(MapDebugOptions.TILE_BORDERS)
+        item.isChecked = toggleDebugOptions(MapViewDebugOptions.TILE_BORDERS)
       }
       R.id.menu_debug_mode_parse_status -> {
-        item.isChecked = toggleDebugOptions(MapDebugOptions.PARSE_STATUS)
+        item.isChecked = toggleDebugOptions(MapViewDebugOptions.PARSE_STATUS)
       }
       R.id.menu_debug_mode_timestamps -> {
-        item.isChecked = toggleDebugOptions(MapDebugOptions.TIMESTAMPS)
+        item.isChecked = toggleDebugOptions(MapViewDebugOptions.TIMESTAMPS)
       }
       R.id.menu_debug_mode_collision -> {
-        item.isChecked = toggleDebugOptions(MapDebugOptions.COLLISION)
+        item.isChecked = toggleDebugOptions(MapViewDebugOptions.COLLISION)
       }
       R.id.menu_debug_mode_overdraw -> {
-        item.isChecked = toggleDebugOptions(MapDebugOptions.OVERDRAW)
+        item.isChecked = toggleDebugOptions(MapViewDebugOptions.OVERDRAW)
       }
       R.id.menu_debug_mode_stencil_clip -> {
-        item.isChecked = toggleDebugOptions(MapDebugOptions.STENCIL_CLIP)
+        item.isChecked = toggleDebugOptions(MapViewDebugOptions.STENCIL_CLIP)
       }
       R.id.menu_debug_mode_depth_buffer -> {
-        item.isChecked = toggleDebugOptions(MapDebugOptions.DEPTH_BUFFER)
+        item.isChecked = toggleDebugOptions(MapViewDebugOptions.DEPTH_BUFFER)
+      }
+      R.id.menu_debug_mode_camera_overlay -> {
+        item.isChecked = toggleDebugOptions(MapViewDebugOptions.CAMERA)
+      }
+      R.id.menu_debug_mode_padding_overlay -> {
+        item.isChecked = toggleDebugOptions(MapViewDebugOptions.PADDING)
       }
       else -> {
         return super.onOptionsItemSelected(item)
@@ -150,18 +198,15 @@ class DebugModeActivity : AppCompatActivity() {
     return true
   }
 
-  private fun toggleDebugOptions(option: MapDebugOptions): Boolean {
-    return if (debugOptions.contains(option)) {
-      mapboxMap.setDebug(debugOptions, false)
-      debugOptions.remove(option)
-      mapboxMap.setDebug(debugOptions, true)
-      false
-    } else {
-      mapboxMap.setDebug(debugOptions, false)
-      debugOptions.add(option)
-      mapboxMap.setDebug(debugOptions, true)
-      true
+  private fun toggleDebugOptions(option: MapViewDebugOptions): Boolean {
+    if (debugOptions.add(option)) {
+      binding.mapView.debugOptions = debugOptions
+      return true
     }
+
+    debugOptions.remove(option)
+    binding.mapView.debugOptions = debugOptions
+    return false
   }
 
   override fun onStart() {
@@ -173,7 +218,16 @@ class DebugModeActivity : AppCompatActivity() {
     }
   }
 
-  companion object {
-    const val TAG = "DebugModeActivity"
+  override fun onStop() {
+    super.onStop()
+    resourceRequestCancelable?.cancel()
+    untypedEventCancelable?.cancel()
+  }
+
+  private companion object {
+    private const val TAG = "DebugModeActivity"
+    private const val TAG_PERFORMANCE_STATISTICS = "PerformanceStatistics"
+    private const val PERF_STAT_STOP_COLLECT_BUTTON = "Stop collecting"
+    private const val PERF_STAT_START_COLLECT_BUTTON = "Collect Perf Stats"
   }
 }

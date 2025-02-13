@@ -49,13 +49,13 @@ class CameraAnimatorOptions<T> private constructor(
      * If specified explicitly - this value will be used as first target.
      * Otherwise current camera option on animation start will be taken.
      */
-    fun startValue(startValue: T) = apply { this.startValue = startValue }
+    fun startValue(startValue: T): Builder<T> = apply { this.startValue = startValue }
 
     /**
      * Optional field indicating who created animator.
      * Defaults to NULL if not specified explicitly.
      */
-    fun owner(owner: String) = apply { this.owner = owner }
+    fun owner(owner: String): Builder<T> = apply { this.owner = owner }
 
     /**
      * Build an actual [CameraAnimatorOptions] object.
@@ -103,7 +103,7 @@ class CameraAnimatorOptions<T> private constructor(
     /**
      * Builder DSL function to create [CameraAnimatorOptions] object.
      */
-    fun <T> cameraAnimatorOptions(vararg targets: T, block: (Builder<T>.() -> Unit)? = null) = if (block != null)
-      Builder(targets = targets).apply(block).build() else Builder(targets = targets).build()
+    inline fun <T> cameraAnimatorOptions(vararg targets: T, block: (Builder<T>.() -> Unit) = {}) =
+      Builder(targets = targets).apply(block).build()
   }
 }

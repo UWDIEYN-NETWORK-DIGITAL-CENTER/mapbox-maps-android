@@ -26,13 +26,13 @@ class DrawPolygonActivity : AppCompatActivity() {
     super.onCreate(savedInstanceState)
     val binding = ActivityDdsDrawPolygonBinding.inflate(layoutInflater)
     setContentView(binding.root)
-    binding.mapView.getMapboxMap().setCamera(
+    binding.mapView.mapboxMap.setCamera(
       START_CAMERA_POSITION
     )
-    binding.mapView.getMapboxMap().loadStyle(
-      style(styleUri = Style.LIGHT) {
+    binding.mapView.mapboxMap.loadStyle(
+      style(style = Style.LIGHT) {
         +geoJsonSource(SOURCE_ID) {
-          url(SOURCE_URL)
+          data(SOURCE_URL)
         }
         +layerAtPosition(
           fillLayer(LAYER_ID, SOURCE_ID) {
@@ -49,7 +49,7 @@ class DrawPolygonActivity : AppCompatActivity() {
       }
     )
     binding.patternFab.setOnClickListener {
-      binding.mapView.getMapboxMap().getStyle { style ->
+      binding.mapView.mapboxMap.getStyle { style ->
         val bitmap = ContextCompat.getDrawable(this@DrawPolygonActivity, R.drawable.pattern)
           ?.toBitmap(128, 128)!!
         style.addImage(IMAGE_ID, bitmap)
@@ -65,7 +65,7 @@ class DrawPolygonActivity : AppCompatActivity() {
     private const val LAYER_ID = "layer-id"
     private const val SOURCE_ID = "source-id"
     private const val TOP_LAYER_ID = "line-layer"
-    private const val SETTLEMENT_LABEL = "settlement-label"
+    private const val SETTLEMENT_LABEL = "settlement-major-label"
     private const val SOURCE_URL = "asset://maine_polygon.geojson"
     private val START_CAMERA_POSITION = cameraOptions {
       center(

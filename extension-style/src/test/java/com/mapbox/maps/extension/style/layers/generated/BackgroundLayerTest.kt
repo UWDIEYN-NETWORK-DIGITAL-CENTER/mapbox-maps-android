@@ -6,11 +6,12 @@ import android.graphics.Color
 import com.mapbox.bindgen.Expected
 import com.mapbox.bindgen.None
 import com.mapbox.bindgen.Value
+import com.mapbox.maps.MapboxExperimental
+import com.mapbox.maps.MapboxStyleManager
 import com.mapbox.maps.StyleManager
 import com.mapbox.maps.StylePropertyValue
 import com.mapbox.maps.StylePropertyValueKind
 import com.mapbox.maps.extension.style.ShadowStyleManager
-import com.mapbox.maps.extension.style.StyleInterface
 import com.mapbox.maps.extension.style.expressions.dsl.generated.*
 import com.mapbox.maps.extension.style.layers.getLayer
 import com.mapbox.maps.extension.style.layers.properties.generated.*
@@ -25,10 +26,11 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
+@OptIn(MapboxExperimental::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(shadows = [ShadowStyleManager::class])
 class BackgroundLayerTest {
-  private val style = mockk<StyleInterface>(relaxUnitFun = true, relaxed = true)
+  private val style = mockk<MapboxStyleManager>(relaxUnitFun = true, relaxed = true)
   private val expected = mockk<Expected<String, None>>(relaxUnitFun = true, relaxed = true)
   private val valueExpected = mockk<Expected<String, Value>>(relaxUnitFun = true, relaxed = true)
   private val styleProperty = mockk<StylePropertyValue>()
@@ -82,6 +84,37 @@ class BackgroundLayerTest {
     val expectedValue = "rgba(0, 0, 0, 1)"
     assertEquals(expectedValue.toString(), layer.backgroundColor?.toString())
     verify { style.getStyleLayerProperty("id", "background-color") }
+  }
+
+  @Test
+  fun backgroundColorUseThemeSetAfterInitialization() {
+    val layer = backgroundLayer("id") {}
+    val theme = "none"
+    layer.bindTo(style)
+    layer.backgroundColorUseTheme(theme)
+    verify { style.setStyleLayerProperty("id", "background-color-use-theme", capture(valueSlot)) }
+    assertEquals(valueSlot.captured.toString(), theme)
+  }
+
+  @Test
+  fun backgroundColorUseThemeSet() {
+    val theme = "none"
+    val layer = backgroundLayer("id") {
+      backgroundColorUseTheme(theme)
+    }
+    layer.bindTo(style)
+    verify { style.addStyleLayer(capture(valueSlot), any()) }
+    assertTrue(valueSlot.captured.toString().contains("background-color-use-theme"))
+  }
+
+  @Test
+  fun backgroundColorUseThemeGet() {
+    val theme = "none"
+    every { styleProperty.value } returns TypeUtils.wrapToValue(theme)
+    val layer = backgroundLayer("id") {}
+    layer.bindTo(style)
+    assertEquals(theme.toString(), layer.backgroundColorUseTheme?.toString())
+    verify { style.getStyleLayerProperty("id", "background-color-use-theme") }
   }
   // Expression Tests
 
@@ -202,6 +235,113 @@ class BackgroundLayerTest {
       delay(200)
     }
     verify { style.setStyleLayerProperty("id", "background-color-transition", capture(valueSlot)) }
+    assertEquals(valueSlot.captured.toString(), "{duration=100, delay=200}")
+  }
+
+  @Test
+  fun backgroundEmissiveStrengthSet() {
+    val layer = backgroundLayer("id") {}
+    val testValue = 1.0
+    layer.bindTo(style)
+    layer.backgroundEmissiveStrength(testValue)
+    verify { style.setStyleLayerProperty("id", "background-emissive-strength", capture(valueSlot)) }
+    assertEquals(valueSlot.captured.toString(), "1.0")
+  }
+
+  @Test
+  fun backgroundEmissiveStrengthGet() {
+    val testValue = 1.0
+    every { styleProperty.value } returns TypeUtils.wrapToValue(testValue)
+    val layer = backgroundLayer("id") { }
+    layer.bindTo(style)
+    val expectedValue = 1.0
+    assertEquals(expectedValue.toString(), layer.backgroundEmissiveStrength?.toString())
+    verify { style.getStyleLayerProperty("id", "background-emissive-strength") }
+  }
+  // Expression Tests
+
+  @Test
+  fun backgroundEmissiveStrengthAsExpressionSet() {
+    val expression = sum {
+      literal(2)
+      literal(3)
+    }
+    val layer = backgroundLayer("id") {}
+    layer.bindTo(style)
+    layer.backgroundEmissiveStrength(expression)
+    verify { style.setStyleLayerProperty("id", "background-emissive-strength", capture(valueSlot)) }
+    assertEquals(valueSlot.captured.toString(), "[+, 2, 3]")
+  }
+
+  @Test
+  fun backgroundEmissiveStrengthAsExpressionGet() {
+    val expression = sum {
+      literal(2)
+      literal(3)
+    }
+    every { styleProperty.value } returns TypeUtils.wrapToValue(expression)
+    every { styleProperty.kind } returns StylePropertyValueKind.EXPRESSION
+    val layer = backgroundLayer("id") { }
+    layer.bindTo(style)
+    assertEquals(expression.toString(), layer.backgroundEmissiveStrengthAsExpression?.toString())
+    verify { style.getStyleLayerProperty("id", "background-emissive-strength") }
+  }
+
+  @Test
+  fun backgroundEmissiveStrengthAsExpressionGetNull() {
+    val layer = backgroundLayer("id") { }
+    layer.bindTo(style)
+    assertEquals(null, layer.backgroundEmissiveStrengthAsExpression)
+    verify { style.getStyleLayerProperty("id", "background-emissive-strength") }
+  }
+
+  @Test
+  fun backgroundEmissiveStrengthAsExpressionGetFromLiteral() {
+    every { styleProperty.value } returns TypeUtils.wrapToValue(1.0)
+    val layer = backgroundLayer("id") { }
+    layer.bindTo(style)
+    assertEquals(1.0, layer.backgroundEmissiveStrengthAsExpression?.contents as Double, 1E-5)
+    assertEquals(1.0, layer.backgroundEmissiveStrength!!, 1E-5)
+    verify { style.getStyleLayerProperty("id", "background-emissive-strength") }
+  }
+
+  @Test
+  fun backgroundEmissiveStrengthTransitionSet() {
+    val layer = backgroundLayer("id") {}
+    layer.bindTo(style)
+    layer.backgroundEmissiveStrengthTransition(
+      transitionOptions {
+        duration(100)
+        delay(200)
+      }
+    )
+    verify { style.setStyleLayerProperty("id", "background-emissive-strength-transition", capture(valueSlot)) }
+    assertEquals(valueSlot.captured.toString(), "{duration=100, delay=200}")
+  }
+
+  @Test
+  fun backgroundEmissiveStrengthTransitionGet() {
+    val transition = transitionOptions {
+      duration(100)
+      delay(200)
+    }
+    every { styleProperty.value } returns TypeUtils.wrapToValue(transition)
+    every { styleProperty.kind } returns StylePropertyValueKind.TRANSITION
+    val layer = backgroundLayer("id") {}
+    layer.bindTo(style)
+    assertEquals(transition.toValue().toString(), layer.backgroundEmissiveStrengthTransition?.toValue().toString())
+    verify { style.getStyleLayerProperty("id", "background-emissive-strength-transition") }
+  }
+
+  @Test
+  fun backgroundEmissiveStrengthTransitionSetDsl() {
+    val layer = backgroundLayer("id") {}
+    layer.bindTo(style)
+    layer.backgroundEmissiveStrengthTransition {
+      duration(100)
+      delay(200)
+    }
+    verify { style.setStyleLayerProperty("id", "background-emissive-strength-transition", capture(valueSlot)) }
     assertEquals(valueSlot.captured.toString(), "{duration=100, delay=200}")
   }
 
@@ -379,6 +519,74 @@ class BackgroundLayerTest {
   }
 
   @Test
+  fun backgroundPitchAlignmentSet() {
+    val layer = backgroundLayer("id") {}
+    layer.bindTo(style)
+    layer.backgroundPitchAlignment(BackgroundPitchAlignment.MAP)
+    verify { style.setStyleLayerProperty("id", "background-pitch-alignment", capture(valueSlot)) }
+    assertEquals(valueSlot.captured.toString(), "map")
+  }
+
+  @Test
+  fun backgroundPitchAlignmentGet() {
+    every { styleProperty.value } returns TypeUtils.wrapToValue("map")
+
+    val layer = backgroundLayer("id") { }
+    layer.bindTo(style)
+    assertEquals(BackgroundPitchAlignment.MAP, layer.backgroundPitchAlignment)
+    verify { style.getStyleLayerProperty("id", "background-pitch-alignment") }
+  }
+  // Expression Tests
+
+  @Test
+  fun backgroundPitchAlignmentAsExpressionSet() {
+    val expression = sum {
+      literal(2)
+      literal(3)
+    }
+    val layer = backgroundLayer("id") {}
+    layer.bindTo(style)
+    layer.backgroundPitchAlignment(expression)
+    verify { style.setStyleLayerProperty("id", "background-pitch-alignment", capture(valueSlot)) }
+    assertEquals(valueSlot.captured.toString(), "[+, 2, 3]")
+  }
+
+  @Test
+  fun backgroundPitchAlignmentAsExpressionGet() {
+    val expression = sum {
+      literal(2)
+      literal(3)
+    }
+    every { styleProperty.value } returns TypeUtils.wrapToValue(expression)
+    every { styleProperty.kind } returns StylePropertyValueKind.EXPRESSION
+    val layer = backgroundLayer("id") { }
+    layer.bindTo(style)
+    assertEquals(expression.toString(), layer.backgroundPitchAlignmentAsExpression?.toString())
+    verify { style.getStyleLayerProperty("id", "background-pitch-alignment") }
+  }
+
+  @Test
+  fun backgroundPitchAlignmentAsExpressionGetNull() {
+    val layer = backgroundLayer("id") { }
+    layer.bindTo(style)
+    assertEquals(null, layer.backgroundPitchAlignmentAsExpression)
+    verify { style.getStyleLayerProperty("id", "background-pitch-alignment") }
+  }
+
+  @Test
+  fun backgroundPitchAlignmentAsExpressionGetFromLiteral() {
+    val value = "map"
+    every { styleProperty.value } returns TypeUtils.wrapToValue(value)
+
+    val layer = backgroundLayer("id") { }
+    layer.bindTo(style)
+    assertEquals(value.toString(), layer.backgroundPitchAlignmentAsExpression?.toString())
+    assertEquals(BackgroundPitchAlignment.MAP.value, layer.backgroundPitchAlignmentAsExpression.toString())
+    assertEquals(BackgroundPitchAlignment.MAP, layer.backgroundPitchAlignment)
+    verify { style.getStyleLayerProperty("id", "background-pitch-alignment") }
+  }
+
+  @Test
   fun visibilitySet() {
     val layer = backgroundLayer("id") {}
     layer.bindTo(style)
@@ -394,6 +602,26 @@ class BackgroundLayerTest {
     val layer = backgroundLayer("id") { }
     layer.bindTo(style)
     assertEquals(Visibility.NONE, layer.visibility)
+    verify { style.getStyleLayerProperty("id", "visibility") }
+  }
+
+  @Test
+  fun visibilityAsExpressionSet() {
+    val layer = backgroundLayer("id") {}
+    layer.bindTo(style)
+    layer.visibility(literal("none"))
+    verify { style.setStyleLayerProperty("id", "visibility", capture(valueSlot)) }
+    assertEquals(valueSlot.captured.toString(), "none")
+  }
+
+  @Test
+  fun visibilityAsExpressionGet() {
+    every { styleProperty.kind } returns StylePropertyValueKind.EXPRESSION
+    every { styleProperty.value } returns literal("none")
+
+    val layer = backgroundLayer("id") { }
+    layer.bindTo(style)
+    assertEquals(literal("none"), layer.visibilityAsExpression)
     verify { style.getStyleLayerProperty("id", "visibility") }
   }
 
@@ -436,6 +664,15 @@ class BackgroundLayerTest {
     assertEquals(expectedValue.toString(), BackgroundLayer.defaultBackgroundColor?.toString())
     verify { StyleManager.getStyleLayerPropertyDefaultValue("background", "background-color") }
   }
+
+  @Test
+  fun defaultBackgroundColorUseThemeTest() {
+    val testValue = "default"
+    every { styleProperty.value } returns TypeUtils.wrapToValue(testValue)
+    assertEquals(testValue, BackgroundLayer.defaultBackgroundColorUseTheme)
+    verify { StyleManager.getStyleLayerPropertyDefaultValue("background", "background-color-use-theme") }
+  }
+
   // Expression Tests
 
   @Test
@@ -494,6 +731,50 @@ class BackgroundLayerTest {
 
     assertEquals(transition.toValue().toString(), BackgroundLayer.defaultBackgroundColorTransition?.toValue().toString())
     verify { StyleManager.getStyleLayerPropertyDefaultValue("background", "background-color-transition") }
+  }
+
+  @Test
+  fun defaultBackgroundEmissiveStrengthTest() {
+    val testValue = 1.0
+    every { styleProperty.value } returns TypeUtils.wrapToValue(testValue)
+    val expectedValue = 1.0
+    assertEquals(expectedValue.toString(), BackgroundLayer.defaultBackgroundEmissiveStrength?.toString())
+    verify { StyleManager.getStyleLayerPropertyDefaultValue("background", "background-emissive-strength") }
+  }
+  // Expression Tests
+
+  @Test
+  fun defaultBackgroundEmissiveStrengthAsExpressionTest() {
+    val expression = sum {
+      literal(2)
+      literal(3)
+    }
+    every { styleProperty.value } returns TypeUtils.wrapToValue(expression)
+    every { styleProperty.kind } returns StylePropertyValueKind.EXPRESSION
+
+    assertEquals(expression.toString(), BackgroundLayer.defaultBackgroundEmissiveStrengthAsExpression?.toString())
+    verify { StyleManager.getStyleLayerPropertyDefaultValue("background", "background-emissive-strength") }
+  }
+
+  @Test
+  fun defaultBackgroundEmissiveStrengthAsExpressionGetFromLiteral() {
+    every { styleProperty.value } returns TypeUtils.wrapToValue(1.0)
+    assertEquals(1.0, BackgroundLayer.defaultBackgroundEmissiveStrengthAsExpression?.contents as Double, 1E-5)
+    assertEquals(1.0, BackgroundLayer.defaultBackgroundEmissiveStrength!!, 1E-5)
+    verify { StyleManager.getStyleLayerPropertyDefaultValue("background", "background-emissive-strength") }
+  }
+
+  @Test
+  fun defaultBackgroundEmissiveStrengthTransitionTest() {
+    val transition = transitionOptions {
+      duration(100)
+      delay(200)
+    }
+    every { styleProperty.value } returns TypeUtils.wrapToValue(transition)
+    every { styleProperty.kind } returns StylePropertyValueKind.TRANSITION
+
+    assertEquals(transition.toValue().toString(), BackgroundLayer.defaultBackgroundEmissiveStrengthTransition?.toValue().toString())
+    verify { StyleManager.getStyleLayerPropertyDefaultValue("background", "background-emissive-strength-transition") }
   }
 
   @Test
@@ -570,6 +851,39 @@ class BackgroundLayerTest {
     assertEquals("abc", BackgroundLayer.defaultBackgroundPatternAsExpression.toString())
     assertEquals("abc", BackgroundLayer.defaultBackgroundPattern)
     verify { StyleManager.getStyleLayerPropertyDefaultValue("background", "background-pattern") }
+  }
+
+  @Test
+  fun defaultBackgroundPitchAlignmentTest() {
+    every { styleProperty.value } returns TypeUtils.wrapToValue("map")
+
+    assertEquals(BackgroundPitchAlignment.MAP, BackgroundLayer.defaultBackgroundPitchAlignment)
+    verify { StyleManager.getStyleLayerPropertyDefaultValue("background", "background-pitch-alignment") }
+  }
+  // Expression Tests
+
+  @Test
+  fun defaultBackgroundPitchAlignmentAsExpressionTest() {
+    val expression = sum {
+      literal(2)
+      literal(3)
+    }
+    every { styleProperty.value } returns TypeUtils.wrapToValue(expression)
+    every { styleProperty.kind } returns StylePropertyValueKind.EXPRESSION
+
+    assertEquals(expression.toString(), BackgroundLayer.defaultBackgroundPitchAlignmentAsExpression?.toString())
+    verify { StyleManager.getStyleLayerPropertyDefaultValue("background", "background-pitch-alignment") }
+  }
+
+  @Test
+  fun defaultBackgroundPitchAlignmentAsExpressionGetFromLiteral() {
+    val value = "map"
+    every { styleProperty.value } returns TypeUtils.wrapToValue(value)
+
+    assertEquals(value.toString(), BackgroundLayer.defaultBackgroundPitchAlignmentAsExpression?.toString())
+    assertEquals(BackgroundPitchAlignment.MAP.value, BackgroundLayer.defaultBackgroundPitchAlignmentAsExpression.toString())
+    assertEquals(BackgroundPitchAlignment.MAP, BackgroundLayer.defaultBackgroundPitchAlignment)
+    verify { StyleManager.getStyleLayerPropertyDefaultValue("background", "background-pitch-alignment") }
   }
 
   @Test

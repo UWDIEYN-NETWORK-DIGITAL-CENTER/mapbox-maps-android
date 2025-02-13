@@ -5,6 +5,10 @@ import com.mapbox.maps.extension.observable.eventdata.StyleImageUnusedEventData
 /**
  * Definition for listener invoked when an image added to the Style is no longer needed.
  */
+@Deprecated(
+  message = "This listener is deprecated, and will be removed in next major release. use StyleImageRemoveUnusedCallback instead.",
+  replaceWith = ReplaceWith("StyleImageRemoveUnusedCallback")
+)
 fun interface OnStyleImageUnusedListener {
 
   /**

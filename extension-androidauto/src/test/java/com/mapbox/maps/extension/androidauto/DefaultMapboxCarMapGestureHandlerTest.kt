@@ -3,6 +3,7 @@
 package com.mapbox.maps.extension.androidauto
 
 import com.mapbox.maps.CameraOptions
+import com.mapbox.maps.MapCenterAltitudeMode
 import com.mapbox.maps.MapboxExperimental
 import com.mapbox.maps.ScreenCoordinate
 import com.mapbox.maps.logI
@@ -21,7 +22,13 @@ class DefaultMapboxCarMapGestureHandlerTest {
 
   private val surface = mockk<MapboxCarMapSurface>(relaxed = true) {
     every { mapSurface } returns mockk {
-      every { getMapboxMap() } returns mockk(relaxed = true)
+      every { mapboxMap } returns mockk {
+        every { getCenterAltitudeMode() } returns MapCenterAltitudeMode.TERRAIN
+        every { setCenterAltitudeMode(any()) } just runs
+        every { setGestureInProgress(any()) } just runs
+        every { cameraForDrag(any(), any()) } returns CameraOptions.Builder().build()
+        every { setCamera(any<CameraOptions>()) } just runs
+      }
       every { camera } returns mockk(relaxed = true)
     }
   }
@@ -41,14 +48,38 @@ class DefaultMapboxCarMapGestureHandlerTest {
   @Test
   fun `onScroll will start and stop dragging`() {
     val center = ScreenCoordinate(450.0, 225.0)
-    val mapboxMap = surface.mapSurface.getMapboxMap()
+    val mapboxMap = surface.mapSurface.mapboxMap
 
     carMapGestures.onScroll(surface, center, 3.0f, -3.0f)
 
     verifyOrder {
-      mapboxMap.dragStart(ScreenCoordinate(450.0, 225.0))
+      mapboxMap.getCenterAltitudeMode()
+      mapboxMap.getCenterAltitudeMode()
+      mapboxMap.setGestureInProgress(true)
+      mapboxMap.setCenterAltitudeMode(MapCenterAltitudeMode.SEA)
+      mapboxMap.cameraForDrag(any(), any())
       mapboxMap.setCamera(any<CameraOptions>())
-      mapboxMap.dragEnd()
+      mapboxMap.setCenterAltitudeMode(MapCenterAltitudeMode.TERRAIN)
+      mapboxMap.setGestureInProgress(false)
+    }
+  }
+
+  @Test
+  fun `onScroll with center altitude mode set to SEA`() {
+    val center = ScreenCoordinate(450.0, 225.0)
+    val mapboxMap = surface.mapSurface.mapboxMap
+
+    every { mapboxMap.getCenterAltitudeMode() } returns MapCenterAltitudeMode.SEA
+
+    carMapGestures.onScroll(surface, center, 3.0f, -3.0f)
+
+    verifyOrder {
+      mapboxMap.getCenterAltitudeMode()
+      mapboxMap.getCenterAltitudeMode()
+      mapboxMap.setGestureInProgress(true)
+      mapboxMap.cameraForDrag(any(), any())
+      mapboxMap.setCamera(any<CameraOptions>())
+      mapboxMap.setGestureInProgress(false)
     }
   }
 
@@ -56,9 +87,9 @@ class DefaultMapboxCarMapGestureHandlerTest {
   fun `onScroll will move camera from visibleCenter to the delta distance`() {
     val fromCoordinateSlot = slot<ScreenCoordinate>()
     val toCoordinateSlot = slot<ScreenCoordinate>()
-    val mapboxMap = surface.mapSurface.getMapboxMap()
+    val mapboxMap = surface.mapSurface.mapboxMap
     every {
-      mapboxMap.getDragCameraOptions(capture(fromCoordinateSlot), capture(toCoordinateSlot))
+      mapboxMap.cameraForDrag(capture(fromCoordinateSlot), capture(toCoordinateSlot))
     } returns mockk(relaxed = true)
 
     val center = ScreenCoordinate(450.0, 225.0)
@@ -72,7 +103,7 @@ class DefaultMapboxCarMapGestureHandlerTest {
 
   @Test
   fun `onScale double-tap-gesture will easeTo new zoom`() {
-    every { surface.mapSurface.getMapboxMap().cameraState } returns mockk {
+    every { surface.mapSurface.mapboxMap.cameraState } returns mockk {
       every { zoom } returns 10.0
     }
     val cameraOptionsSlot = slot<CameraOptions>()
@@ -91,7 +122,7 @@ class DefaultMapboxCarMapGestureHandlerTest {
 
   @Test
   fun `onScale will use the focus as the anchor point`() {
-    val mapboxMap = surface.mapSurface.getMapboxMap()
+    val mapboxMap = surface.mapSurface.mapboxMap
     every { mapboxMap.cameraState } returns mockk {
       every { zoom } returns 16.50
     }
@@ -112,7 +143,7 @@ class DefaultMapboxCarMapGestureHandlerTest {
   fun `onScale with factor less than one will zoom out`() {
     val expectedFromZoom = 16.50
     val expectedToZoom = 16.48
-    val mapboxMap = surface.mapSurface.getMapboxMap()
+    val mapboxMap = surface.mapSurface.mapboxMap
     every { mapboxMap.cameraState } returns mockk {
       every { zoom } returns expectedFromZoom
     }
@@ -130,7 +161,7 @@ class DefaultMapboxCarMapGestureHandlerTest {
   fun `onScale with factor greater than one will zoom in`() {
     val expectedFromZoom = 16.50
     val expectedToZoom = 16.52
-    val mapboxMap = surface.mapSurface.getMapboxMap()
+    val mapboxMap = surface.mapSurface.mapboxMap
     every { mapboxMap.cameraState } returns mockk {
       every { zoom } returns expectedFromZoom
     }

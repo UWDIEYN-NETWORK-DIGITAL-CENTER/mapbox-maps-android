@@ -20,7 +20,7 @@ import java.util.Locale
  * Class for PolylineAnnotation
  */
 class PolylineAnnotation(
-  id: Long,
+  id: String,
   /** The annotation manager that manipulate this annotation */
   private val annotationManager: AnnotationManager<LineString, PolylineAnnotation, *, *, *, *, *>,
   jsonObject: JsonObject,
@@ -55,7 +55,7 @@ class PolylineAnnotation(
   /**
    * The lineJoin property
    *
-   * The display of lines when joining.
+   * The display of lines when joining. Default value: "miter".
    */
   var lineJoin: LineJoin?
     /**
@@ -66,7 +66,7 @@ class PolylineAnnotation(
     get() {
       val value = jsonObject.get(PolylineAnnotationOptions.PROPERTY_LINE_JOIN)
       value?.let {
-        return LineJoin.valueOf(it.asString.toUpperCase(Locale.US))
+        return LineJoin.valueOf(it.asString.uppercase(Locale.US))
       }
       return null
     }
@@ -119,9 +119,42 @@ class PolylineAnnotation(
     }
 
   /**
+   * The lineZOffset property
+   *
+   * Vertical offset from ground, in meters. Defaults to 0. This is an experimental property with some known issues:  - Not supported for globe projection at the moment  - Elevated line discontinuity is possible on tile borders with terrain enabled  - Rendering artifacts can happen near line joins and line caps depending on the line styling  - Rendering artifacts relating to `line-opacity` and `line-blur`  - Elevated line visibility is determined by layer order  - Z-fighting issues can happen with intersecting elevated lines  - Elevated lines don't cast shadows Default value: 0.
+   */
+  var lineZOffset: Double?
+    /**
+     * Get the lineZOffset property
+     *
+     * @return property wrapper value around Double
+     */
+    get() {
+      val value = jsonObject.get(PolylineAnnotationOptions.PROPERTY_LINE_Z_OFFSET)
+      value?.let {
+        return it.asString.toDouble()
+      }
+      return null
+    }
+    /**
+     * Set the lineZOffset property
+     *
+     * To update the polylineAnnotation on the map use {@link polylineAnnotationManager#update(Annotation)}.
+     *
+     * @param value constant property value for Double
+     */
+    set(value) {
+      if (value != null) {
+        jsonObject.addProperty(PolylineAnnotationOptions.PROPERTY_LINE_Z_OFFSET, value)
+      } else {
+        jsonObject.remove(PolylineAnnotationOptions.PROPERTY_LINE_Z_OFFSET)
+      }
+    }
+
+  /**
    * The lineBlur property
    *
-   * Blur applied to the line, in density-independent pixels.
+   * Blur applied to the line, in pixels. Default value: 0. Minimum value: 0. The unit of lineBlur is in pixels.
    */
   var lineBlur: Double?
     /**
@@ -152,8 +185,107 @@ class PolylineAnnotation(
     }
 
   /**
+   * The lineBorderColor property in Int
+   * The color of the line border. If line-border-width is greater than zero and the alpha value of this color is 0 (default), the color for the border will be selected automatically based on the line color. Default value: "rgba(0, 0, 0, 0)".
+   */
+  var lineBorderColorInt: Int?
+    /**
+     * Get the lineBorderColor property
+     * @return color value for String
+     */
+    @ColorInt
+    get() {
+      val value = jsonObject.get(PolylineAnnotationOptions.PROPERTY_LINE_BORDER_COLOR)
+      value?.let {
+        ColorUtils.rgbaToColor(it.asString)?.let {
+          return it
+        }
+      }
+      return null
+    }
+    /**
+     * Set the lineBorderColor property
+     * To update the polylineAnnotation on the map use {@link polylineAnnotationManager#update(Annotation)}.
+     *
+     * @param color value for String
+     */
+    set(@ColorInt value) {
+      if (value != null) {
+        jsonObject.addProperty(
+          PolylineAnnotationOptions.PROPERTY_LINE_BORDER_COLOR, ColorUtils.colorToRgbaString(value)
+        )
+      } else {
+        jsonObject.remove(PolylineAnnotationOptions.PROPERTY_LINE_BORDER_COLOR)
+      }
+    }
+
+  /**
+   * The lineBorderColor property in String
+   *
+   * The color of the line border. If line-border-width is greater than zero and the alpha value of this color is 0 (default), the color for the border will be selected automatically based on the line color. Default value: "rgba(0, 0, 0, 0)".
+   */
+  var lineBorderColorString: String?
+    /**
+     * Get the lineBorderColor property
+     * @return color value for String
+     */
+    get() {
+      val value = jsonObject.get(PolylineAnnotationOptions.PROPERTY_LINE_BORDER_COLOR)
+      value?.let {
+        return it.asString.toString()
+      }
+      return null
+    }
+    /**
+     * Set the lineBorderColor property
+     * To update the polylineAnnotation on the map use {@link polylineAnnotationManager#update(Annotation)}.
+     *
+     * @param color value for String
+     */
+    set(value) {
+      if (value != null) {
+        jsonObject.addProperty(PolylineAnnotationOptions.PROPERTY_LINE_BORDER_COLOR, value)
+      } else {
+        jsonObject.remove(PolylineAnnotationOptions.PROPERTY_LINE_BORDER_COLOR)
+      }
+    }
+
+  /**
+   * The lineBorderWidth property
+   *
+   * The width of the line border. A value of zero means no border. Default value: 0. Minimum value: 0.
+   */
+  var lineBorderWidth: Double?
+    /**
+     * Get the lineBorderWidth property
+     *
+     * @return property wrapper value around Double
+     */
+    get() {
+      val value = jsonObject.get(PolylineAnnotationOptions.PROPERTY_LINE_BORDER_WIDTH)
+      value?.let {
+        return it.asString.toDouble()
+      }
+      return null
+    }
+    /**
+     * Set the lineBorderWidth property
+     *
+     * To update the polylineAnnotation on the map use {@link polylineAnnotationManager#update(Annotation)}.
+     *
+     * @param value constant property value for Double
+     */
+    set(value) {
+      if (value != null) {
+        jsonObject.addProperty(PolylineAnnotationOptions.PROPERTY_LINE_BORDER_WIDTH, value)
+      } else {
+        jsonObject.remove(PolylineAnnotationOptions.PROPERTY_LINE_BORDER_WIDTH)
+      }
+    }
+
+  /**
    * The lineColor property in Int
-   * The color with which the line will be drawn.
+   * The color with which the line will be drawn. Default value: "#000000".
    */
   var lineColorInt: Int?
     /**
@@ -189,7 +321,7 @@ class PolylineAnnotation(
   /**
    * The lineColor property in String
    *
-   * The color with which the line will be drawn.
+   * The color with which the line will be drawn. Default value: "#000000".
    */
   var lineColorString: String?
     /**
@@ -220,7 +352,7 @@ class PolylineAnnotation(
   /**
    * The lineGapWidth property
    *
-   * Draws a line casing outside of a line's actual path. Value indicates the width of the inner gap.
+   * Draws a line casing outside of a line's actual path. Value indicates the width of the inner gap. Default value: 0. Minimum value: 0. The unit of lineGapWidth is in pixels.
    */
   var lineGapWidth: Double?
     /**
@@ -253,7 +385,7 @@ class PolylineAnnotation(
   /**
    * The lineOffset property
    *
-   * The line's offset. For linear features, a positive value offsets the line to the right, relative to the direction of the line, and a negative value to the left. For polygon features, a positive value results in an inset, and a negative value results in an outset.
+   * The line's offset. For linear features, a positive value offsets the line to the right, relative to the direction of the line, and a negative value to the left. For polygon features, a positive value results in an inset, and a negative value results in an outset. Default value: 0. The unit of lineOffset is in pixels.
    */
   var lineOffset: Double?
     /**
@@ -286,7 +418,7 @@ class PolylineAnnotation(
   /**
    * The lineOpacity property
    *
-   * The opacity at which the line will be drawn.
+   * The opacity at which the line will be drawn. Default value: 1. Value range: [0, 1]
    */
   var lineOpacity: Double?
     /**
@@ -352,7 +484,7 @@ class PolylineAnnotation(
   /**
    * The lineWidth property
    *
-   * Stroke thickness.
+   * Stroke thickness. Default value: 1. Minimum value: 0. The unit of lineWidth is in pixels.
    */
   var lineWidth: Double?
     /**
@@ -420,8 +552,17 @@ class PolylineAnnotation(
     jsonObject.get(PolylineAnnotationOptions.PROPERTY_LINE_SORT_KEY)?.let {
       annotationManager.enableDataDrivenProperty(PolylineAnnotationOptions.PROPERTY_LINE_SORT_KEY)
     }
+    jsonObject.get(PolylineAnnotationOptions.PROPERTY_LINE_Z_OFFSET)?.let {
+      annotationManager.enableDataDrivenProperty(PolylineAnnotationOptions.PROPERTY_LINE_Z_OFFSET)
+    }
     jsonObject.get(PolylineAnnotationOptions.PROPERTY_LINE_BLUR)?.let {
       annotationManager.enableDataDrivenProperty(PolylineAnnotationOptions.PROPERTY_LINE_BLUR)
+    }
+    jsonObject.get(PolylineAnnotationOptions.PROPERTY_LINE_BORDER_COLOR)?.let {
+      annotationManager.enableDataDrivenProperty(PolylineAnnotationOptions.PROPERTY_LINE_BORDER_COLOR)
+    }
+    jsonObject.get(PolylineAnnotationOptions.PROPERTY_LINE_BORDER_WIDTH)?.let {
+      annotationManager.enableDataDrivenProperty(PolylineAnnotationOptions.PROPERTY_LINE_BORDER_WIDTH)
     }
     jsonObject.get(PolylineAnnotationOptions.PROPERTY_LINE_COLOR)?.let {
       annotationManager.enableDataDrivenProperty(PolylineAnnotationOptions.PROPERTY_LINE_COLOR)

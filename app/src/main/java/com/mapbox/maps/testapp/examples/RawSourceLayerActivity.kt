@@ -51,14 +51,14 @@ class RawSourceLayerActivity : AppCompatActivity() {
     super.onCreate(savedInstanceState)
     val mapView = MapView(this)
     setContentView(mapView)
-    mapView.getMapboxMap().apply {
+    mapView.mapboxMap.apply {
       setCamera(
         CameraOptions.Builder()
           .center(Point.fromLngLat(-77.032667, 38.913175))
           .zoom(16.0)
           .build()
       )
-      loadStyleUri(Style.MAPBOX_STREETS) { addGeoJsonSource(it) }
+      loadStyle(Style.STANDARD) { addGeoJsonSource(it) }
     }
   }
 

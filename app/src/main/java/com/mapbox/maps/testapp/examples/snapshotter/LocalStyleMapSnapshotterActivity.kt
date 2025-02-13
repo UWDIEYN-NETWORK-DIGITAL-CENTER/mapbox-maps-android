@@ -15,9 +15,6 @@ class LocalStyleMapSnapshotterActivity : AppCompatActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     val snapshotterOptions = MapSnapshotOptions.Builder()
-      .resourceOptions(
-        ResourceOptionsManager.getDefault(this).resourceOptions
-      )
       .size(Size(512.0f, 512.0f))
       .pixelRatio(1.0f)
       .build()
@@ -53,12 +50,11 @@ class LocalStyleMapSnapshotterActivity : AppCompatActivity() {
         }
       """.trimIndent()
     )
-    mapSnapshotter.start {
-      it?.let { mapSnapshot ->
-        val imageView = ImageView(this)
-        imageView.setImageBitmap(mapSnapshot.bitmap())
-        setContentView(imageView)
-      }
+    // ignore error in this example
+    mapSnapshotter.start { bitmap, _ ->
+      val imageView = ImageView(this)
+      imageView.setImageBitmap(bitmap)
+      setContentView(imageView)
     }
   }
 

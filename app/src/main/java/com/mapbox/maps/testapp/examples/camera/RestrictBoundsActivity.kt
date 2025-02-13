@@ -16,9 +16,13 @@ import com.mapbox.maps.CameraBoundsOptions
 import com.mapbox.maps.CoordinateBounds
 import com.mapbox.maps.MapboxMap
 import com.mapbox.maps.Style
+import com.mapbox.maps.extension.style.layers.generated.FillLayer
+import com.mapbox.maps.extension.style.layers.generated.fillLayer
+import com.mapbox.maps.extension.style.layers.getLayerAs
+import com.mapbox.maps.extension.style.layers.properties.generated.Visibility
 import com.mapbox.maps.extension.style.sources.generated.GeoJsonSource
 import com.mapbox.maps.extension.style.sources.generated.geoJsonSource
-import com.mapbox.maps.extension.style.sources.getSource
+import com.mapbox.maps.extension.style.sources.getSourceAs
 import com.mapbox.maps.extension.style.style
 import com.mapbox.maps.testapp.R
 import com.mapbox.maps.testapp.databinding.ActivityRestrictBoundsBinding
@@ -35,11 +39,17 @@ class RestrictBoundsActivity : AppCompatActivity() {
     super.onCreate(savedInstanceState)
     binding = ActivityRestrictBoundsBinding.inflate(layoutInflater)
     setContentView(binding.root)
-    mapboxMap = binding.mapView.getMapboxMap()
+    mapboxMap = binding.mapView.mapboxMap
     mapboxMap.loadStyle(
-      style(Style.MAPBOX_STREETS) {
+      style(Style.STANDARD) {
         +geoJsonSource(BOUNDS_ID) {
           featureCollection(FeatureCollection.fromFeatures(listOf()))
+        }
+        +fillLayer(BOUNDS_ID, BOUNDS_ID) {
+          fillColor(Color.RED)
+          fillOpacity(0.15)
+          visibility(Visibility.NONE)
+          slot("bottom")
         }
       }
     ) { setupBounds(SAN_FRANCISCO_BOUND) }
@@ -69,37 +79,49 @@ class RestrictBoundsActivity : AppCompatActivity() {
         setupBounds(INFINITE_BOUNDS)
         true
       }
+      R.id.menu_action_toggle_bounds -> {
+        toggleShowBounds()
+        true
+      }
       else -> {
         super.onOptionsItemSelected(item)
       }
     }
   }
 
-  private fun setupBounds(bounds: CameraBoundsOptions) {
-    mapboxMap.setBounds(bounds)
-    showBoundsArea(bounds)
-  }
-
-  private fun showBoundsArea(boundsOptions: CameraBoundsOptions) {
-    val source = mapboxMap.getStyle()!!.getSource(BOUNDS_ID) as GeoJsonSource
-    val bounds = boundsOptions.bounds
-    val list = mutableListOf<List<Point>>()
-    bounds?.let {
-      if (!it.infiniteBounds) {
-        val northEast = it.northeast
-        val southWest = it.southwest
-        val northWest = Point.fromLngLat(southWest.longitude(), northEast.latitude())
-        val southEast = Point.fromLngLat(northEast.longitude(), southWest.latitude())
-        list.add(
-          mutableListOf(northEast, southEast, southWest, northWest, northEast)
-        )
+  private fun toggleShowBounds() {
+    mapboxMap.getStyle {
+      val boundsFillLayer = it.getLayerAs<FillLayer>(BOUNDS_ID)!!
+      val visibility: Visibility = boundsFillLayer.visibility!!
+      when (visibility) {
+        Visibility.NONE -> boundsFillLayer.visibility(Visibility.VISIBLE)
+        Visibility.VISIBLE -> boundsFillLayer.visibility(Visibility.NONE)
       }
     }
-    source.geometry(
-      Polygon.fromLngLats(
-        list
+  }
+
+  private fun setupBounds(bounds: CameraBoundsOptions) {
+    mapboxMap.getStyle { style ->
+      setupBoundsArea(bounds, style)
+    }
+  }
+
+  private fun setupBoundsArea(boundsOptions: CameraBoundsOptions, style: Style) {
+    mapboxMap.setBounds(boundsOptions)
+    // In this example we always have bounds
+    val bounds = boundsOptions.bounds!!
+    if (!bounds.infiniteBounds) {
+      val northEast = bounds.northeast
+      val southWest = bounds.southwest
+      val northWest = Point.fromLngLat(southWest.longitude(), northEast.latitude())
+      val southEast = Point.fromLngLat(northEast.longitude(), southWest.latitude())
+      val boundsBox = listOf(northEast, southEast, southWest, northWest, northEast)
+      // Update the source with the new bounds
+      style.getSourceAs<GeoJsonSource>(BOUNDS_ID)!!.geometry(
+        // We only want one polygon: the box around the bounds
+        Polygon.fromLngLats(listOf(boundsBox))
       )
-    )
+    }
   }
 
   private fun showCrosshair() {

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="description_simple_map">Create and display a map that uses the default Mapbox streets style. This example also shows how to update the starting camera for a map.</string>
+    <string name="description_standard_style">Use the Standard style and modify settings at runtime.</string>
     <string name="description_studio_style_map">Use a custom style designed in Mapbox Studio.</string>
     <string name="description_runtime_styling">Shows runtime styling</string>
     <string name="description_tint_fill">Add an image to a style and use it to display a pattern in the landuse FillLayer in the Mapbox Streets style.</string>
@@ -17,12 +18,15 @@
     <string name="description_map_viewpager">Use a MapView inside a ViewPager</string>
     <string name="description_map_multi">Using multiple map fragments in one Activity</string>
     <string name="description_debug_mode">Use variations of debug modes of the Map</string>
+    <string name="description_mapbox_recorder">Showcasing recording / replaying session with MapboxMapRecorder</string>
     <string name="description_snapshotter">Create a static, non-interactive image of a map style with specified camera position. The resulting snapshot is provided as a bitmap on Android.</string>
     <string name="description_snapshotter_dds">Use data driven styling with static map image generation</string>
     <string name="description_snapshotter_local">Use an local style with static map image generation</string>
     <string name="description_location_tracking">Display the user\'s location on a map with the default user location puck.</string>
     <string name="description_simulate_navigation_route">Simulate a navigation route</string>
     <string name="description_location_basic_pulsing_circle">Display the LocationComponent\'s default pulsing circle</string>
+    <string name="description_simple_geofencing">Display geofence area around current location</string>
+    <string name="description_extended_geofencing">Display geofence created by isochrone</string>
     <string name="description_restrict_bounds">Restrict the map\'s viewport to a specified set of coordinates for gesture-based camera changes. The viewport can still be changed programmatically.</string>
     <string name="description_texture_view">Use TextureView as render surface</string>
     <string name="description_texture_view_animation">Apply ViewAnimation on a TextureView</string>
@@ -38,6 +42,7 @@
     <string name="description_camera_low_level">Animate the map camera to a new position using camera animators. Individual camera properties such as zoom, bearing, and center coordinate can be animated independently.</string>
     <string name="description_animate_camera_during_gesture">Animate the map camera properties during user gestures.</string>
     <string name="description_fill_extrusion">Extrude the building layer in the Mapbox Light style using FillExtrusionLayer and set up the light position.</string>
+    <string name="description_lights3d">Extrude the building layer in the Mapbox Standard style and set up the light position.</string>
     <string name="description_icon_property">Add point data and several images to a style and use the switchCase and get expressions to choose which image to display at each point in a SymbolLayer based on a data property.</string>
     <string name="description_animated_image_source">Load a raster image to a style using ImageSource and display it on a map as animated weather data using RasterLayer.</string>
     <string name="description_dds_multiple_geometries">Display multiple shapes on a map</string>
@@ -91,8 +96,20 @@
     <string name="description_view_annotation_basic">Add view annotation on a map click</string>
     <string name="description_view_annotation_animation">Animate a view annotation on screen</string>
     <string name="description_view_annotation_point_annotation">Add view annotation to a point annotation</string>
+    <string name="description_dynamic_view_annotations">Add dynamic view annotations to line layers and fixed coordinates</string>
     <string name="description_info_window">Legacy InfoWindow implementation using view annotations</string>
     <string name="description_viewport">Viewport camera showcase</string>
     <string name="description_advanced_viewport">Advanced viewport with gestures showcase</string>
     <string name="description_third_party_source">Add a third party vector tile source.</string>
+    <string name="description_raster_colorization">Raster colorization using raster-color</string>
+    <string name="description_secondary_display_presentation">Displaying a map on a secondary display using Presentation.</string>
+    <string name="description_model_layer">Showcase the usage of a 3D model layer.</string>
+    <string name="description_custom_raster_source">Showcase the usage of a custom raster source.</string>
+    <string name="description_slot_layer">Showcase the usage of slot layer.</string>
+    <string name="description_raster_particles">Showcase the usage of a raster particle layer.</string>
+    <string name="description_clip_layer">Showcase the usage of clip layer.</string>
+    <string name="description_standard_interactions">Showcase of the Standard Style interactions.</string>
+    <string name="description_location_component_model_animation">Animate 3D location puck on the map</string>
+    <string name="description_precipitation">Showcase rain and snow effects.</string>
+    <string name="description_color_theme">Showcase color theme.</string>
 </resources>

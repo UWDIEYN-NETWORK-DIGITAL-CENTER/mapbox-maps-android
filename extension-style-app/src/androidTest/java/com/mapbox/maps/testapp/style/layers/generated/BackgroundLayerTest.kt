@@ -5,6 +5,7 @@ package com.mapbox.maps.testapp.style.layers.generated
 import android.graphics.Color
 import androidx.test.annotation.UiThreadTest
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.mapbox.maps.MapboxExperimental
 import com.mapbox.maps.extension.style.expressions.dsl.generated.*
 import com.mapbox.maps.extension.style.layers.generated.*
 import com.mapbox.maps.extension.style.layers.properties.generated.*
@@ -17,6 +18,7 @@ import org.junit.runner.RunWith
 /**
  * Basic smoke tests for BackgroundLayer
  */
+@OptIn(MapboxExperimental::class)
 @RunWith(AndroidJUnit4::class)
 class BackgroundLayerTest : BaseStyleTest() {
   // Property getters and setters
@@ -63,6 +65,17 @@ class BackgroundLayerTest : BaseStyleTest() {
 
   @Test
   @UiThreadTest
+  fun backgroundColorUseTheme() {
+    val theme = "none"
+    val layer = backgroundLayer("id") {
+      backgroundColorUseTheme(theme)
+    }
+    setupLayer(layer)
+    assertEquals(theme, layer.backgroundColorUseTheme)
+  }
+
+  @Test
+  @UiThreadTest
   fun backgroundColorTransitionTest() {
     val transition = transitionOptions {
       duration(100)
@@ -90,6 +103,61 @@ class BackgroundLayerTest : BaseStyleTest() {
     }
     setupLayer(layer)
     assertEquals(transition, layer.backgroundColorTransition)
+  }
+
+  @Test
+  @UiThreadTest
+  fun backgroundEmissiveStrengthTest() {
+    val testValue = 1.0
+    val layer = backgroundLayer("id") {
+      backgroundEmissiveStrength(testValue)
+    }
+    setupLayer(layer)
+    assertEquals(testValue, layer.backgroundEmissiveStrength!!, 1E-5)
+  }
+
+  @Test
+  @UiThreadTest
+  fun backgroundEmissiveStrengthAsExpressionTest() {
+    val expression = literal(1.0)
+    val layer = backgroundLayer("id") {
+      backgroundEmissiveStrength(expression)
+    }
+    setupLayer(layer)
+
+    assertEquals(1.0, layer.backgroundEmissiveStrengthAsExpression?.contents as Double, 1E-5)
+    assertEquals(1.0, layer.backgroundEmissiveStrength!!, 1E-5)
+  }
+
+  @Test
+  @UiThreadTest
+  fun backgroundEmissiveStrengthTransitionTest() {
+    val transition = transitionOptions {
+      duration(100)
+      delay(200)
+    }
+    val layer = backgroundLayer("id") {
+      backgroundEmissiveStrengthTransition(transition)
+    }
+    setupLayer(layer)
+    assertEquals(transition, layer.backgroundEmissiveStrengthTransition)
+  }
+
+  @Test
+  @UiThreadTest
+  fun backgroundEmissiveStrengthTransitionSetDslTest() {
+    val transition = transitionOptions {
+      duration(100)
+      delay(200)
+    }
+    val layer = backgroundLayer("id") {
+      backgroundEmissiveStrengthTransition {
+        duration(100)
+        delay(200)
+      }
+    }
+    setupLayer(layer)
+    assertEquals(transition, layer.backgroundEmissiveStrengthTransition)
   }
 
   @Test
@@ -173,9 +241,47 @@ class BackgroundLayerTest : BaseStyleTest() {
 
   @Test
   @UiThreadTest
+  fun backgroundPitchAlignmentTest() {
+    val layer = backgroundLayer("id") {
+      backgroundPitchAlignment(BackgroundPitchAlignment.MAP)
+    }
+    setupLayer(layer)
+    assertEquals(BackgroundPitchAlignment.MAP, layer.backgroundPitchAlignment)
+  }
+
+  @Test
+  @UiThreadTest
+  fun backgroundPitchAlignmentAsExpressionTest() {
+    val expression = literal("map")
+    val layer = backgroundLayer("id") {
+      backgroundPitchAlignment(expression)
+    }
+    setupLayer(layer)
+
+    assertEquals(expression.toString(), layer.backgroundPitchAlignmentAsExpression.toString())
+    assertEquals(BackgroundPitchAlignment.MAP, layer.backgroundPitchAlignment!!)
+  }
+
+  @Test
+  @UiThreadTest
   fun visibilityTest() {
     val layer = backgroundLayer("id") {
       visibility(Visibility.NONE)
+    }
+    setupLayer(layer)
+    assertEquals(Visibility.NONE, layer.visibility)
+  }
+
+  @Test
+  @UiThreadTest
+  fun visibilityAsExpressionTest() {
+    val layer = backgroundLayer("id") {
+      visibility(
+        concat {
+          literal("no")
+          literal("ne")
+        }
+      )
     }
     setupLayer(layer)
     assertEquals(Visibility.NONE, layer.visibility)
@@ -192,25 +298,37 @@ class BackgroundLayerTest : BaseStyleTest() {
     assertNotNull("defaultBackgroundColor should not be null", BackgroundLayer.defaultBackgroundColor)
     assertNotNull("defaultBackgroundColorAsExpression should not be null", BackgroundLayer.defaultBackgroundColorAsExpression)
     assertNotNull("defaultBackgroundColorAsColorInt should not be null", BackgroundLayer.defaultBackgroundColorAsColorInt)
+    assertNotNull("defaultBackgroundColorUseTheme should not be null", BackgroundLayer.defaultBackgroundColorUseTheme)
     assertNotNull("defaultBackgroundColorTransition should not be null", BackgroundLayer.defaultBackgroundColorTransition)
+    assertNotNull("defaultBackgroundEmissiveStrength should not be null", BackgroundLayer.defaultBackgroundEmissiveStrength)
+    assertNotNull("defaultBackgroundEmissiveStrengthAsExpression should not be null", BackgroundLayer.defaultBackgroundEmissiveStrengthAsExpression)
+    assertNotNull("defaultBackgroundEmissiveStrengthTransition should not be null", BackgroundLayer.defaultBackgroundEmissiveStrengthTransition)
     assertNotNull("defaultBackgroundOpacity should not be null", BackgroundLayer.defaultBackgroundOpacity)
     assertNotNull("defaultBackgroundOpacityAsExpression should not be null", BackgroundLayer.defaultBackgroundOpacityAsExpression)
     assertNotNull("defaultBackgroundOpacityTransition should not be null", BackgroundLayer.defaultBackgroundOpacityTransition)
     assertNotNull("defaultBackgroundPattern should not be null", BackgroundLayer.defaultBackgroundPattern)
     assertNotNull("defaultBackgroundPatternAsExpression should not be null", BackgroundLayer.defaultBackgroundPatternAsExpression)
+    assertNotNull("defaultBackgroundPitchAlignment should not be null", BackgroundLayer.defaultBackgroundPitchAlignment)
+    assertNotNull("defaultBackgroundPitchAlignmentAsExpression should not be null", BackgroundLayer.defaultBackgroundPitchAlignmentAsExpression)
   }
 
   @Test
   @UiThreadTest
   fun getLayerTest() {
     val backgroundColorTestValue = "rgba(0, 0, 0, 1)"
+    val backgroundColorUseThemeTestValue = "default"
+    val backgroundEmissiveStrengthTestValue = 1.0
     val backgroundOpacityTestValue = 1.0
     val backgroundPatternTestValue = "abc"
+    val backgroundPitchAlignmentTestValue = BackgroundPitchAlignment.MAP
 
     val layer = backgroundLayer("id") {
       backgroundColor(backgroundColorTestValue)
+      backgroundColorUseTheme(backgroundColorUseThemeTestValue)
+      backgroundEmissiveStrength(backgroundEmissiveStrengthTestValue)
       backgroundOpacity(backgroundOpacityTestValue)
       backgroundPattern(backgroundPatternTestValue)
+      backgroundPitchAlignment(backgroundPitchAlignmentTestValue)
     }
 
     setupLayer(layer)
@@ -221,8 +339,11 @@ class BackgroundLayerTest : BaseStyleTest() {
     setupLayer(cachedLayer)
 
     assertEquals(backgroundColorTestValue, cachedLayer.backgroundColor)
+    assertEquals(backgroundColorUseThemeTestValue, cachedLayer.backgroundColorUseTheme)
+    assertEquals(backgroundEmissiveStrengthTestValue, cachedLayer.backgroundEmissiveStrength)
     assertEquals(backgroundOpacityTestValue, cachedLayer.backgroundOpacity)
     assertEquals(backgroundPatternTestValue, cachedLayer.backgroundPattern)
+    assertEquals(backgroundPitchAlignmentTestValue, cachedLayer.backgroundPitchAlignment)
   }
 }
 

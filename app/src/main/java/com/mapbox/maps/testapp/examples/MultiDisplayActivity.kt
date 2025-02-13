@@ -3,12 +3,13 @@ package com.mapbox.maps.testapp.examples
 import android.app.ActivityOptions
 import android.content.Context
 import android.content.Intent
-import android.graphics.BitmapFactory
 import android.hardware.display.DisplayManager
 import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmap
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.Style
@@ -35,11 +36,15 @@ class MultiDisplayActivity : AppCompatActivity() {
     super.onCreate(savedInstanceState)
     binding = ActivityMultiDisplayBinding.inflate(layoutInflater)
     setContentView(binding.root)
-    binding.mapView.getMapboxMap().loadStyle(
+    binding.mapView.mapboxMap.loadStyle(
       style(Style.DARK) {
-        +image(IMAGE_ID) {
-          bitmap(BitmapFactory.decodeResource(resources, R.drawable.red_marker))
-        }
+        +image(
+          IMAGE_ID,
+          ContextCompat.getDrawable(
+            this@MultiDisplayActivity,
+            R.drawable.ic_red_marker
+          )!!.toBitmap()
+        )
         +geoJsonSource(SOURCE_ID) {
           geometry(HELSINKI)
         }
@@ -64,7 +69,7 @@ class MultiDisplayActivity : AppCompatActivity() {
       .zoom(ZOOM)
       .build()
 
-    binding.mapView.getMapboxMap().flyTo(
+    binding.mapView.mapboxMap.flyTo(
       cameraOption,
       mapAnimationOptions {
         duration(DURATION)

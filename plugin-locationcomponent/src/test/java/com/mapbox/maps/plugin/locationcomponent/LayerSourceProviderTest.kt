@@ -5,34 +5,42 @@ import com.mapbox.maps.plugin.LocationPuck3D
 import com.mapbox.maps.plugin.locationcomponent.LocationComponentConstants.LOCATION_INDICATOR_LAYER
 import com.mapbox.maps.plugin.locationcomponent.LocationComponentConstants.MODEL_LAYER
 import com.mapbox.maps.plugin.locationcomponent.LocationComponentConstants.MODEL_SOURCE
+import io.mockk.mockk
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
-import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
+@RunWith(RobolectricTestRunner::class)
 class LayerSourceProviderTest {
-
-  private lateinit var layerSourceProvider: LayerSourceProvider
-
-  @Before
-  fun setup() {
-    layerSourceProvider = LayerSourceProvider()
-  }
 
   @Test(expected = RuntimeException::class)
   fun testGetModelSourceUrlEmpty() {
     val locationPuck3D = LocationPuck3D(modelUri = "")
-    layerSourceProvider.getModelSource(locationPuck3D)
+    LayerSourceProvider.getModelSource(locationPuck3D)
   }
 
   @Test
   fun testGetModelSource() {
     val locationPuck3D = LocationPuck3D(modelUri = "testurl")
-    val modelSource = layerSourceProvider.getModelSource(locationPuck3D)
+    val modelSource = LayerSourceProvider.getModelSource(locationPuck3D)
     assertEquals(MODEL_SOURCE, modelSource.sourceId)
+
     assertEquals(
-      "{models={defaultModel={orientation=[0.0, 0.0, 0.0], position=[0.0, 0.0], uri=testurl}}, type=model}",
-      modelSource.toValue().toString()
+      mapOf(
+        "models" to mapOf(
+          "defaultModel" to mapOf(
+            "orientation" to listOf(0.0, 0.0, 0.0),
+            "position" to listOf(0.0, 0.0),
+            "uri" to "testurl",
+            "nodeOverrides" to emptyList<String>(),
+            "materialOverrides" to emptyList<String>()
+          )
+        ),
+        "type" to "model"
+      ).toValue(),
+      modelSource.toValue(),
     )
   }
 
@@ -41,33 +49,54 @@ class LayerSourceProviderTest {
     val locationPuck3D = LocationPuck3D(
       modelUri = "testurl",
       modelScale = listOf(1f, 2f, 3f),
-      modelRotation = listOf(3f, 2f, 1f)
+      modelRotation = listOf(3f, 2f, 1f),
+      modelCastShadows = true,
+      modelReceiveShadows = true
     )
-    val modelLayer = layerSourceProvider.getModelLayer(locationPuck3D)
+    val modelLayer = LayerSourceProvider.getModelLayer(locationPuck3D)
     assertEquals(MODEL_LAYER, modelLayer.layerId)
     assertEquals(
-      "{model-type=location-indicator, model-rotation=[3.0, 2.0, 1.0], id=mapbox-location-model-layer, source=mapbox-location-model-source, type=model, model-opacity=1.0, model-scale=[1.0, 2.0, 3.0], model-translation=[0.0, 0.0, 0.0]}",
-      modelLayer.toValue().toString()
+      hashMapOf(
+        "model-type" to "location-indicator",
+        "model-rotation" to listOf(3.0, 2.0, 1.0),
+        "id" to "mapbox-location-model-layer",
+        "source" to "mapbox-location-model-source",
+        "type" to "model",
+        "model-opacity" to 1.0,
+        "model-scale-mode" to "viewport",
+        "model-scale" to listOf(1.0, 2.0, 3.0),
+        "model-translation" to listOf(0.0, 0.0, 0.0),
+        "model-receive-shadows" to true,
+        "model-cast-shadows" to true,
+        "model-scale-transition" to hashMapOf("duration" to 0, "delay" to 0),
+        "model-rotation-transition" to hashMapOf("duration" to 0, "delay" to 0),
+        "model-elevation-reference" to "ground",
+        "model-emissive-strength" to 1.0,
+        "model-color" to listOf("rgba", 255, 255, 255, 1.0),
+        "model-color-mix-intensity" to 0.0,
+        "model-emissive-strength" to 1.0
+      ).toValue(),
+      modelLayer.toValue()
     )
   }
 
   @Test
   fun testGetLocationIndicatorLayer() {
-    val locationIndicatorLayer = layerSourceProvider.getLocationIndicatorLayer()
+    val locationIndicatorLayer = LayerSourceProvider.getLocationIndicatorLayer()
     assertEquals(LOCATION_INDICATOR_LAYER, locationIndicatorLayer.layerId)
   }
 
   @Test
   fun testGetLocationIndicatorLayerRenderer() {
     val locationPuck2D = LocationPuck2D()
-    val locationIndicatorLayerRenderer = layerSourceProvider.getLocationIndicatorLayerRenderer(locationPuck2D)
+    val locationIndicatorLayerRenderer = LayerSourceProvider.getLocationIndicatorLayerRenderer(locationPuck2D, mockk())
     assertNotNull(locationIndicatorLayerRenderer)
   }
 
   @Test
   fun testGetModelLayerRenderer() {
     val locationPuck3D = LocationPuck3D(modelUri = "testurl")
-    val modelLayerRenderer = layerSourceProvider.getModelLayerRenderer(locationPuck3D)
+    val modelLayerRenderer = LayerSourceProvider.getModelLayerRenderer(locationPuck3D)
     assertNotNull(modelLayerRenderer)
   }
 }

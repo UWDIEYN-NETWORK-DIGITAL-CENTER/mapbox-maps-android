@@ -3,15 +3,17 @@ package com.mapbox.maps.plugin.locationcomponent
 import com.mapbox.bindgen.Expected
 import com.mapbox.bindgen.None
 import com.mapbox.geojson.Point
-import com.mapbox.maps.extension.style.StyleInterface
+import com.mapbox.maps.MapboxStyleManager
 import com.mapbox.maps.plugin.LocationPuck3D
-import io.mockk.*
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import org.junit.Before
 import org.junit.Test
 
 class ModelLayerRendererTest {
 
-  private val style: StyleInterface = mockk(relaxed = true)
+  private val style: MapboxStyleManager = mockk(relaxed = true)
   private val layerSourceProvider: LayerSourceProvider = mockk(relaxed = true)
   private val layerWrapper: ModelLayerWrapper = mockk(relaxed = true)
   private val sourceWrapper: ModelSourceWrapper = mockk(relaxUnitFun = true, relaxed = true)
@@ -65,9 +67,6 @@ class ModelLayerRendererTest {
     locationLayerRenderer.addLayers(positionManager)
 
     verify { positionManager.addLayerToMap(layerWrapper) }
-    verify(exactly = 1) { option.modelOpacity }
-    verify(exactly = 1) { layerWrapper.modelOpacity(0.5) }
-    verify(exactly = 1) { layerWrapper.modelRotation(listOf(0.0, 0.0, 0.0)) }
   }
 
   @Test
@@ -117,7 +116,7 @@ class ModelLayerRendererTest {
 
   @Test
   fun updateStyle() {
-    val newStyle = mockk<StyleInterface>(relaxed = true)
+    val newStyle = mockk<MapboxStyleManager>(relaxed = true)
     locationLayerRenderer.updateStyle(newStyle)
     verify {
       sourceWrapper.updateStyle(newStyle)

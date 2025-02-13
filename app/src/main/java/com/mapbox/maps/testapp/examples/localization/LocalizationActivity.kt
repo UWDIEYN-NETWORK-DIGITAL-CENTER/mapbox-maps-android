@@ -16,7 +16,8 @@ import java.util.*
  * Example showcasing how to localize a map client side to a specific locale using Style#localizeLabels(locale: Locale).
  * This function will attempt to localize a map into a selected locale if the symbol layers are using
  * a Mapbox source and the locale is being provided as part of the vector source data.
- * This feature supports both v7 and v8 of Mapbox style spec version.
+ *
+ * This feature supports both v7 and v8 of Mapbox style spec version and does not support [Style.STANDARD].
  */
 class LocalizationActivity : AppCompatActivity() {
   private lateinit var mapboxMap: MapboxMap
@@ -40,28 +41,29 @@ class LocalizationActivity : AppCompatActivity() {
     super.onCreate(savedInstanceState)
     val binding = ActivityMapLocalizationBinding.inflate(layoutInflater)
     setContentView(binding.root)
+    @Suppress("DEPRECATION")
     locale = resources.configuration.locale
     selectedLocale = locale
     applySelectedLanguage = false
     Toast.makeText(this, R.string.change_language_instruction, Toast.LENGTH_LONG).show()
-    mapboxMap = binding.mapView.getMapboxMap()
-    mapboxMap.loadStyleUri(nextStyle) {
+    mapboxMap = binding.mapView.mapboxMap
+    mapboxMap.loadStyle(nextStyle) {
       it.localizeLabels(locale)
     }
     binding.fabStyles.setOnClickListener {
       val styleUri = nextStyle
-      mapboxMap.loadStyleUri(styleUri) {
+      mapboxMap.loadStyle(styleUri) {
         it.localizeLabels(selectedLocale)
       }
       Toast.makeText(this, styleUri, Toast.LENGTH_SHORT).show()
     }
     binding.fabLocalize.setOnClickListener {
       applySelectedLanguage = if (!applySelectedLanguage) {
-        mapboxMap.getStyle()?.localizeLabels(selectedLocale)
+        mapboxMap.style?.localizeLabels(selectedLocale)
         Toast.makeText(this, R.string.map_not_localized, Toast.LENGTH_SHORT).show()
         true
       } else {
-        mapboxMap.getStyle()?.localizeLabels(locale)
+        mapboxMap.style?.localizeLabels(locale)
         Toast.makeText(this, R.string.map_localized, Toast.LENGTH_SHORT).show()
         false
       }
@@ -115,7 +117,7 @@ class LocalizationActivity : AppCompatActivity() {
       }
       else -> return super.onOptionsItemSelected(item)
     }
-    mapboxMap.getStyle()?.localizeLabels(selectedLocale, layerIdList.toList())
+    mapboxMap.style?.localizeLabels(selectedLocale, layerIdList.toList())
     return true
   }
 

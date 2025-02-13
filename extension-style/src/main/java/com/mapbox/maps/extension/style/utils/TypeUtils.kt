@@ -1,5 +1,6 @@
 package com.mapbox.maps.extension.style.utils
 
+import androidx.annotation.RestrictTo
 import com.google.gson.JsonPrimitive
 import com.mapbox.bindgen.Value
 import com.mapbox.geojson.Feature
@@ -7,13 +8,26 @@ import com.mapbox.geojson.FeatureCollection
 import com.mapbox.geojson.Geometry
 import com.mapbox.maps.StylePropertyValue
 import com.mapbox.maps.StylePropertyValueKind
+import com.mapbox.maps.TileCacheBudget
+import com.mapbox.maps.TransitionOptions
 import com.mapbox.maps.extension.style.expressions.generated.Expression
 import com.mapbox.maps.extension.style.layers.properties.generated.LayerProperty
 import com.mapbox.maps.extension.style.light.LightPosition
+import com.mapbox.maps.extension.style.sources.toValue
 import com.mapbox.maps.extension.style.types.Formatted
 import com.mapbox.maps.extension.style.types.StyleTransition
 
-internal object TypeUtils {
+/**
+ * Internal utility to convert Any type to Value class.
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+object TypeUtils {
+  /**
+   * Wrap the Any Kotlin type to [Value] class to be consumed by native renderer.
+   *
+   * @param value the value to be wrapped.
+   * @return the [Value] class.
+   */
   fun wrapToValue(value: Any): Value {
     return when (value) {
       is Value -> {
@@ -32,6 +46,9 @@ internal object TypeUtils {
         Value(value.value)
       }
       is LightPosition -> {
+        value.toValue()
+      }
+      is TileCacheBudget -> {
         value.toValue()
       }
       is Int -> {
@@ -232,7 +249,7 @@ fun Value.unwrapToExpression(): Expression {
     is List<*> -> {
       @Suppress("UNCHECKED_CAST")
       val listValue = input as List<Value>
-      val operator = listValue.first().contents as String
+      val operator = listValue.first().contents as? String ?: return Expression(input)
       if ("literal" == operator) {
         when (val literalValue = listValue.last().contents) {
           is List<*> -> {
@@ -254,6 +271,12 @@ fun Value.unwrapToExpression(): Expression {
             return Expression.literal(resultMap as HashMap<String, Any>)
           }
         }
+      } else if ("image" == operator) {
+        val builder = Expression.ImageBuilder()
+        listValue.drop(1).forEach {
+          builder.addArgument(it.unwrapToExpression())
+        }
+        return builder.build()
       }
       val argList = listValue.drop(1)
       val expressionBuilder = Expression.ExpressionBuilder(operator)
@@ -337,3 +360,9 @@ fun FeatureCollection.toValue(): Value {
 fun Geometry.toValue(): Value {
   return TypeUtils.wrapToValue(this.toJson())
 }
+
+/**
+ * DSL builder function to create [TransitionOptions] object.
+ */
+inline fun transition(block: TransitionOptions.Builder.() -> Unit): TransitionOptions =
+  TransitionOptions.Builder().apply(block).build()

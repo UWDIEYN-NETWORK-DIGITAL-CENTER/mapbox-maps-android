@@ -13,7 +13,8 @@
     mapbox:mapbox_locationComponentLayerAbove = "testString"
     mapbox:mapbox_locationComponentLayerBelow = "testString"
     mapbox:mapbox_locationComponentPuckBearingEnabled = "false"
-    mapbox:mapbox_locationComponentPuckBearingSource = "heading"
+    mapbox:mapbox_locationComponentPuckBearing = "heading"
+    mapbox:mapbox_locationComponentSlot = "testString"
     android:layout_width="match_parent"
     android:layout_height="match_parent" />
 <!-- End of generated file. -->

@@ -9,17 +9,22 @@ import android.os.Bundle
 import android.view.animation.LinearInterpolator
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.mapbox.api.directions.v5.DirectionsCriteria
 import com.mapbox.api.directions.v5.MapboxDirections
 import com.mapbox.api.directions.v5.models.DirectionsResponse
+import com.mapbox.common.MapboxOptions
 import com.mapbox.core.constants.Constants.PRECISION_6
 import com.mapbox.geojson.Feature
 import com.mapbox.geojson.FeatureCollection
 import com.mapbox.geojson.LineString
 import com.mapbox.geojson.Point
-import com.mapbox.maps.CoordinateBounds
 import com.mapbox.maps.EdgeInsets
+import com.mapbox.maps.MapboxDelicateApi
 import com.mapbox.maps.Style
+import com.mapbox.maps.coroutine.awaitCameraForCoordinates
+import com.mapbox.maps.coroutine.awaitStyle
+import com.mapbox.maps.dsl.cameraOptions
 import com.mapbox.maps.extension.style.layers.addLayer
 import com.mapbox.maps.extension.style.layers.addLayerBelow
 import com.mapbox.maps.extension.style.layers.generated.lineLayer
@@ -34,7 +39,9 @@ import com.mapbox.maps.plugin.animation.MapAnimationOptions.Companion.mapAnimati
 import com.mapbox.maps.plugin.animation.easeTo
 import com.mapbox.maps.testapp.R
 import com.mapbox.maps.testapp.databinding.ActivityDdsMovingIconWithTrailingLineBinding
+import com.mapbox.maps.toMapboxImage
 import com.mapbox.turf.TurfMeasurement
+import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -62,7 +69,7 @@ class MovingIconWithTrailingLineActivity : AppCompatActivity() {
     super.onCreate(savedInstanceState)
     binding = ActivityDdsMovingIconWithTrailingLineBinding.inflate(layoutInflater)
     setContentView(binding.root)
-    binding.mapView.getMapboxMap().loadStyleUri(
+    binding.mapView.mapboxMap.loadStyle(
       Style.LIGHT
     ) { // Use the Mapbox Directions API to get a directions route
       getRoute()
@@ -75,8 +82,8 @@ class MovingIconWithTrailingLineActivity : AppCompatActivity() {
    * @param featureCollection returned GeoJSON FeatureCollection from the Directions API route request
    */
   private fun initData(style: Style, featureCollection: FeatureCollection) {
-    featureCollection.features()?.let {
-      (it[0].geometry() as? LineString)?.let { lineString ->
+    featureCollection.features()?.firstOrNull()?.geometry()?.let {
+      (it as? LineString)?.let { lineString ->
         routeCoordinateList = lineString.coordinates()
         initSources(style, featureCollection)
         initSymbolLayer(style)
@@ -135,7 +142,7 @@ class MovingIconWithTrailingLineActivity : AppCompatActivity() {
       .destination(destinationPoint)
       .overview(DirectionsCriteria.OVERVIEW_FULL)
       .profile(DirectionsCriteria.PROFILE_WALKING)
-      .accessToken(getString(R.string.mapbox_access_token))
+      .accessToken(MapboxOptions.accessToken)
       .build()
 
     directionsClient?.enqueueCall(object : Callback<DirectionsResponse> {
@@ -150,23 +157,24 @@ class MovingIconWithTrailingLineActivity : AppCompatActivity() {
           }
 
           val currentRoute = body.routes()[0]
-          binding.mapView.getMapboxMap().getStyle { style ->
-            binding.mapView.getMapboxMap().let { mapboxMap ->
-              mapboxMap.easeTo(
-                mapboxMap.cameraForCoordinateBounds(
-                  CoordinateBounds(originPoint, destinationPoint, false),
-                  EdgeInsets(50.0, 50.0, 50.0, 50.0),
-                  null,
-                  null
-                ),
-                mapAnimationOptions {
-                  duration(5000L)
-                }
-              )
-            }
+          lifecycleScope.launch {
+            val map = binding.mapView.mapboxMap
+            val cameraOptionsForCoordinates = map.awaitCameraForCoordinates(
+              coordinates = listOf(originPoint, destinationPoint),
+              camera = cameraOptions { },
+              coordinatesPadding = EdgeInsets(50.0, 50.0, 50.0, 50.0),
+              maxZoom = null,
+              offset = null
+            )
+            map.easeTo(
+              cameraOptionsForCoordinates,
+              mapAnimationOptions {
+                duration(5000L)
+              }
+            )
             currentRoute.geometry()?.let {
               initData(
-                style,
+                binding.mapView.mapboxMap.awaitStyle(),
                 FeatureCollection.fromFeature(
                   Feature.fromGeometry(
                     LineString.fromPolyline(
@@ -213,7 +221,9 @@ class MovingIconWithTrailingLineActivity : AppCompatActivity() {
    * Add the marker icon SymbolLayer.
    */
   private fun initSymbolLayer(style: Style) {
-    style.addImage(MARKER_ID, BitmapFactory.decodeResource(resources, R.drawable.pink_dot))
+    @OptIn(MapboxDelicateApi::class)
+    val image = BitmapFactory.decodeResource(resources, R.drawable.pink_dot).toMapboxImage()
+    style.addImage(MARKER_ID, image)
     style.addLayer(
       symbolLayer(SYMBOL_LAYER_ID, DOT_SOURCE_ID) {
         iconImage(MARKER_ID)
@@ -226,18 +236,18 @@ class MovingIconWithTrailingLineActivity : AppCompatActivity() {
   }
 
   /**
-   * Add the LineLayer for the marker icon's travel route. Adding it under the "road-label" layer, so that the
+   * Add the LineLayer for the marker icon's travel route. Adding it under the "road-label-simple" layer, so that the
    * this LineLayer doesn't block the street name.
    */
   private fun initDotLinePath(style: Style) {
     style.addLayerBelow(
-      lineLayer(LINE_Layer_ID, LINE_SOURCE_ID) {
+      lineLayer(LINE_LAYER_ID, LINE_SOURCE_ID) {
         lineColor("#F13C6E")
         lineCap(LineCap.ROUND)
         lineJoin(LineJoin.ROUND)
         lineWidth(4.0)
       },
-      below = "road-label"
+      below = "road-label-simple"
     )
   }
 
@@ -245,6 +255,7 @@ class MovingIconWithTrailingLineActivity : AppCompatActivity() {
     super.onDestroy()
     directionsClient?.cancelCall()
     if (::currentAnimator.isInitialized) {
+      currentAnimator.removeAllListeners()
       currentAnimator.cancel()
     }
   }
@@ -253,7 +264,7 @@ class MovingIconWithTrailingLineActivity : AppCompatActivity() {
     private const val TAG = "MovingIconWithTrailingLineActivity"
     private const val DOT_SOURCE_ID = "dot-source-id"
     private const val LINE_SOURCE_ID = "line-source-id"
-    private const val LINE_Layer_ID = "line-layer-id"
+    private const val LINE_LAYER_ID = "line-layer-id"
     private const val MARKER_ID = "moving-red-marker"
     private const val SYMBOL_LAYER_ID = "symbol-layer-id"
     private val originPoint = Point.fromLngLat(38.7508, 9.0309)

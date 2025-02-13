@@ -6,6 +6,11 @@ import com.google.gson.annotations.SerializedName
  * Describes the reason of Error for response object.
  * @param value String value of this enum
  */
+@Deprecated(
+  message = "This enum class is deprecated, and will be removed in next major release.",
+  replaceWith = ReplaceWith("RequestErrorType"),
+  level = DeprecationLevel.WARNING
+)
 enum class ResponseErrorReason(val value: String) {
   /**
    * Error type success.

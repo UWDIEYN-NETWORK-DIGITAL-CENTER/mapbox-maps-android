@@ -93,6 +93,17 @@ class HillshadeLayerTest : BaseStyleTest() {
 
   @Test
   @UiThreadTest
+  fun hillshadeAccentColorUseTheme() {
+    val theme = "none"
+    val layer = hillshadeLayer("id", "source") {
+      hillshadeAccentColorUseTheme(theme)
+    }
+    setupLayer(layer)
+    assertEquals(theme, layer.hillshadeAccentColorUseTheme)
+  }
+
+  @Test
+  @UiThreadTest
   fun hillshadeAccentColorTransitionTest() {
     val transition = transitionOptions {
       duration(100)
@@ -120,6 +131,61 @@ class HillshadeLayerTest : BaseStyleTest() {
     }
     setupLayer(layer)
     assertEquals(transition, layer.hillshadeAccentColorTransition)
+  }
+
+  @Test
+  @UiThreadTest
+  fun hillshadeEmissiveStrengthTest() {
+    val testValue = 1.0
+    val layer = hillshadeLayer("id", "source") {
+      hillshadeEmissiveStrength(testValue)
+    }
+    setupLayer(layer)
+    assertEquals(testValue, layer.hillshadeEmissiveStrength!!, 1E-5)
+  }
+
+  @Test
+  @UiThreadTest
+  fun hillshadeEmissiveStrengthAsExpressionTest() {
+    val expression = literal(1.0)
+    val layer = hillshadeLayer("id", "source") {
+      hillshadeEmissiveStrength(expression)
+    }
+    setupLayer(layer)
+
+    assertEquals(1.0, layer.hillshadeEmissiveStrengthAsExpression?.contents as Double, 1E-5)
+    assertEquals(1.0, layer.hillshadeEmissiveStrength!!, 1E-5)
+  }
+
+  @Test
+  @UiThreadTest
+  fun hillshadeEmissiveStrengthTransitionTest() {
+    val transition = transitionOptions {
+      duration(100)
+      delay(200)
+    }
+    val layer = hillshadeLayer("id", "source") {
+      hillshadeEmissiveStrengthTransition(transition)
+    }
+    setupLayer(layer)
+    assertEquals(transition, layer.hillshadeEmissiveStrengthTransition)
+  }
+
+  @Test
+  @UiThreadTest
+  fun hillshadeEmissiveStrengthTransitionSetDslTest() {
+    val transition = transitionOptions {
+      duration(100)
+      delay(200)
+    }
+    val layer = hillshadeLayer("id", "source") {
+      hillshadeEmissiveStrengthTransition {
+        duration(100)
+        delay(200)
+      }
+    }
+    setupLayer(layer)
+    assertEquals(transition, layer.hillshadeEmissiveStrengthTransition)
   }
 
   @Test
@@ -215,6 +281,17 @@ class HillshadeLayerTest : BaseStyleTest() {
     }
     setupLayer(layer)
     assertEquals(Color.CYAN, layer.hillshadeHighlightColorAsColorInt)
+  }
+
+  @Test
+  @UiThreadTest
+  fun hillshadeHighlightColorUseTheme() {
+    val theme = "none"
+    val layer = hillshadeLayer("id", "source") {
+      hillshadeHighlightColorUseTheme(theme)
+    }
+    setupLayer(layer)
+    assertEquals(theme, layer.hillshadeHighlightColorUseTheme)
   }
 
   @Test
@@ -337,6 +414,17 @@ class HillshadeLayerTest : BaseStyleTest() {
 
   @Test
   @UiThreadTest
+  fun hillshadeShadowColorUseTheme() {
+    val theme = "none"
+    val layer = hillshadeLayer("id", "source") {
+      hillshadeShadowColorUseTheme(theme)
+    }
+    setupLayer(layer)
+    assertEquals(theme, layer.hillshadeShadowColorUseTheme)
+  }
+
+  @Test
+  @UiThreadTest
   fun hillshadeShadowColorTransitionTest() {
     val transition = transitionOptions {
       duration(100)
@@ -376,6 +464,21 @@ class HillshadeLayerTest : BaseStyleTest() {
     assertEquals(Visibility.NONE, layer.visibility)
   }
 
+  @Test
+  @UiThreadTest
+  fun visibilityAsExpressionTest() {
+    val layer = hillshadeLayer("id", "source") {
+      visibility(
+        concat {
+          literal("no")
+          literal("ne")
+        }
+      )
+    }
+    setupLayer(layer)
+    assertEquals(Visibility.NONE, layer.visibility)
+  }
+
   // Default property getter tests
 
   @Test
@@ -387,13 +490,18 @@ class HillshadeLayerTest : BaseStyleTest() {
     assertNotNull("defaultHillshadeAccentColor should not be null", HillshadeLayer.defaultHillshadeAccentColor)
     assertNotNull("defaultHillshadeAccentColorAsExpression should not be null", HillshadeLayer.defaultHillshadeAccentColorAsExpression)
     assertNotNull("defaultHillshadeAccentColorAsColorInt should not be null", HillshadeLayer.defaultHillshadeAccentColorAsColorInt)
+    assertNotNull("defaultHillshadeAccentColorUseTheme should not be null", HillshadeLayer.defaultHillshadeAccentColorUseTheme)
     assertNotNull("defaultHillshadeAccentColorTransition should not be null", HillshadeLayer.defaultHillshadeAccentColorTransition)
+    assertNotNull("defaultHillshadeEmissiveStrength should not be null", HillshadeLayer.defaultHillshadeEmissiveStrength)
+    assertNotNull("defaultHillshadeEmissiveStrengthAsExpression should not be null", HillshadeLayer.defaultHillshadeEmissiveStrengthAsExpression)
+    assertNotNull("defaultHillshadeEmissiveStrengthTransition should not be null", HillshadeLayer.defaultHillshadeEmissiveStrengthTransition)
     assertNotNull("defaultHillshadeExaggeration should not be null", HillshadeLayer.defaultHillshadeExaggeration)
     assertNotNull("defaultHillshadeExaggerationAsExpression should not be null", HillshadeLayer.defaultHillshadeExaggerationAsExpression)
     assertNotNull("defaultHillshadeExaggerationTransition should not be null", HillshadeLayer.defaultHillshadeExaggerationTransition)
     assertNotNull("defaultHillshadeHighlightColor should not be null", HillshadeLayer.defaultHillshadeHighlightColor)
     assertNotNull("defaultHillshadeHighlightColorAsExpression should not be null", HillshadeLayer.defaultHillshadeHighlightColorAsExpression)
     assertNotNull("defaultHillshadeHighlightColorAsColorInt should not be null", HillshadeLayer.defaultHillshadeHighlightColorAsColorInt)
+    assertNotNull("defaultHillshadeHighlightColorUseTheme should not be null", HillshadeLayer.defaultHillshadeHighlightColorUseTheme)
     assertNotNull("defaultHillshadeHighlightColorTransition should not be null", HillshadeLayer.defaultHillshadeHighlightColorTransition)
     assertNotNull("defaultHillshadeIlluminationAnchor should not be null", HillshadeLayer.defaultHillshadeIlluminationAnchor)
     assertNotNull("defaultHillshadeIlluminationAnchorAsExpression should not be null", HillshadeLayer.defaultHillshadeIlluminationAnchorAsExpression)
@@ -402,6 +510,7 @@ class HillshadeLayerTest : BaseStyleTest() {
     assertNotNull("defaultHillshadeShadowColor should not be null", HillshadeLayer.defaultHillshadeShadowColor)
     assertNotNull("defaultHillshadeShadowColorAsExpression should not be null", HillshadeLayer.defaultHillshadeShadowColorAsExpression)
     assertNotNull("defaultHillshadeShadowColorAsColorInt should not be null", HillshadeLayer.defaultHillshadeShadowColorAsColorInt)
+    assertNotNull("defaultHillshadeShadowColorUseTheme should not be null", HillshadeLayer.defaultHillshadeShadowColorUseTheme)
     assertNotNull("defaultHillshadeShadowColorTransition should not be null", HillshadeLayer.defaultHillshadeShadowColorTransition)
   }
 
@@ -409,11 +518,15 @@ class HillshadeLayerTest : BaseStyleTest() {
   @UiThreadTest
   fun getLayerTest() {
     val hillshadeAccentColorTestValue = "rgba(0, 0, 0, 1)"
+    val hillshadeAccentColorUseThemeTestValue = "default"
+    val hillshadeEmissiveStrengthTestValue = 1.0
     val hillshadeExaggerationTestValue = 1.0
     val hillshadeHighlightColorTestValue = "rgba(0, 0, 0, 1)"
+    val hillshadeHighlightColorUseThemeTestValue = "default"
     val hillshadeIlluminationAnchorTestValue = HillshadeIlluminationAnchor.MAP
     val hillshadeIlluminationDirectionTestValue = 1.0
     val hillshadeShadowColorTestValue = "rgba(0, 0, 0, 1)"
+    val hillshadeShadowColorUseThemeTestValue = "default"
 
     val minZoomTestValue = 10.0
     val maxZoomTestValue = 20.0
@@ -422,11 +535,15 @@ class HillshadeLayerTest : BaseStyleTest() {
       minZoom(minZoomTestValue)
       maxZoom(maxZoomTestValue)
       hillshadeAccentColor(hillshadeAccentColorTestValue)
+      hillshadeAccentColorUseTheme(hillshadeAccentColorUseThemeTestValue)
+      hillshadeEmissiveStrength(hillshadeEmissiveStrengthTestValue)
       hillshadeExaggeration(hillshadeExaggerationTestValue)
       hillshadeHighlightColor(hillshadeHighlightColorTestValue)
+      hillshadeHighlightColorUseTheme(hillshadeHighlightColorUseThemeTestValue)
       hillshadeIlluminationAnchor(hillshadeIlluminationAnchorTestValue)
       hillshadeIlluminationDirection(hillshadeIlluminationDirectionTestValue)
       hillshadeShadowColor(hillshadeShadowColorTestValue)
+      hillshadeShadowColorUseTheme(hillshadeShadowColorUseThemeTestValue)
     }
 
     setupLayer(layer)
@@ -440,11 +557,15 @@ class HillshadeLayerTest : BaseStyleTest() {
     assertEquals(minZoomTestValue, cachedLayer.minZoom)
     assertEquals(maxZoomTestValue, cachedLayer.maxZoom)
     assertEquals(hillshadeAccentColorTestValue, cachedLayer.hillshadeAccentColor)
+    assertEquals(hillshadeAccentColorUseThemeTestValue, cachedLayer.hillshadeAccentColorUseTheme)
+    assertEquals(hillshadeEmissiveStrengthTestValue, cachedLayer.hillshadeEmissiveStrength)
     assertEquals(hillshadeExaggerationTestValue, cachedLayer.hillshadeExaggeration)
     assertEquals(hillshadeHighlightColorTestValue, cachedLayer.hillshadeHighlightColor)
+    assertEquals(hillshadeHighlightColorUseThemeTestValue, cachedLayer.hillshadeHighlightColorUseTheme)
     assertEquals(hillshadeIlluminationAnchorTestValue, cachedLayer.hillshadeIlluminationAnchor)
     assertEquals(hillshadeIlluminationDirectionTestValue, cachedLayer.hillshadeIlluminationDirection)
     assertEquals(hillshadeShadowColorTestValue, cachedLayer.hillshadeShadowColor)
+    assertEquals(hillshadeShadowColorUseThemeTestValue, cachedLayer.hillshadeShadowColorUseTheme)
   }
 }
 

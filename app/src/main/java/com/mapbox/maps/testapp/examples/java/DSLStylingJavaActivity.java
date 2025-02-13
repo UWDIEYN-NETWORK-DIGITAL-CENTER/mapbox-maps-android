@@ -1,15 +1,30 @@
 package com.mapbox.maps.testapp.examples.java;
 
+import static com.mapbox.maps.extension.style.expressions.generated.Expression.concat;
+import static com.mapbox.maps.extension.style.expressions.generated.Expression.get;
+import static com.mapbox.maps.extension.style.expressions.generated.Expression.gt;
+import static com.mapbox.maps.extension.style.expressions.generated.Expression.literal;
+import static com.mapbox.maps.extension.style.expressions.generated.Expression.rgb;
+import static com.mapbox.maps.extension.style.expressions.generated.Expression.subtract;
+import static com.mapbox.maps.extension.style.expressions.generated.Expression.toNumber;
+import static java.text.DateFormat.getDateTimeInstance;
+
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+
 import com.mapbox.geojson.Point;
+import com.mapbox.maps.MapLoadingError;
+import com.mapbox.maps.MapLoadingErrorCallback;
 import com.mapbox.maps.MapView;
 import com.mapbox.maps.MapboxMap;
-import com.mapbox.maps.QueriedFeature;
+import com.mapbox.maps.QueriedRenderedFeature;
 import com.mapbox.maps.RenderedQueryGeometry;
 import com.mapbox.maps.RenderedQueryOptions;
 import com.mapbox.maps.ScreenBox;
@@ -37,21 +52,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import androidx.appcompat.app.AppCompatActivity;
-
-import static com.mapbox.maps.extension.style.expressions.generated.Expression.concat;
-import static com.mapbox.maps.extension.style.expressions.generated.Expression.get;
-import static com.mapbox.maps.extension.style.expressions.generated.Expression.gt;
-import static com.mapbox.maps.extension.style.expressions.generated.Expression.literal;
-import static com.mapbox.maps.extension.style.expressions.generated.Expression.rgb;
-import static com.mapbox.maps.extension.style.expressions.generated.Expression.subtract;
-import static com.mapbox.maps.extension.style.expressions.generated.Expression.toNumber;
-import static java.text.DateFormat.getDateTimeInstance;
-
 /**
  * Example showcasing usage of creating style with java codes.
  */
-public class DSLStylingJavaActivity extends AppCompatActivity implements OnMapClickListener {
+public class DSLStylingJavaActivity extends AppCompatActivity implements OnMapClickListener, MapLoadingErrorCallback {
     public static final ArrayList<ArrayList<Double>> POINT_LIST = new ArrayList<ArrayList<Double>>() {
         {
             add(new ArrayList<Double>() {
@@ -89,7 +93,7 @@ public class DSLStylingJavaActivity extends AppCompatActivity implements OnMapCl
     private static final String RASTER_LAYER_ID = "raster";
     private static final String IMAGE_9_PATCH_ID = "image9patch";
     private static final Expression MAG_KEY = literal("mag");
-    private static final List<String> QUERY_LIST = new ArrayList() {
+    private static final List<String> QUERY_LIST = new ArrayList<String>() {
         {
             add(CIRCLE_LAYER_ID);
             add(SYMBOL_LAYER_ID);
@@ -102,14 +106,15 @@ public class DSLStylingJavaActivity extends AppCompatActivity implements OnMapCl
         }
     };
     private MapboxMap mapboxMap;
-    private MapView mapView;
 
+    private static final String TAG = "StylingJavaActivity";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mapView = new MapView(this);
+        MapView mapView = new MapView(this);
         setContentView(mapView);
         mapboxMap = mapView.getMapboxMap();
+        mapboxMap.subscribeMapLoadingError(this);
         mapboxMap.loadStyle(createStyle(), style -> {
             Bitmap bitmap = BitmapFactory.decodeResource(DSLStylingJavaActivity.this.getResources(), R.drawable.blue_round_nine);
             ImageUtils.addImage9Patch(style, new ImageNinePatchExtensionImpl.Builder(IMAGE_9_PATCH_ID, bitmap).build());
@@ -117,8 +122,11 @@ public class DSLStylingJavaActivity extends AppCompatActivity implements OnMapCl
                 builder.build();
                 return null;
             });
-        }, null);
+        });
         GesturesUtils.addOnMapClickListener(mapboxMap, this);
+
+        // subscribe to map idle event
+        mapboxMap.subscribeMapIdle(mapIdle -> Log.d(TAG, "mapIdle event : " + mapIdle.getTimestamp()));
     }
 
     @Override
@@ -130,9 +138,9 @@ public class DSLStylingJavaActivity extends AppCompatActivity implements OnMapCl
                         new ScreenCoordinate(clicked.getX() + 50, clicked.getY() + 50)
                 )),
                 new RenderedQueryOptions(QUERY_LIST, literal(true)), features -> {
-                    List<QueriedFeature> featureList = features.getValue();
+                    List<QueriedRenderedFeature> featureList = features.getValue();
                     if (featureList != null && !featureList.isEmpty()) {
-                        Number time = featureList.get(0).getFeature().getNumberProperty("time");
+                        Number time = featureList.get(0).getQueriedFeature().getFeature().getNumberProperty("time");
                         Toast.makeText(DSLStylingJavaActivity.this, getDateTime(time.longValue()), Toast.LENGTH_SHORT).show();
                     }
                 });
@@ -146,7 +154,7 @@ public class DSLStylingJavaActivity extends AppCompatActivity implements OnMapCl
             Date netDate = new Date(time);
             dateTime = sdf.format(netDate);
         } catch (Exception e) {
-            e.toString();
+            Log.w(TAG, "getDateTime: Unable to parse " + time, e);
         }
         return dateTime;
     }
@@ -167,7 +175,7 @@ public class DSLStylingJavaActivity extends AppCompatActivity implements OnMapCl
         builder.addLayer(rasterLayer);
         // Add the earthquake source
         builder.addSource(new GeoJsonSource.Builder(SOURCE_ID)
-                .url(GEOJSON_URL)
+                .data(GEOJSON_URL)
                 .cluster(false)
                 .build()
         );
@@ -200,5 +208,10 @@ public class DSLStylingJavaActivity extends AppCompatActivity implements OnMapCl
         builder.addLayerAtPosition(builder.layerAtPosition(symbolLayer, CIRCLE_LAYER_ID));
 
         return builder.build();
+    }
+
+    @Override
+    public void run(@NonNull MapLoadingError mapLoadingError) {
+
     }
 }

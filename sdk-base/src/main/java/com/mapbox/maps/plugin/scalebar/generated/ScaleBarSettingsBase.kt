@@ -24,7 +24,7 @@ abstract class ScaleBarSettingsBase : ScaleBarSettingsInterface {
    * @return scalebar settings
    */
   override fun getSettings(): ScaleBarSettings {
-    return internalSettings.copy()
+    return internalSettings.toBuilder().build()
   }
 
   /**
@@ -32,13 +32,13 @@ abstract class ScaleBarSettingsBase : ScaleBarSettingsInterface {
    *
    * @param block the receiver function of ScaleBarSettings
    */
-  override fun updateSettings(block: ScaleBarSettings.() -> Unit) {
-    this.internalSettings.apply(block)
+  override fun updateSettings(block: ScaleBarSettings.Builder.() -> Unit) {
+    this.internalSettings = this.internalSettings.toBuilder().apply(block).build()
     applySettings()
   }
 
   /**
-   * Whether the scale is visible on the map.
+   * Whether the scale is visible on the map. Default value: true.
    */
   override var enabled: Boolean
     get() {
@@ -46,13 +46,13 @@ abstract class ScaleBarSettingsBase : ScaleBarSettingsInterface {
     }
     set(value) {
       if (this.internalSettings.enabled != value) {
-        this.internalSettings.enabled = value
+        this.internalSettings = this.internalSettings.toBuilder().setEnabled(value).build()
         applySettings()
       }
     }
 
   /**
-   * Defines where the scale bar is positioned on the map
+   * Defines where the scale bar is positioned on the map Default value: "top-left".
    */
   override var position: Int
     get() {
@@ -60,13 +60,13 @@ abstract class ScaleBarSettingsBase : ScaleBarSettingsInterface {
     }
     set(value) {
       if (this.internalSettings.position != value) {
-        this.internalSettings.position = value
+        this.internalSettings = this.internalSettings.toBuilder().setPosition(value).build()
         applySettings()
       }
     }
 
   /**
-   * Defines the margin to the left that the scale bar honors.
+   * Defines the margin to the left that the scale bar honors. Default value: 4.
    */
   override var marginLeft: Float
     get() {
@@ -74,13 +74,13 @@ abstract class ScaleBarSettingsBase : ScaleBarSettingsInterface {
     }
     set(value) {
       if (this.internalSettings.marginLeft != value) {
-        this.internalSettings.marginLeft = value
+        this.internalSettings = this.internalSettings.toBuilder().setMarginLeft(value).build()
         applySettings()
       }
     }
 
   /**
-   * Defines the margin to the top that the scale bar honors.
+   * Defines the margin to the top that the scale bar honors. Default value: 4.
    */
   override var marginTop: Float
     get() {
@@ -88,13 +88,13 @@ abstract class ScaleBarSettingsBase : ScaleBarSettingsInterface {
     }
     set(value) {
       if (this.internalSettings.marginTop != value) {
-        this.internalSettings.marginTop = value
+        this.internalSettings = this.internalSettings.toBuilder().setMarginTop(value).build()
         applySettings()
       }
     }
 
   /**
-   * Defines the margin to the right that the scale bar honors.
+   * Defines the margin to the right that the scale bar honors. Default value: 4.
    */
   override var marginRight: Float
     get() {
@@ -102,13 +102,13 @@ abstract class ScaleBarSettingsBase : ScaleBarSettingsInterface {
     }
     set(value) {
       if (this.internalSettings.marginRight != value) {
-        this.internalSettings.marginRight = value
+        this.internalSettings = this.internalSettings.toBuilder().setMarginRight(value).build()
         applySettings()
       }
     }
 
   /**
-   * Defines the margin to the bottom that the scale bar honors.
+   * Defines the margin to the bottom that the scale bar honors. Default value: 4.
    */
   override var marginBottom: Float
     get() {
@@ -116,13 +116,13 @@ abstract class ScaleBarSettingsBase : ScaleBarSettingsInterface {
     }
     set(value) {
       if (this.internalSettings.marginBottom != value) {
-        this.internalSettings.marginBottom = value
+        this.internalSettings = this.internalSettings.toBuilder().setMarginBottom(value).build()
         applySettings()
       }
     }
 
   /**
-   * Defines text color of the scale bar.
+   * Defines text color of the scale bar. Default value: "black".
    */
   override var textColor: Int
     get() {
@@ -130,13 +130,13 @@ abstract class ScaleBarSettingsBase : ScaleBarSettingsInterface {
     }
     set(value) {
       if (this.internalSettings.textColor != value) {
-        this.internalSettings.textColor = value
+        this.internalSettings = this.internalSettings.toBuilder().setTextColor(value).build()
         applySettings()
       }
     }
 
   /**
-   * Defines primary color of the scale bar.
+   * Defines primary color of the scale bar. Default value: "black".
    */
   override var primaryColor: Int
     get() {
@@ -144,13 +144,13 @@ abstract class ScaleBarSettingsBase : ScaleBarSettingsInterface {
     }
     set(value) {
       if (this.internalSettings.primaryColor != value) {
-        this.internalSettings.primaryColor = value
+        this.internalSettings = this.internalSettings.toBuilder().setPrimaryColor(value).build()
         applySettings()
       }
     }
 
   /**
-   * Defines secondary color of the scale bar.
+   * Defines secondary color of the scale bar. Default value: "white".
    */
   override var secondaryColor: Int
     get() {
@@ -158,13 +158,13 @@ abstract class ScaleBarSettingsBase : ScaleBarSettingsInterface {
     }
     set(value) {
       if (this.internalSettings.secondaryColor != value) {
-        this.internalSettings.secondaryColor = value
+        this.internalSettings = this.internalSettings.toBuilder().setSecondaryColor(value).build()
         applySettings()
       }
     }
 
   /**
-   * Defines width of the border for the scale bar.
+   * Defines width of the border for the scale bar. Default value: 2.
    */
   override var borderWidth: Float
     get() {
@@ -172,13 +172,13 @@ abstract class ScaleBarSettingsBase : ScaleBarSettingsInterface {
     }
     set(value) {
       if (this.internalSettings.borderWidth != value) {
-        this.internalSettings.borderWidth = value
+        this.internalSettings = this.internalSettings.toBuilder().setBorderWidth(value).build()
         applySettings()
       }
     }
 
   /**
-   * Defines height of the scale bar.
+   * Defines height of the scale bar. Default value: 2.
    */
   override var height: Float
     get() {
@@ -186,13 +186,13 @@ abstract class ScaleBarSettingsBase : ScaleBarSettingsInterface {
     }
     set(value) {
       if (this.internalSettings.height != value) {
-        this.internalSettings.height = value
+        this.internalSettings = this.internalSettings.toBuilder().setHeight(value).build()
         applySettings()
       }
     }
 
   /**
-   * Defines margin of the text bar of the scale bar.
+   * Defines margin of the text bar of the scale bar. Default value: 8.
    */
   override var textBarMargin: Float
     get() {
@@ -200,13 +200,13 @@ abstract class ScaleBarSettingsBase : ScaleBarSettingsInterface {
     }
     set(value) {
       if (this.internalSettings.textBarMargin != value) {
-        this.internalSettings.textBarMargin = value
+        this.internalSettings = this.internalSettings.toBuilder().setTextBarMargin(value).build()
         applySettings()
       }
     }
 
   /**
-   * Defines text border width of the scale bar.
+   * Defines text border width of the scale bar. Default value: 2.
    */
   override var textBorderWidth: Float
     get() {
@@ -214,13 +214,13 @@ abstract class ScaleBarSettingsBase : ScaleBarSettingsInterface {
     }
     set(value) {
       if (this.internalSettings.textBorderWidth != value) {
-        this.internalSettings.textBorderWidth = value
+        this.internalSettings = this.internalSettings.toBuilder().setTextBorderWidth(value).build()
         applySettings()
       }
     }
 
   /**
-   * Defines text size of the scale bar.
+   * Defines text size of the scale bar. Default value: 8.
    */
   override var textSize: Float
     get() {
@@ -228,13 +228,13 @@ abstract class ScaleBarSettingsBase : ScaleBarSettingsInterface {
     }
     set(value) {
       if (this.internalSettings.textSize != value) {
-        this.internalSettings.textSize = value
+        this.internalSettings = this.internalSettings.toBuilder().setTextSize(value).build()
         applySettings()
       }
     }
 
   /**
-   * Whether the scale bar is using metric unit. True if the scale bar is using metric system, false if the scale bar is using imperial units.
+   * Whether the scale bar is using metric unit. True if the scale bar is using metric system, false if the scale bar is using imperial units. Default value: true.
    */
   override var isMetricUnits: Boolean
     get() {
@@ -242,13 +242,13 @@ abstract class ScaleBarSettingsBase : ScaleBarSettingsInterface {
     }
     set(value) {
       if (this.internalSettings.isMetricUnits != value) {
-        this.internalSettings.isMetricUnits = value
+        this.internalSettings = this.internalSettings.toBuilder().setIsMetricUnits(value).build()
         applySettings()
       }
     }
 
   /**
-   * Configures minimum refresh interval, in millisecond, default is 15.
+   * Configures minimum refresh interval, in millisecond, default is 15. Default value: 15.
    */
   override var refreshInterval: Long
     get() {
@@ -256,13 +256,13 @@ abstract class ScaleBarSettingsBase : ScaleBarSettingsInterface {
     }
     set(value) {
       if (this.internalSettings.refreshInterval != value) {
-        this.internalSettings.refreshInterval = value
+        this.internalSettings = this.internalSettings.toBuilder().setRefreshInterval(value).build()
         applySettings()
       }
     }
 
   /**
-   * Configures whether to show the text border or not, default is true.
+   * Configures whether to show the text border or not, default is true. Default value: true.
    */
   override var showTextBorder: Boolean
     get() {
@@ -270,13 +270,13 @@ abstract class ScaleBarSettingsBase : ScaleBarSettingsInterface {
     }
     set(value) {
       if (this.internalSettings.showTextBorder != value) {
-        this.internalSettings.showTextBorder = value
+        this.internalSettings = this.internalSettings.toBuilder().setShowTextBorder(value).build()
         applySettings()
       }
     }
 
   /**
-   * configures ratio of scale bar max width compared with MapView width, default is 0.5.
+   * configures ratio of scale bar max width compared with MapView width, default is 0.5. Default value: 0.5.
    */
   override var ratio: Float
     get() {
@@ -284,13 +284,13 @@ abstract class ScaleBarSettingsBase : ScaleBarSettingsInterface {
     }
     set(value) {
       if (this.internalSettings.ratio != value) {
-        this.internalSettings.ratio = value
+        this.internalSettings = this.internalSettings.toBuilder().setRatio(value).build()
         applySettings()
       }
     }
 
   /**
-   * If set to True scale bar will be triggering onDraw depending on [ScaleBarSettings.refreshInterval] even if actual data did not change. If set to False scale bar will redraw only on demand. Defaults to False and should not be changed explicitly in most cases. Could be set to True to produce correct GPU frame metrics when running gfxinfo command.
+   * If set to True scale bar will be triggering onDraw depending on [ScaleBarSettings.refreshInterval] even if actual data did not change. If set to False scale bar will redraw only on demand. Defaults to False and should not be changed explicitly in most cases. Could be set to True to produce correct GPU frame metrics when running gfxinfo command. Default value: false.
    */
   override var useContinuousRendering: Boolean
     get() {
@@ -298,7 +298,7 @@ abstract class ScaleBarSettingsBase : ScaleBarSettingsInterface {
     }
     set(value) {
       if (this.internalSettings.useContinuousRendering != value) {
-        this.internalSettings.useContinuousRendering = value
+        this.internalSettings = this.internalSettings.toBuilder().setUseContinuousRendering(value).build()
         applySettings()
       }
     }

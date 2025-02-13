@@ -1,12 +1,14 @@
 package com.mapbox.maps.testapp.examples.snapshotter
 
+import android.graphics.Paint
+import android.graphics.RectF
 import android.os.Bundle
 import android.widget.ImageView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.mapbox.geojson.Point
 import com.mapbox.maps.*
 import com.mapbox.maps.Snapshotter
-import com.mapbox.maps.bitmap
 
 /**
  * Example demonstrating taking simple snapshot using [Snapshotter].
@@ -18,19 +20,13 @@ class MapSnapshotterActivity : AppCompatActivity(), SnapshotStyleListener {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     val snapshotterOptions = MapSnapshotOptions.Builder()
-      .resourceOptions(
-        ResourceOptionsManager.getDefault(this).resourceOptions
-      )
       .size(Size(512.0f, 512.0f))
       .pixelRatio(1.0f)
       .build()
 
-    mapSnapshotter = Snapshotter(
-      this, snapshotterOptions,
-      SnapshotOverlayOptions(showLogo = false, showAttributes = false)
-    ).apply {
+    mapSnapshotter = Snapshotter(this, snapshotterOptions,).apply {
       setStyleListener(this@MapSnapshotterActivity)
-      setStyleUri(Style.MAPBOX_STREETS)
+      setStyleUri(Style.STANDARD)
       setCamera(
         CameraOptions.Builder().zoom(14.0).center(
           Point.fromLngLat(
@@ -38,12 +34,24 @@ class MapSnapshotterActivity : AppCompatActivity(), SnapshotStyleListener {
           )
         ).build()
       )
-      start {
-        it?.let { mapSnapshot ->
-          val imageView = ImageView(this@MapSnapshotterActivity)
-          imageView.setImageBitmap(mapSnapshot.bitmap())
-          setContentView(imageView)
+      start(
+        overlayCallback = { overlay ->
+          overlay.canvas.drawOval(
+            RectF(0f, 0f, 100f, 100f),
+            Paint().apply { alpha = 128 }
+          )
         }
+      ) { bitmap, errorMessage ->
+        if (errorMessage != null) {
+          Toast.makeText(
+            this@MapSnapshotterActivity,
+            errorMessage,
+            Toast.LENGTH_SHORT
+          ).show()
+        }
+        val imageView = ImageView(this@MapSnapshotterActivity)
+        imageView.setImageBitmap(bitmap)
+        setContentView(imageView)
       }
     }
   }

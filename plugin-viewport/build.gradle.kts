@@ -1,57 +1,36 @@
-import org.jetbrains.dokka.gradle.DokkaTask
-
 plugins {
-  id("com.android.library")
-  kotlin("android")
-  id("org.jetbrains.dokka")
-  id("io.gitlab.arturbosch.detekt").version(Versions.detekt)
+  id("com.mapbox.gradle.library")
 }
 
 android {
-  compileSdk = AndroidVersions.compileSdkVersion
+  compileSdk = libs.versions.androidCompileSdkVersion.get().toInt()
+  namespace = "com.mapbox.maps.plugin.viewport"
   defaultConfig {
-    minSdk = AndroidVersions.minSdkVersion
-    targetSdk = AndroidVersions.targetSdkVersion
+    minSdk = libs.versions.androidMinSdkVersion.get().toInt()
+    targetSdk = libs.versions.androidTargetSdkVersion.get().toInt()
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-  }
-
-  sourceSets {
-    getByName("main") {
-      // limit amount of exposed library resources
-      res.srcDirs("src/main/res-public")
-      java.srcDir("src/main/kotlin")
-    }
-    getByName("test").java.srcDir("src/test/kotlin")
   }
 }
 
+mapboxLibrary {
+  publish {
+    group = "com.mapbox.plugin"
+    artifactId = "maps-viewport"
+    artifactTitle = "The viewport module for the Mapbox Maps SDK"
+    artifactDescription = artifactTitle
+    sdkName = "mobile-maps-android-viewport"
+  }
+}
 
 dependencies {
   implementation(project(":sdk-base"))
   implementation(project(":plugin-animation"))
   implementation(project(":plugin-locationcomponent"))
-  implementation(Dependencies.androidxAppCompat)
-  implementation(Dependencies.androidxCoreKtx)
-  implementation(Dependencies.androidxAnnotations)
-  implementation(Dependencies.kotlin)
-  implementation(Dependencies.mapboxBase)
-  testImplementation(Dependencies.equalsVerifier)
-  testImplementation(Dependencies.junit)
-  testImplementation(Dependencies.mockk)
-  testImplementation(Dependencies.robolectric)
-  androidTestImplementation(Dependencies.androidxTestRunner)
-  androidTestImplementation(Dependencies.androidxJUnitTestRules)
-  androidTestImplementation(Dependencies.androidxEspresso)
-  detektPlugins(Dependencies.detektFormatting)
-}
+  implementation(libs.bundles.base.dependencies)
 
-tasks.withType<DokkaTask>().configureEach {
-  dokkaSourceSets {
-    configureEach {
-      reportUndocumented.set(true)
-      failOnWarning.set(true)
-    }
-  }
+  testImplementation(libs.bundles.base.dependenciesTests)
+  androidTestImplementation(libs.bundles.base.dependenciesAndroidTests)
+  detektPlugins(libs.detektFormatting)
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> { kotlinOptions.jvmTarget = "1.8" }
@@ -59,8 +38,6 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> { kotlinOptions.
 project.apply {
   from("$rootDir/gradle/ktlint.gradle")
   from("$rootDir/gradle/lint.gradle")
-  from("$rootDir/gradle/jacoco.gradle")
-  from("$rootDir/gradle/sdk-registry.gradle")
   from("$rootDir/gradle/track-public-apis.gradle")
   from("$rootDir/gradle/detekt.gradle")
   from("$rootDir/gradle/dependency-updates.gradle")

@@ -4,15 +4,17 @@ import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.graphics.Color
 import androidx.annotation.ColorInt
+import androidx.annotation.RestrictTo
 import androidx.core.view.animation.PathInterpolatorCompat
 
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 internal class PuckPulsingAnimator(private val pixelRatio: Float = 1.0f) :
   PuckAnimator<Double>(Evaluators.DOUBLE) {
   var maxRadius: Double = DEFAULT_RADIUS_DP * pixelRatio
 
   @ColorInt
   var pulsingColor: Int = Color.BLUE
-  var pulseFadeEnabled = true
+  private var pulseFadeEnabled = true
 
   init {
     duration = PULSING_DEFAULT_DURATION
@@ -29,7 +31,7 @@ internal class PuckPulsingAnimator(private val pixelRatio: Float = 1.0f) :
       animate(0.0, maxRadius)
     }
     addListener(object : AnimatorListenerAdapter() {
-      override fun onAnimationRepeat(animation: Animator?) {
+      override fun onAnimationRepeat(animation: Animator) {
         super.onAnimationRepeat(animation)
         setObjectValues(0.0, maxRadius)
       }

@@ -5,6 +5,10 @@ import com.mapbox.maps.extension.observable.eventdata.MapLoadedEventData
 /**
  * Definition for listener invoked when the map loading finishes.
  */
+@Deprecated(
+  message = "This listener is deprecated, and will be removed in next major release. use MapLoadedCallback instead.",
+  replaceWith = ReplaceWith("MapLoadedCallback")
+)
 fun interface OnMapLoadedListener {
 
   /**

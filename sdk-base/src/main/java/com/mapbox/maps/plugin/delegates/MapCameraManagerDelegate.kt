@@ -1,10 +1,13 @@
 package com.mapbox.maps.plugin.delegates
 
+import android.app.Activity
+import android.graphics.RectF
 import com.mapbox.bindgen.Expected
 import com.mapbox.bindgen.None
 import com.mapbox.geojson.Geometry
 import com.mapbox.geojson.Point
 import com.mapbox.maps.*
+import com.mapbox.maps.util.isEmpty
 
 /**
  * Definition of a camera delegate. Any invocation will interact with the map's actual camera.
@@ -17,60 +20,86 @@ interface MapCameraManagerDelegate {
   val cameraState: CameraState
 
   /**
-   * Convenience method that returns the camera options object for given arguments
+   * Convert the given [bounds], [boundsPadding], [bearing] and [pitch] values to [CameraOptions].
+   * Note that this method takes into account the current map padding in addition to the
+   * [boundsPadding] provided in parameters.
    *
-   * This API isn't supported by Globe projection.
+   * In order for this method to produce correct results [MapView] must be already
+   * measured and inflated to have correct width and height values.
+   * Calling this method in [Activity.onCreate] will lead to incorrect results.
    *
-   * @param bounds The coordinate bounds of the map
-   * @param padding The edge padding of the map
-   * @param bearing The bearing of the map
-   * @param pitch The pitch of the map
+   * @param bounds The [CoordinateBounds] of the camera.
+   * @param boundsPadding The amount of padding in [EdgeInsets] to add to the given bounds.
+   * @param bearing The bearing of the camera.
+   * @param pitch The pitch of the camera.
+   * @param maxZoom The maximum zoom level allowed in the returned camera options.
+   * @param offset The center of the given bounds relative to map center in pixels.
    *
-   * @return Returns the camera options object representing the provided params
+   * @return the converted [CameraOptions]. Padding is absent in the returned [CameraOptions]
+   * as the zoom level already accounts for the [boundsPadding] provided.
    */
+  @Deprecated(
+    message = "Deprecated",
+    replaceWith = ReplaceWith("cameraForCoordinates(coordinates, camera, coordinatesPadding, maxZoom, offset, result)"),
+    level = DeprecationLevel.WARNING
+  )
   fun cameraForCoordinateBounds(
     bounds: CoordinateBounds,
-    padding: EdgeInsets = EdgeInsets(0.0, 0.0, 0.0, 0.0),
+    boundsPadding: EdgeInsets? = null,
     bearing: Double? = null,
-    pitch: Double? = null
+    pitch: Double? = null,
+    maxZoom: Double? = null,
+    offset: ScreenCoordinate? = null,
   ): CameraOptions
 
   /**
-   * Convenience method that returns the camera options object for given arguments
+   * Convenience method that returns the [CameraOptions] object for given parameters.
+   * This method takes into account the current map padding in addition to the padding provided in parameters.
    *
-   * This API isn't supported by Globe projection.
+   * @param coordinates The `coordinates` representing the bounds of the camera.
+   * @param coordinatesPadding The amount of padding in pixels to add to the given `coordinates`.
+   * @param bearing The bearing of the camera.
+   * @param pitch The pitch of the camera.
    *
-   * @param coordinates The coordinates representing the bounds of the map
-   * @param padding The edge padding of the map
-   * @param bearing The bearing of the map
-   * @param pitch The pitch of the map
-   *
-   * @return Returns the camera options object representing the provided params
+   * @return The [CameraOptions] object representing the provided parameters. Padding is absent in the returned [CameraOptions] as the zoom level already accounts for the padding.
    */
+  @Deprecated(
+    message = "Deprecated",
+    replaceWith = ReplaceWith("cameraForCoordinates(coordinates, camera, coordinatesPadding, maxZoom, offset, result)"),
+    level = DeprecationLevel.WARNING
+  )
   fun cameraForCoordinates(
     coordinates: List<Point>,
-    padding: EdgeInsets = EdgeInsets(0.0, 0.0, 0.0, 0.0),
+    coordinatesPadding: EdgeInsets? = null,
     bearing: Double? = null,
     pitch: Double? = null
   ): CameraOptions
 
   /**
-   * Convenience method that adjusts the provided camera options object for given arguments
+   * Convenience method that adjusts the provided [CameraOptions] object for given parameters.
    *
-   * Returns the provided \p camera with zoom adjusted to fit \p coordinates into \p box, so that coordinates on the left,
-   * top and right of the effective camera center at the principal point of the projection (defined by padding) fit into \p box.
-   * Returns the provided camera options object unchanged upon error.
-   * Note that this method may fail if the principal point of the projection is not inside \p box or
-   * if there is no sufficient screen space, defined by principal point and box, to fit the geometry.
+   * Returns the provided `camera` options with zoom adjusted to fit `coordinates` into the `box`, so that `coordinates` on the left,
+   * top, right, and bottom of the effective `camera` center at the principal point of the projection (defined by `padding`) fit into the `box`.
+   * Returns the provided `camera` options object unchanged upon an error.
+   *
+   * The method fails if the principal point is positioned outside of the `box`
+   * or if there is no sufficient screen space, defined by principal point and the `box`, to fit the geometry.
+   * Additionally, in cases when the principal point is positioned exactly on one of the edges of the `box`,
+   * any geometry point that spans further than that edge on the same axis cannot possibly be framed and is ignored for zoom level calculation purposes.
    *
    * This API isn't supported by Globe projection.
    *
-   * @param coordinates The coordinates representing the bounds of the map
-   * @param box The box into which \p coordinates should fit
-   * @param camera The camera for which zoom should be adjusted. Note that \p camera.center is required.
+   * @param coordinates The `coordinates` representing the bounds of the camera.
+   * @param camera The [CameraOptions] for which zoom should be adjusted. Note that the `camera.center`, and `camera.zoom` (as fallback) is required.
+   * @param box The [ScreenBox] into which [coordinates] should fit.
    *
-   * @return Returns the camera options object with the zoom level adjusted to fit \p coordinates into \p box.
+   * @return The [CameraOptions] object with the zoom level adjusted to fit [coordinates] into the [box].
    */
+  @Deprecated(
+    message = "Deprecated",
+    replaceWith = ReplaceWith("cameraForCoordinates(coordinates, camera, coordinatesPadding, maxZoom, offset, result)"),
+    level = DeprecationLevel.WARNING
+  )
   fun cameraForCoordinates(
     coordinates: List<Point>,
     camera: CameraOptions,
@@ -78,20 +107,86 @@ interface MapCameraManagerDelegate {
   ): CameraOptions
 
   /**
-   * Convenience method that returns the camera options object for given arguments
+   * Convenience method that returns the [CameraOptions] object for given parameters.
    *
-   * This API isn't supported by Globe projection.
+   * Important: if the render thread did not yet calculate the size of the map (due to initialization or map resizing) - empty [CameraOptions] will be returned.
+   * Emptiness could be checked with [CameraOptions.isEmpty]. Consider using asynchronous overloaded method:
+   *    ```
+   *    fun cameraForCoordinates(
+   *     coordinates: List<Point>,
+   *     camera: CameraOptions,
+   *     coordinatesPadding: EdgeInsets?,
+   *     maxZoom: Double?,
+   *     offset: ScreenCoordinate?,
+   *     result: (CameraOptions) -> Unit
+   *    )
+   *    ```
+   * Consider using this synchronous method ONLY when you are absolutely sure that map is fully ready.
    *
-   * @param geometry The geometry of the map
-   * @param padding The edge padding of the map
-   * @param bearing The bearing of the map
-   * @param pitch The pitch of the map
+   * @param coordinates The `coordinates` representing the bounds of the camera.
+   * @param camera The [CameraOptions] which will be applied before calculating the camera for the coordinates. If any of the fields in [CameraOptions] are not provided then the current value from the map for that field will be used.
+   * @param coordinatesPadding The amount of padding in pixels to add to the given `coordinates`.
+   *                           Note: This padding is not applied to the map but to the coordinates provided. If you want to apply padding to the map use param `camera`.
+   * @param maxZoom The maximum zoom level allowed in the returned camera options.
+   * @param offset The center of the given bounds relative to map center in pixels.
    *
-   * @return Returns the camera options object representing the provided params
+   * @return The [CameraOptions] object representing the provided parameters if the map size was calculated and empty [CameraOptions] otherwise, see [CameraOptions.isEmpty].
+   *  Also empty [CameraOptions] are returned in case of an internal error.
    */
+  @MapboxDelicateApi
+  fun cameraForCoordinates(
+    coordinates: List<Point>,
+    camera: CameraOptions,
+    coordinatesPadding: EdgeInsets?,
+    maxZoom: Double?,
+    offset: ScreenCoordinate?
+  ): CameraOptions
+
+  /**
+   * Convenience method that returns the [CameraOptions] object for given parameters.
+   *
+   * @param coordinates The `coordinates` representing the bounds of the camera.
+   * @param camera The [CameraOptions] which will be applied before calculating the camera for the coordinates. If any of the fields in [CameraOptions] are not provided then the current value from the map for that field will be used.
+   * @param coordinatesPadding The amount of padding in pixels to add to the given `coordinates`.
+   *                           Note: This padding is not applied to the map but to the coordinates provided. If you want to apply padding to the map use param `camera`.
+   * @param maxZoom The maximum zoom level allowed in the returned camera options.
+   * @param offset The center of the given bounds relative to map center in pixels.
+   * @param result Callback returning the [CameraOptions] object representing the provided parameters. Those [CameraOptions] always take into account actual MapView size and may return empty ([CameraOptions.isEmpty]) options only if an internal error has occurred.
+   */
+  fun cameraForCoordinates(
+    coordinates: List<Point>,
+    camera: CameraOptions,
+    coordinatesPadding: EdgeInsets?,
+    maxZoom: Double?,
+    offset: ScreenCoordinate?,
+    result: (CameraOptions) -> Unit
+  )
+
+  /**
+   * Convert the given [geometry], [geometryPadding], [bearing] and [pitch] values to [CameraOptions].
+   * Note that this method takes into account the current map padding in addition to the
+   * [geometryPadding] provided in parameters.
+   *
+   * In order for this method to produce correct results `MapView` must be already
+   * measured and inflated to have correct width and height values.
+   * Calling this method in [Activity.onCreate] will lead to incorrect results.
+   *
+   * @param geometry The [Geometry] to take in account when converting
+   * @param geometryPadding The optional amount of padding in pixels to add to the given [geometry].
+   * @param bearing The optional bearing to take in account when converting
+   * @param pitch The optional pitch to take in account when converting
+   *
+   * @return Returns the converted [CameraOptions]. Padding is absent in the returned
+   * [CameraOptions] as the zoom level already accounts for the [geometryPadding] provided.
+   */
+  @Deprecated(
+    message = "Deprecated",
+    replaceWith = ReplaceWith("cameraForCoordinates(coordinates, camera, coordinatesPadding, maxZoom, offset, result)"),
+    level = DeprecationLevel.WARNING
+  )
   fun cameraForGeometry(
     geometry: Geometry,
-    padding: EdgeInsets = EdgeInsets(0.0, 0.0, 0.0, 0.0),
+    geometryPadding: EdgeInsets? = null,
     bearing: Double? = null,
     pitch: Double? = null
   ): CameraOptions
@@ -215,6 +310,50 @@ interface MapCameraManagerDelegate {
   fun coordinatesForPixels(pixels: List<ScreenCoordinate>): List<Point>
 
   /**
+   * Returns the [CoordinateBounds] for given [RectF] defined in screen points.
+   *
+   * The screen points are in `platform pixels` relative to the top left corner
+   * of the map (not of the whole screen).
+   *
+   * This API isn't supported by Globe projection.
+   *
+   * @param rectF rectangle area defined in screen points.
+   * @return [CoordinateBounds] representing given [RectF].
+   * @throws [IllegalArgumentException] if [RectF] is empty
+   */
+  fun coordinateBoundsForRect(rectF: RectF): CoordinateBounds
+
+  /**
+   * Calculates the geographical coordinate information that corresponds to a given screen coordinate.
+   *
+   * The screen coordinate is in platform pixels, relative to the top left corner of the map (not the whole screen).
+   *
+   * The returned coordinate will be the closest position projected onto the map surface,
+   * in case the screen coordinate does not intersect with the map surface.
+   *
+   * @param pixel The screen coordinate on the map, in platform pixels.
+   *
+   * @return A CoordinateInfo record containing information about the geographical coordinate corresponding to the given screen coordinate, including whether it is on the map surface.
+   *
+   */
+  fun coordinateInfoForPixel(pixel: ScreenCoordinate): CoordinateInfo
+
+  /**
+   * Calculates the geographical coordinates information that corresponds to the given screen coordinates.
+   *
+   * The screen coordinates are in platform pixels, relative to the top left corner of the map (not the whole screen).
+   *
+   * The returned coordinate will be the closest position projected onto the map surface,
+   * in case the screen coordinate does not intersect with the map surface.
+   *
+   * @param pixels The list of screen coordinates on the map, in platform pixels.
+   *
+   * @return The CoordinateInfo records containing information about the geographical coordinates corresponding to the given screen coordinates, including whether they are on the map surface.
+   *
+   */
+  fun coordinatesInfoForPixels(pixels: List<ScreenCoordinate>): List<CoordinateInfo>
+
+  /**
    * Changes the map view by any combination of center, zoom, bearing, and pitch, without an animated transition.
    * The map will retain its current values for any details not passed via the camera options argument.
    * It is not guaranteed that the provided CameraOptions will be set, the map may apply constraints resulting in a
@@ -256,28 +395,29 @@ interface MapCameraManagerDelegate {
   fun getBounds(): CameraBounds
 
   /**
-   * Prepares the drag gesture to use the provided screen coordinate as a pivot point. This function should be called each time when user starts a dragging action (e.g. by clicking on the map). The following dragging will be relative to the pivot.
+   * Sets the map [MapCenterAltitudeMode] that defines behavior of the center point
+   * altitude for all subsequent camera manipulations.
    *
-   * @param point The pivot coordinate, measured in \link MapOptions#size platform pixels \endlink from top to bottom and from left to right.
+   * Note: any gesture changing the map camera will set [MapCenterAltitudeMode.TERRAIN]
+   * when finished.
    */
-  fun dragStart(point: ScreenCoordinate)
+  fun setCenterAltitudeMode(mode: MapCenterAltitudeMode)
 
   /**
-   * Calculates target point where camera should move after drag. The method should be called after `dragStart` and before `dragEnd`.
+   * Returns the map's [MapCenterAltitudeMode].
    *
-   * @param fromPoint The point to drag the map from, measured in \link MapOptions#size platform pixels \endlink from top to bottom and from left to right.
-   * @param toPoint The point to drag the map to, measured in \link MapOptions#size platform pixels \endlink from top to bottom and from left to right.
-   *
-   * @return Returns the camera options object showing end point
+   * @return The map's [MapCenterAltitudeMode].
    */
-  fun getDragCameraOptions(
-    fromPoint: ScreenCoordinate,
-    toPoint: ScreenCoordinate
-  ): CameraOptions
+  fun getCenterAltitudeMode(): MapCenterAltitudeMode
 
   /**
-   * Ends the ongoing drag gesture.
-   * This function should be called always after the user has ended a drag gesture initiated by `dragStart`.
+   * Calculates a target point where the camera should move after dragging from
+   * a screen coordinate `startCoordinate` to another coordinate `endCoordinate`.
+   *
+   * @param fromPoint The `screen coordinate` to drag the map from, measured in `platform pixels` from top to bottom and from left to right.
+   * @param toPoint The `screen coordinate` to drag the map to, measured in `platform pixels` from top to bottom and from left to right.
+   *
+   * @return The [CameraOptions] object with the center variable set to the computed target location.
    */
-  fun dragEnd()
+  fun cameraForDrag(fromPoint: ScreenCoordinate, toPoint: ScreenCoordinate): CameraOptions
 }

@@ -5,6 +5,7 @@ import android.util.AttributeSet
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import androidx.annotation.RestrictTo
 import com.mapbox.maps.plugin.logo.generated.LogoAttributeParser
 import com.mapbox.maps.plugin.logo.generated.LogoSettings
 import com.mapbox.maps.plugin.logo.generated.LogoSettingsBase
@@ -12,13 +13,14 @@ import com.mapbox.maps.plugin.logo.generated.LogoSettingsBase
 /**
  * Concrete implementation of LogoViewPlugin.
  */
-open class LogoViewPlugin(
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+internal class LogoViewPlugin(
   private val viewImplProvider: (Context) -> LogoViewImpl = { LogoViewImpl(it) }
 ) : LogoPlugin, LogoSettingsBase() {
 
   private lateinit var logoView: LogoView
 
-  override var internalSettings: LogoSettings = LogoSettings()
+  override var internalSettings: LogoSettings = LogoSettings { }
 
   override fun applySettings() {
     logoView.setLogoMargins(
@@ -36,9 +38,13 @@ open class LogoViewPlugin(
    * Defines whether the plugins is enabled or disabled.
    */
   override var enabled: Boolean
-    get() = logoView.logoEnabled
+    get() = internalSettings.enabled
     set(value) {
-      logoView.logoEnabled = value
+      if (internalSettings.enabled != value) {
+        internalSettings = internalSettings.toBuilder().setEnabled(value).build()
+        applySettings()
+        logoView.logoEnabled = value
+      }
     }
 
   /**

@@ -2,10 +2,11 @@ package com.mapbox.maps.testapp.examples.markersandcallouts
 
 import android.animation.TypeEvaluator
 import android.animation.ValueAnimator
-import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmap
 import com.mapbox.geojson.Feature
 import com.mapbox.geojson.Point
 import com.mapbox.maps.Style
@@ -39,12 +40,13 @@ class AnimatedMarkerActivity : AppCompatActivity(), OnMapClickListener {
       feature(Feature.fromGeometry(currentPoint))
     }
 
-    val mapboxMap = binding.mapView.getMapboxMap()
+    val mapboxMap = binding.mapView.mapboxMap
     mapboxMap.loadStyle(
       style(Style.SATELLITE_STREETS) {
-        +image("marker_icon") {
-          bitmap(BitmapFactory.decodeResource(resources, R.drawable.red_marker))
-        }
+        +image(
+          "marker_icon",
+          ContextCompat.getDrawable(this@AnimatedMarkerActivity, R.drawable.ic_red_marker)!!.toBitmap()
+        )
         +geojsonSource
         +symbolLayer(layerId = "layer-id", sourceId = "source-id") {
           iconImage("marker_icon")
@@ -93,6 +95,6 @@ class AnimatedMarkerActivity : AppCompatActivity(), OnMapClickListener {
   override fun onDestroy() {
     super.onDestroy()
     animator?.cancel()
-    binding.mapView.getMapboxMap().removeOnMapClickListener(this)
+    binding.mapView.mapboxMap.removeOnMapClickListener(this)
   }
 }

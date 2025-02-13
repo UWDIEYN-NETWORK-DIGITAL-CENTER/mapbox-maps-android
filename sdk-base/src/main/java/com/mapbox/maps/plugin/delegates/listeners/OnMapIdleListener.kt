@@ -5,6 +5,11 @@ import com.mapbox.maps.extension.observable.eventdata.MapIdleEventData
 /**
  * Definition for listener invoked whenever the Map has entered the idle state.
  */
+@Deprecated(
+  message = "This listener is deprecated, and will be removed in next major release. use MapIdleCallback instead.",
+  replaceWith = ReplaceWith("MapIdleCallback"),
+  level = DeprecationLevel.WARNING
+)
 fun interface OnMapIdleListener {
 
   /**

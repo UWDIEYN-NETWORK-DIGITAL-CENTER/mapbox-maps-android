@@ -1,6 +1,7 @@
 package com.mapbox.maps.plugin.animation
 
 import android.animation.Animator
+import android.animation.Animator.AnimatorListener
 import android.animation.AnimatorListenerAdapter
 import android.animation.AnimatorSet
 import android.animation.ValueAnimator
@@ -8,10 +9,15 @@ import android.os.Handler
 import android.os.Looper.getMainLooper
 import androidx.core.animation.addListener
 import com.mapbox.geojson.Point
-import com.mapbox.maps.*
+import com.mapbox.maps.CameraOptions
+import com.mapbox.maps.CameraState
+import com.mapbox.maps.EdgeInsets
+import com.mapbox.maps.ScreenCoordinate
+import com.mapbox.maps.dsl.cameraOptions
+import com.mapbox.maps.logE
+import com.mapbox.maps.logI
+import com.mapbox.maps.logW
 import com.mapbox.maps.plugin.animation.CameraAnimationsPluginImpl.Companion.TAG
-import com.mapbox.maps.plugin.animation.CameraAnimationsPluginImplTest.Companion.cameraState
-import com.mapbox.maps.plugin.animation.CameraAnimationsPluginImplTest.Companion.toCameraState
 import com.mapbox.maps.plugin.animation.CameraAnimatorOptions.Companion.cameraAnimatorOptions
 import com.mapbox.maps.plugin.animation.MapAnimationOptions.Companion.mapAnimationOptions
 import com.mapbox.maps.plugin.animation.animator.CameraAnimator
@@ -21,13 +27,29 @@ import com.mapbox.maps.plugin.animation.animator.CameraPitchAnimator
 import com.mapbox.maps.plugin.delegates.MapCameraManagerDelegate
 import com.mapbox.maps.plugin.delegates.MapDelegateProvider
 import com.mapbox.maps.plugin.delegates.MapTransformDelegate
-import io.mockk.*
+import com.mapbox.maps.toCameraOptions
+import io.mockk.Runs
+import io.mockk.every
+import io.mockk.just
+import io.mockk.mockk
+import io.mockk.mockkObject
+import io.mockk.mockkStatic
+import io.mockk.runs
+import io.mockk.slot
+import io.mockk.spyk
+import io.mockk.unmockkObject
+import io.mockk.unmockkStatic
 import io.mockk.verify
+import io.mockk.verifyOrder
 import org.junit.After
-import org.junit.Assert.*
+import org.junit.Assert.assertArrayEquals
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.ParameterizedRobolectricTestRunner
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.LooperMode
@@ -102,6 +124,9 @@ class CameraAnimationsPluginImplTest {
     animators.forEach {
       verify { it.addInternalListener(any()) }
     }
+    animators.forEach {
+      assertTrue(cameraAnimationsPluginImpl.animators.contains(it))
+    }
   }
 
   @Test
@@ -117,6 +142,7 @@ class CameraAnimationsPluginImplTest {
         it.removeInternalListener()
       }
     }
+    assertTrue("Animators is not empty", cameraAnimationsPluginImpl.animators.isEmpty())
   }
 
   @Test
@@ -242,6 +268,26 @@ class CameraAnimationsPluginImplTest {
   }
 
   @Test
+  fun testEaseToWithEmptyCameraOptions() {
+    val cancelable = cameraAnimationsPluginImpl.easeTo(
+      cameraOptions { },
+      mapAnimationOptions { duration(DURATION) }
+    )
+    // Checking that passing empty cameraOptions doesn't throw exception
+    assertTrue(cancelable != null)
+  }
+
+  @Test
+  fun testFlyToWithEmptyCameraOptions() {
+    val cancelable = cameraAnimationsPluginImpl.flyTo(
+      cameraOptions { },
+      mapAnimationOptions { duration(DURATION) }
+    )
+    // Checking that passing empty cameraOptions doesn't throw exception
+    assertTrue(cancelable != null)
+  }
+
+  @Test
   fun startSubsequentAnimationsWithTheSameType1() {
     var cameraPosition = CameraOptions.Builder().build()
     every { mapCameraManagerDelegate.setCamera(any<CameraOptions>()) } answers {
@@ -316,10 +362,14 @@ class CameraAnimationsPluginImplTest {
     every {
       mapCameraManagerDelegate.cameraState
     } answers { cameraPosition.toCameraState() }
-    every { mapCameraManagerDelegate.setCamera(any<CameraOptions>()) } answers {
+
+    every {
+      mapCameraManagerDelegate.setCamera(any<CameraOptions>())
+    } answers {
       cameraPosition = firstArg<CameraOptions>()
       cameraAnimationsPluginImpl.onCameraMove(cameraPosition.toCameraState())
     }
+
     val targetPitch = 5.0
     val cameraOptions = CameraOptions.Builder().pitch(targetPitch).build()
     val expectedValues = mutableSetOf(targetPitch)
@@ -373,6 +423,66 @@ class CameraAnimationsPluginImplTest {
   }
 
   @Test
+  fun `two same immediate animations, second is skipped`() {
+    var cameraPosition = CameraOptions.Builder().build()
+    every {
+      mapCameraManagerDelegate.cameraState
+    } answers {
+      cameraPosition.toCameraState()
+    }
+    every {
+      mapCameraManagerDelegate.setCamera(any<CameraOptions>())
+    } answers {
+      cameraPosition = firstArg<CameraOptions>()
+      cameraAnimationsPluginImpl.onCameraMove(cameraPosition.toCameraState())
+    }
+
+    val cameraAnimatorOptions = cameraAnimatorOptions(10.0) {
+      startValue(10.0)
+    }
+    val bearingFirst = CameraBearingAnimator(cameraAnimatorOptions, true) {
+      duration = 0
+    }
+    bearingFirst.addListener(onStart = {
+      assertEquals(2, cameraAnimationsPluginImpl.animators.size)
+      assertEquals(false, (it as CameraAnimator<*>).skipped)
+    })
+
+    val bearingSecond = CameraBearingAnimator(cameraAnimatorOptions, true) {
+      duration = 0
+    }
+    bearingSecond.addListener(onStart = {
+      assertEquals(1, cameraAnimationsPluginImpl.animators.size)
+      assertEquals(true, (it as CameraAnimator<*>).skipped)
+    })
+
+    cameraAnimationsPluginImpl.playAnimatorsTogether(bearingFirst, bearingSecond)
+    assertTrue("Animators is not empty", cameraAnimationsPluginImpl.animators.isEmpty())
+  }
+
+  @Test
+  fun `animation skipped if camera already has target value`() {
+    val cameraPosition = CameraOptions.Builder().bearing(10.0).build().toCameraState()
+    // Make sure current camera animations plugin has the right initial value
+    cameraAnimationsPluginImpl.onCameraMove(cameraPosition)
+
+    val cameraAnimatorOptions = cameraAnimatorOptions(10.0) {
+      startValue(10.0)
+    }
+
+    val bearingAnimator = CameraBearingAnimator(cameraAnimatorOptions, true) {
+      duration = 0
+    }
+    bearingAnimator.addListener(onStart = {
+      assertEquals(1, cameraAnimationsPluginImpl.animators.size)
+      assertEquals(true, (it as CameraAnimator<*>).skipped)
+    })
+
+    cameraAnimationsPluginImpl.playAnimatorsTogether(bearingAnimator)
+    assertTrue("Animators is not empty", cameraAnimationsPluginImpl.animators.isEmpty())
+  }
+
+  @Test
   fun testEaseToSequenceDurationZero() {
     var cameraPosition = CameraState(
       Point.fromLngLat(90.0, 90.0),
@@ -405,9 +515,9 @@ class CameraAnimationsPluginImplTest {
 
     shadowOf(getMainLooper()).pause()
 
-    val handler = Handler(getMainLooper())
     cameraAnimationsPluginImpl.easeTo(cameraOptions1, mapAnimationOptions { duration(0) })
 
+    val handler = Handler(getMainLooper())
     handler.postDelayed(
       {
         cameraAnimationsPluginImpl.easeTo(
@@ -726,6 +836,22 @@ class CameraAnimationsPluginImplTest {
   }
 
   @Test
+  fun testPlayEmptyAnimatorsSequentially() {
+    cameraAnimationsPluginImpl = spyk(CameraAnimationsPluginImpl())
+    cameraAnimationsPluginImpl.playAnimatorsSequentially(*emptyArray())
+
+    verify(exactly = 0) { cameraAnimationsPluginImpl.registerAnimators(any()) }
+  }
+
+  @Test
+  fun testPlayEmptyAnimatorsTogether() {
+    cameraAnimationsPluginImpl = spyk(CameraAnimationsPluginImpl())
+    cameraAnimationsPluginImpl.playAnimatorsTogether(*emptyArray())
+
+    verify(exactly = 0) { cameraAnimationsPluginImpl.registerAnimators(any()) }
+  }
+
+  @Test
   fun testAnimatorListenerParameterEnd() {
     val listener = CameraAnimatorListener()
     shadowOf(getMainLooper()).pause()
@@ -733,8 +859,8 @@ class CameraAnimationsPluginImplTest {
       cameraState.toCameraOptions(),
       mapAnimationOptions {
         duration(100L)
-        animatorListener(listener)
-      }
+      },
+      listener
     )
     shadowOf(getMainLooper()).idle()
     assertEquals(true, listener.started)
@@ -753,8 +879,8 @@ class CameraAnimationsPluginImplTest {
       cameraState.toCameraOptions(),
       mapAnimationOptions {
         duration(10L)
-        animatorListener(listener)
-      }
+      },
+      listener
     )
     handler.postDelayed(
       {
@@ -836,8 +962,8 @@ class CameraAnimationsPluginImplTest {
       cameraState.toCameraOptions(),
       mapAnimationOptions {
         duration(10L)
-        animatorListener(listenerOne)
-      }
+      },
+      listenerOne
     )
     handler.postDelayed(
       {
@@ -845,8 +971,8 @@ class CameraAnimationsPluginImplTest {
           cameraState.toCameraOptions(),
           mapAnimationOptions {
             duration(10L)
-            animatorListener(listenerTwo)
-          }
+          },
+          listenerTwo
         )
       },
       5L
@@ -934,8 +1060,8 @@ class CameraAnimationsPluginImplTest {
         .build(),
       mapAnimationOptions {
         duration(50L)
-        animatorListener(listener)
-      }
+      },
+      listener
     )
     cancelable.cancel()
     shadowOf(getMainLooper()).idle()
@@ -977,21 +1103,21 @@ class CameraAnimationsPluginImplTest {
         .build(),
       mapAnimationOptions {
         duration(50L)
-        animatorListener(object : AnimatorListenerAdapter() {
-          override fun onAnimationEnd(animation: Animator?) {
-            super.onAnimationEnd(animation)
-            cameraAnimationsPluginImpl.flyTo(
-              CameraOptions.Builder()
-                .center(Point.fromLngLat(VALUE, VALUE))
-                .bearing(VALUE)
-                .build(),
-              mapAnimationOptions {
-                duration(50L)
-                animatorListener(listener)
-              }
-            )
-          }
-        })
+      },
+      object : AnimatorListenerAdapter() {
+        override fun onAnimationEnd(animation: Animator) {
+          super.onAnimationEnd(animation)
+          cameraAnimationsPluginImpl.flyTo(
+            CameraOptions.Builder()
+              .center(Point.fromLngLat(VALUE, VALUE))
+              .bearing(VALUE)
+              .build(),
+            mapAnimationOptions {
+              duration(50L)
+            },
+            listener
+          )
+        }
       }
     )
     shadowOf(getMainLooper()).idle()
@@ -1026,9 +1152,9 @@ class CameraAnimationsPluginImplTest {
     bearingAnimator.start()
     pitchAnimator.start()
     shadowOf(getMainLooper()).idle()
-    // Both, tick and bearing are updated to the start values at first tick.
-    assertEquals(20.0, updateList.first().bearing!!, EPS)
-    assertEquals(10.0, updateList.first().pitch!!, EPS)
+    // animators are applied one after each other now to avoid jittering
+    assertEquals(20.0, updateList[0].bearing!!, EPS)
+    assertEquals(10.0, updateList[1].pitch!!, EPS)
   }
 
   @Test
@@ -1285,19 +1411,19 @@ class CameraAnimationsPluginImplTest {
     var canceled = false
     var canceledCount = 0
 
-    override fun onAnimationRepeat(animation: Animator?) {}
+    override fun onAnimationRepeat(animation: Animator) {}
 
-    override fun onAnimationEnd(animation: Animator?) {
+    override fun onAnimationEnd(animation: Animator) {
       endedCount += 1
       ended = true
     }
 
-    override fun onAnimationCancel(animation: Animator?) {
+    override fun onAnimationCancel(animation: Animator) {
       canceledCount += 1
       canceled = true
     }
 
-    override fun onAnimationStart(animation: Animator?) {
+    override fun onAnimationStart(animation: Animator) {
       startedCount += 1
       started = true
     }
@@ -1363,17 +1489,133 @@ class CameraAnimationsPluginImplTest {
 
     private fun CameraAnimationsPluginImpl.onCameraMove(cameraState: CameraState) {
       onCameraMove(
-        lat = cameraState.center.latitude(),
-        lon = cameraState.center.longitude(),
+        center = cameraState.center,
         zoom = cameraState.zoom,
         pitch = cameraState.pitch,
         bearing = cameraState.bearing,
-        padding = cameraState.padding.let { insets ->
-          arrayOf(insets.left, insets.top, insets.right, insets.bottom)
-        }
+        padding = cameraState.padding
       )
     }
 
     const val EPS = 0.000001
+  }
+}
+
+@RunWith(ParameterizedRobolectricTestRunner::class)
+class RegisterCameraCenterAnimatorUsingShortestPathTest(
+  private val shortestPathEnabled: Boolean,
+  private val testStartValue: Point?,
+  private val testTargets: Array<Point>,
+  private val expectedObjectValues: Array<Point>
+) {
+  private lateinit var mapCameraManagerDelegate: MapCameraManagerDelegate
+  private lateinit var cameraAnimationsPluginImpl: CameraAnimationsPluginImpl
+
+  @Before
+  fun setup() {
+    val delegateProvider = mockk<MapDelegateProvider>(relaxed = true)
+    mapCameraManagerDelegate = mockk(relaxed = true)
+    val mapTransformDelegate = mockk<MapTransformDelegate>(relaxed = true)
+    mockkObject(CameraTransform)
+    mockkStatic("com.mapbox.maps.MapboxLogger")
+    every { logW(any(), any()) } just Runs
+    every { logI(any(), any()) } just Runs
+    every { logE(any(), any()) } just Runs
+    every { delegateProvider.mapCameraManagerDelegate } returns mapCameraManagerDelegate
+    every { delegateProvider.mapTransformDelegate } returns mapTransformDelegate
+    cameraAnimationsPluginImpl = CameraAnimationsPluginImpl().apply {
+      onDelegateProvider(delegateProvider)
+    }
+  }
+
+  @After
+  fun cleanUp() {
+    unmockkObject(CameraTransform)
+    unmockkStatic("com.mapbox.maps.MapboxLogger")
+  }
+
+  @Test
+  fun testCenterAnimationWithShortestPath() {
+    val internalListenerSlot = slot<AnimatorListener>()
+    val argValues = mutableListOf<Any?>()
+    every { mapCameraManagerDelegate.cameraState } returns CameraState(
+      Point.fromLngLat(0.0, 0.0),
+      EdgeInsets(0.0, 0.0, 0.0, 0.0),
+      0.0,
+      0.0,
+      0.0
+    )
+    val cameraCenterAnimator = mockk<CameraCenterAnimator> {
+      every { addInternalListener(capture(internalListenerSlot)) } just runs
+      every { canceled } returns false
+      every { targets } returns testTargets
+      arrayOf(Point.fromLngLat(170.0, 0.0), Point.fromLngLat(-90.0, 0.0))
+      every { startValue } returns testStartValue
+      every { useShortestPath } returns shortestPathEnabled
+      every { type } returns CameraAnimatorType.CENTER
+      every { setObjectValues(*varargAllNullable { argValues.add(it); true }) } just runs
+      every { isRunning } returns false
+      every { addInternalUpdateListener(any()) } just runs
+    }
+    cameraAnimationsPluginImpl.registerAnimators(cameraCenterAnimator)
+
+    internalListenerSlot.captured.onAnimationStart(cameraCenterAnimator)
+
+    assertEquals(/* expected = */ expectedObjectValues.size, /* actual = */ argValues.size)
+    expectedObjectValues.forEachIndexed { index, point ->
+      assertEquals(
+        /* expected = */ point.longitude(),
+        /* actual = */ (argValues[index] as Point).longitude(),
+        /* delta = */ EPS
+      )
+      assertEquals(
+        /* expected = */ point.latitude(),
+        /* actual = */ (argValues[index] as Point).latitude(),
+        /* delta = */ EPS
+      )
+    }
+  }
+
+  private companion object {
+    @JvmStatic
+    @ParameterizedRobolectricTestRunner.Parameters(name = "shortest path enabled: {0}, startPoint: {1}, original targets: {2}, expected targets: {3}")
+    fun data() = listOf(
+      arrayOf(
+        true,
+        (-170.0).toTestPoint(),
+        arrayOf(170.0.toTestPoint(), (-90.0).toTestPoint()),
+        arrayOf((-170.0).toTestPoint(), (-190.0).toTestPoint(), (-90.0).toTestPoint())
+      ),
+      arrayOf(
+        false,
+        (-170.0).toTestPoint(),
+        arrayOf(170.0.toTestPoint(), (-90.0).toTestPoint()),
+        arrayOf((-170.0).toTestPoint(), (170.0).toTestPoint(), (-90.0).toTestPoint())
+      ),
+      arrayOf(
+        true,
+        (-170.0).toTestPoint(),
+        arrayOf(170.0.toTestPoint()),
+        arrayOf(190.0.toTestPoint(), 170.0.toTestPoint())
+      ),
+      arrayOf(
+        true,
+        null,
+        arrayOf(170.0.toTestPoint()),
+        arrayOf(0.0.toTestPoint(), 170.0.toTestPoint())
+      ),
+      arrayOf(
+        true,
+        null,
+        arrayOf(170.0.toTestPoint(), (-90.0).toTestPoint()),
+        arrayOf(0.0.toTestPoint(), (-190.0).toTestPoint(), (-90.0).toTestPoint())
+      ),
+    )
+
+    private fun Double.toTestPoint(): Point {
+      return Point.fromLngLat(this, 0.0)
+    }
+
+    private const val EPS = 0.000001
   }
 }

@@ -1,7 +1,9 @@
 package com.mapbox.maps.plugin.locationcomponent
 
+import androidx.annotation.RestrictTo
 import com.mapbox.bindgen.Value
 
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 internal class LocationIndicatorLayerWrapper(layerId: String) : LocationLayerWrapper(layerId) {
 
   init {
@@ -21,6 +23,8 @@ internal class LocationIndicatorLayerWrapper(layerId: String) : LocationLayerWra
   }
 
   fun bearing(bearing: Double) = updateProperty("bearing", Value(bearing))
+
+  fun slot(slot: String?) = updateProperty("slot", Value(slot ?: ""))
 
   fun location(location: List<Double>) = updateProperty("location", Value(location.map(::Value)))
 

@@ -1,17 +1,27 @@
 package com.mapbox.maps.extension.style
 
 import android.opengl.GLES20
+import com.mapbox.maps.ColorTheme
 import com.mapbox.maps.LayerPosition
-import com.mapbox.maps.extension.style.StyleExtensionImpl.*
+import com.mapbox.maps.MapboxExperimental
+import com.mapbox.maps.TransitionOptions
+import com.mapbox.maps.extension.style.StyleExtensionImpl.Builder
 import com.mapbox.maps.extension.style.atmosphere.generated.Atmosphere
 import com.mapbox.maps.extension.style.image.ImageExtensionImpl
 import com.mapbox.maps.extension.style.image.ImageNinePatchExtensionImpl
-import com.mapbox.maps.extension.style.layers.*
+import com.mapbox.maps.extension.style.layers.Layer
 import com.mapbox.maps.extension.style.layers.properties.generated.ProjectionName
-import com.mapbox.maps.extension.style.light.generated.Light
+import com.mapbox.maps.extension.style.light.DynamicLight
+import com.mapbox.maps.extension.style.light.generated.AmbientLight
+import com.mapbox.maps.extension.style.light.generated.DirectionalLight
+import com.mapbox.maps.extension.style.light.generated.FlatLight
+import com.mapbox.maps.extension.style.model.ModelExtensionImpl
+import com.mapbox.maps.extension.style.precipitations.generated.Rain
+import com.mapbox.maps.extension.style.precipitations.generated.Snow
 import com.mapbox.maps.extension.style.projection.generated.Projection
-import com.mapbox.maps.extension.style.sources.*
+import com.mapbox.maps.extension.style.sources.Source
 import com.mapbox.maps.extension.style.terrain.generated.Terrain
+import com.mapbox.maps.extension.style.utils.StyleTelemetryEvents
 
 /**
  * The concrete implementation of style extension.
@@ -21,29 +31,40 @@ class StyleExtensionImpl private constructor(
 ) : StyleContract.StyleExtension {
 
   /**
-   * The style's Uri. Will load an empty json `{}` if the styleUri is empty.
+   * Style represented as JSON or URI.
    */
-  override val styleUri: String = builder.styleUri
+  override val style: String = builder.style
 
   /**
    * The sources of the style.
    */
-  override val sources = builder.sources.toList()
+  override val sources: List<Source> = builder.sources.toList()
 
   /**
    * The images of the style.
    */
-  override val images = builder.images.toList()
+  override val images: List<StyleContract.StyleImageExtension> = builder.images.toList()
+
+  /**
+   * The models of the style.
+   */
+  @OptIn(MapboxExperimental::class)
+  override val models: List<StyleContract.StyleModelExtension> = builder.models.toList()
 
   /**
    * The layers of the style.
    */
-  override val layers = builder.layers.toList()
+  override val layers: List<Pair<Layer, LayerPosition>> = builder.layers.toList()
 
   /**
-   * The light of the style.
+   * The flat light of the style.
    */
-  override val light: Light? = builder.light
+  override val flatLight: StyleContract.StyleLightExtension? = builder.flatLight
+
+  /**
+   * The dynamic light which is built with [AmbientLight] and [DirectionalLight].
+   */
+  override val dynamicLight: StyleContract.StyleLightExtension? = builder.dynamicLight
 
   /**
    * The terrain of the style.
@@ -61,21 +82,54 @@ class StyleExtensionImpl private constructor(
   override val atmosphere: Atmosphere? = builder.atmosphere
 
   /**
+   * Transition options applied when loading the style.
+   */
+  override val transition: TransitionOptions? = builder.transition
+
+  /**
+   * The rain effect of the style.
+   */
+  @MapboxExperimental
+  override val rain: StyleContract.StyleRainExtension? = builder.rain
+
+  /**
+   * The snow effect of the style.
+   */
+  @MapboxExperimental
+  override val snow: StyleContract.StyleSnowExtension? = builder.snow
+
+  /**
+   * Color theme of the style.
+   */
+  @MapboxExperimental
+  override val colorTheme: ColorTheme? = builder.colorTheme
+
+  /**
    * The builder for style extension.
    */
   class Builder(
     /**
-     * The Uri of the style to load.
+     * Style represented as JSON or URI.
      */
-    val styleUri: String
+    val style: String
   ) {
+
     internal val layers = mutableListOf<Pair<Layer, LayerPosition>>()
     internal val sources = mutableListOf<Source>()
     internal val images = mutableListOf<StyleContract.StyleImageExtension>()
-    internal var light: Light? = null
+    @OptIn(MapboxExperimental::class)
+    internal val models = mutableListOf<StyleContract.StyleModelExtension>()
+    internal var flatLight: StyleContract.StyleLightExtension? = null
+    internal var dynamicLight: StyleContract.StyleLightExtension? = null
     internal var terrain: Terrain? = null
     internal var atmosphere: Atmosphere? = null
     internal var projection: Projection? = null
+    internal var transition: TransitionOptions? = null
+    @OptIn(MapboxExperimental::class)
+    internal var snow: Snow? = null
+    @OptIn(MapboxExperimental::class)
+    internal var rain: Rain? = null
+    internal var colorTheme: ColorTheme? = null
 
     /**
      * Extension function for [Layer] to overload Unary operations.
@@ -108,13 +162,23 @@ class StyleExtensionImpl private constructor(
     }
 
     /**
-     * Extension function for [Light] to overload Unary operations.
+     * Extension function for [FlatLight] to overload Unary operations.
      *
-     * Apply +[Light] will add the light to the [StyleExtensionImpl].
+     * Apply +[FlatLight] will add the light to the [StyleExtensionImpl].
      */
     @JvmName("setLight")
-    operator fun Light.unaryPlus() {
-      light = this
+    operator fun FlatLight.unaryPlus() {
+      flatLight = this
+    }
+
+    /**
+     * Extension function for [DynamicLight] to overload Unary operations.
+     *
+     * Apply +[DynamicLight] will add the light to the [StyleExtensionImpl].
+     */
+    @JvmName("setLight")
+    operator fun DynamicLight.unaryPlus() {
+      dynamicLight = this
     }
 
     /**
@@ -152,6 +216,47 @@ class StyleExtensionImpl private constructor(
     }
 
     /**
+     * Extension function to add [TransitionOptions] to be applied when loading the style.
+     */
+    @JvmName("setTransition")
+    operator fun TransitionOptions.unaryPlus() {
+      transition = this
+    }
+
+    /**
+     * Extension function for [Snow] to overload Unary operations.
+     *
+     * Apply +[Snow] will add specific snow effect to the [StyleExtensionImpl].
+     */
+    @OptIn(MapboxExperimental::class)
+    @JvmName("setSnow")
+    operator fun Snow.unaryPlus() {
+      snow = this
+    }
+
+    /**
+     * Extension function for [Rain] to overload Unary operations.
+     *
+     * Apply +[Rain] will add specific snow effect to the [StyleExtensionImpl].
+     */
+    @OptIn(MapboxExperimental::class)
+    @JvmName("setRain")
+    operator fun Rain.unaryPlus() {
+      rain = this
+    }
+
+    /**
+     * Extension function for [ColorTheme] to overload Unary operations.
+     *
+     * Apply +[ColorTheme] will apply specific theme to the [StyleExtensionImpl].
+     */
+    @MapboxExperimental
+    @JvmName("setColorTheme")
+    operator fun ColorTheme.unaryPlus() {
+      colorTheme = this
+    }
+
+    /**
      * Extension function for [ImageExtensionImpl] to overload Unary operations.
      *
      * Apply +[ImageExtensionImpl] will add the source to the [StyleExtensionImpl].
@@ -159,6 +264,17 @@ class StyleExtensionImpl private constructor(
     @JvmName("addImage")
     operator fun ImageExtensionImpl.unaryPlus() {
       images.add(this)
+    }
+
+    /**
+     * Extension function for [ModelExtensionImpl] to overload Unary operations.
+     *
+     * Apply +[ModelExtensionImpl] will add the source to the [StyleExtensionImpl].
+     */
+    @MapboxExperimental
+    @JvmName("addModel")
+    operator fun ModelExtensionImpl.unaryPlus() {
+      models.add(this)
     }
 
     /**
@@ -197,13 +313,14 @@ class StyleExtensionImpl private constructor(
      * @return an [StyleContract.StyleExtension] instance.
      */
     fun build(): StyleContract.StyleExtension {
+      StyleTelemetryEvents.dsl.increment()
       return StyleExtensionImpl(this)
     }
   }
 }
 
 /**
- * DSL function to construct a style extension.
+ * DSL function to construct a style extension from URI or JSON.
  */
-fun style(styleUri: String = "", block: Builder.() -> Unit) =
-  Builder(styleUri).apply(block).build()
+fun style(style: String = "", block: Builder.() -> Unit): StyleContract.StyleExtension =
+  Builder(style).apply(block).build()

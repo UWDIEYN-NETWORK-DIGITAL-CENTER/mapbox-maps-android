@@ -20,7 +20,7 @@ import java.util.Locale
  * Class for PointAnnotation
  */
 class PointAnnotation(
-  id: Long,
+  id: String,
   /** The annotation manager that manipulate this annotation */
   private val annotationManager: AnnotationManager<Point, PointAnnotation, *, *, *, *, *>,
   jsonObject: JsonObject,
@@ -64,12 +64,15 @@ class PointAnnotation(
      */
     set(value) {
       if (value != null) {
-        field = value
-        if (iconImage == null || iconImage!!.startsWith(ICON_DEFAULT_NAME_PREFIX)) {
-          // User does not set iconImage, update iconImage to this new bitmap
-          iconImage = ICON_DEFAULT_NAME_PREFIX + value.hashCode()
+        if (field != value) {
+          field = value
+          if (iconImage == null || iconImage!!.startsWith(ICON_DEFAULT_NAME_PREFIX)) {
+            // User does not set iconImage, update iconImage to this new bitmap
+            iconImage = ICON_DEFAULT_NAME_PREFIX + value.hashCode()
+          }
         }
       } else {
+        field = null
         jsonObject.remove(PointAnnotationOptions.PROPERTY_ICON_IMAGE)
       }
     }
@@ -77,7 +80,7 @@ class PointAnnotation(
   /**
    * The iconAnchor property
    *
-   * Part of the icon placed closest to the anchor.
+   * Part of the icon placed closest to the anchor. Default value: "center".
    */
   var iconAnchor: IconAnchor?
     /**
@@ -88,7 +91,7 @@ class PointAnnotation(
     get() {
       val value = jsonObject.get(PointAnnotationOptions.PROPERTY_ICON_ANCHOR)
       value?.let {
-        return IconAnchor.valueOf(it.asString.toUpperCase(Locale.US))
+        return IconAnchor.valueOf(it.asString.uppercase(Locale.US))
       }
       return null
     }
@@ -143,7 +146,7 @@ class PointAnnotation(
   /**
    * The iconOffset property
    *
-   * Offset distance of icon from its anchor. Positive values indicate right and down, while negative values indicate left and up. Each component is multiplied by the value of {@link PropertyFactory#iconSize} to obtain the final offset in density-independent pixels. When combined with {@link PropertyFactory#iconRotate} the offset will be as if the rotated direction was up.
+   * Offset distance of icon from its anchor. Positive values indicate right and down, while negative values indicate left and up. Each component is multiplied by the value of `icon-size` to obtain the final offset in pixels. When combined with `icon-rotate` the offset will be as if the rotated direction was up. Default value: [0,0].
    */
   var iconOffset: List<Double>?
     /**
@@ -153,18 +156,15 @@ class PointAnnotation(
      */
     get() {
       val value = jsonObject.get(PointAnnotationOptions.PROPERTY_ICON_OFFSET)
-      value?.let {
-        return (it as JsonArray).map { it.toString().toDouble() }
-      }
-      return null
+      return (value as? JsonArray)?.map { it.toString().toDouble() }
     }
     /**
      * Set the iconOffset property.
      * To update the pointAnnotation on the map use {@link PointAnnotationManager#update(Annotation)}.
      */
     set(value) {
-      if (value != null) {
-        val jsonArray = JsonArray()
+      if (!value.isNullOrEmpty()) {
+        val jsonArray = JsonArray(value.size)
         value.forEach { jsonArray.add(it) }
         jsonObject.add(PointAnnotationOptions.PROPERTY_ICON_OFFSET, jsonArray)
       } else {
@@ -175,7 +175,7 @@ class PointAnnotation(
   /**
    * The iconRotate property
    *
-   * Rotates the icon clockwise.
+   * Rotates the icon clockwise. Default value: 0. The unit of iconRotate is in degrees.
    */
   var iconRotate: Double?
     /**
@@ -208,7 +208,7 @@ class PointAnnotation(
   /**
    * The iconSize property
    *
-   * Scales the original size of the icon by the provided factor. The new pixel size of the image will be the original pixel size multiplied by {@link PropertyFactory#iconSize}. 1 is the original size; 3 triples the size of the image.
+   * Scales the original size of the icon by the provided factor. The new pixel size of the image will be the original pixel size multiplied by `icon-size`. 1 is the original size; 3 triples the size of the image. Default value: 1. Minimum value: 0. The unit of iconSize is in factor of the original icon size.
    */
   var iconSize: Double?
     /**
@@ -239,9 +239,71 @@ class PointAnnotation(
     }
 
   /**
+   * The iconTextFit property
+   *
+   * Scales the icon to fit around the associated text. Default value: "none".
+   */
+  var iconTextFit: IconTextFit?
+    /**
+     * Get the iconTextFit property
+     *
+     * @return property wrapper value around IconTextFit
+     */
+    get() {
+      val value = jsonObject.get(PointAnnotationOptions.PROPERTY_ICON_TEXT_FIT)
+      value?.let {
+        return IconTextFit.valueOf(it.asString.uppercase(Locale.US))
+      }
+      return null
+    }
+    /**
+     * Set the iconTextFit property
+     *
+     * To update the pointAnnotation on the map use {@link pointAnnotationManager#update(Annotation)}.
+     *
+     * @param value constant property value for IconTextFit
+     */
+    set(value) {
+      if (value != null) {
+        jsonObject.addProperty(PointAnnotationOptions.PROPERTY_ICON_TEXT_FIT, value.value)
+      } else {
+        jsonObject.remove(PointAnnotationOptions.PROPERTY_ICON_TEXT_FIT)
+      }
+    }
+
+  /**
+   * The iconTextFitPadding property
+   *
+   * Size of the additional area added to dimensions determined by `icon-text-fit`, in clockwise order: top, right, bottom, left. Default value: [0,0,0,0]. The unit of iconTextFitPadding is in pixels.
+   */
+  var iconTextFitPadding: List<Double>?
+    /**
+     * Get the iconTextFitPadding property
+     *
+     * @return [Point] value for List<Double>
+     */
+    get() {
+      val value = jsonObject.get(PointAnnotationOptions.PROPERTY_ICON_TEXT_FIT_PADDING)
+      return (value as? JsonArray)?.map { it.toString().toDouble() }
+    }
+    /**
+     * Set the iconTextFitPadding property.
+     * To update the pointAnnotation on the map use {@link PointAnnotationManager#update(Annotation)}.
+     */
+    set(value) {
+      if (!value.isNullOrEmpty()) {
+        val jsonArray = JsonArray(value.size)
+        value.forEach { jsonArray.add(it) }
+        jsonObject.add(PointAnnotationOptions.PROPERTY_ICON_TEXT_FIT_PADDING, jsonArray)
+      } else {
+        jsonObject.remove(PointAnnotationOptions.PROPERTY_ICON_TEXT_FIT_PADDING)
+      }
+    }
+
+  /**
    * The symbolSortKey property
    *
-   * Sorts features in ascending order based on this value. Features with lower sort keys are drawn and placed first.  When {@link PropertyFactory#iconAllowOverlap} or {@link PropertyFactory#textAllowOverlap} is `false`, features with a lower sort key will have priority during placement. When {@link PropertyFactory#iconAllowOverlap} or {@link PropertyFactory#textAllowOverlap} is set to `true`, features with a higher sort key will overlap over features with a lower sort key.
+   * Sorts features in ascending order based on this value. Features with lower sort keys are drawn and placed first. When `icon-allow-overlap` or `text-allow-overlap` is `false`, features with a lower sort key will have priority during placement. When `icon-allow-overlap` or `text-allow-overlap` is set to `true`, features with a higher sort key will overlap over features with a lower sort key.
    */
   var symbolSortKey: Double?
     /**
@@ -274,7 +336,7 @@ class PointAnnotation(
   /**
    * The textAnchor property
    *
-   * Part of the text placed closest to the anchor.
+   * Part of the text placed closest to the anchor. Default value: "center".
    */
   var textAnchor: TextAnchor?
     /**
@@ -285,7 +347,7 @@ class PointAnnotation(
     get() {
       val value = jsonObject.get(PointAnnotationOptions.PROPERTY_TEXT_ANCHOR)
       value?.let {
-        return TextAnchor.valueOf(it.asString.toUpperCase(Locale.US))
+        return TextAnchor.valueOf(it.asString.uppercase(Locale.US))
       }
       return null
     }
@@ -307,7 +369,7 @@ class PointAnnotation(
   /**
    * The textField property
    *
-   * Value to use for a text label. If a plain `string` is provided, it will be treated as a `formatted` with default/inherited formatting options. SDF images are not supported in formatted text and will be ignored.
+   * Value to use for a text label. If a plain `string` is provided, it will be treated as a `formatted` with default/inherited formatting options. SDF images are not supported in formatted text and will be ignored. Default value: "".
    */
   var textField: String?
     /**
@@ -340,7 +402,7 @@ class PointAnnotation(
   /**
    * The textJustify property
    *
-   * Text justification options.
+   * Text justification options. Default value: "center".
    */
   var textJustify: TextJustify?
     /**
@@ -351,7 +413,7 @@ class PointAnnotation(
     get() {
       val value = jsonObject.get(PointAnnotationOptions.PROPERTY_TEXT_JUSTIFY)
       value?.let {
-        return TextJustify.valueOf(it.asString.toUpperCase(Locale.US))
+        return TextJustify.valueOf(it.asString.uppercase(Locale.US))
       }
       return null
     }
@@ -373,7 +435,7 @@ class PointAnnotation(
   /**
    * The textLetterSpacing property
    *
-   * Text tracking amount.
+   * Text tracking amount. Default value: 0. The unit of textLetterSpacing is in ems.
    */
   var textLetterSpacing: Double?
     /**
@@ -406,7 +468,7 @@ class PointAnnotation(
   /**
    * The textLineHeight property
    *
-   * Text leading value for multi-line text.
+   * Text leading value for multi-line text. Default value: 1.2. The unit of textLineHeight is in ems.
    */
   var textLineHeight: Double?
     /**
@@ -439,7 +501,7 @@ class PointAnnotation(
   /**
    * The textMaxWidth property
    *
-   * The maximum line width for text wrapping.
+   * The maximum line width for text wrapping. Default value: 10. Minimum value: 0. The unit of textMaxWidth is in ems.
    */
   var textMaxWidth: Double?
     /**
@@ -472,7 +534,7 @@ class PointAnnotation(
   /**
    * The textOffset property
    *
-   * Offset distance of text from its anchor. Positive values indicate right and down, while negative values indicate left and up. If used with text-variable-anchor, input values will be taken as absolute values. Offsets along the x- and y-axis will be applied automatically based on the anchor position.
+   * Offset distance of text from its anchor. Positive values indicate right and down, while negative values indicate left and up. If used with text-variable-anchor, input values will be taken as absolute values. Offsets along the x- and y-axis will be applied automatically based on the anchor position. Default value: [0,0]. The unit of textOffset is in ems.
    */
   var textOffset: List<Double>?
     /**
@@ -482,18 +544,15 @@ class PointAnnotation(
      */
     get() {
       val value = jsonObject.get(PointAnnotationOptions.PROPERTY_TEXT_OFFSET)
-      value?.let {
-        return (it as JsonArray).map { it.toString().toDouble() }
-      }
-      return null
+      return (value as? JsonArray)?.map { it.toString().toDouble() }
     }
     /**
      * Set the textOffset property.
      * To update the pointAnnotation on the map use {@link PointAnnotationManager#update(Annotation)}.
      */
     set(value) {
-      if (value != null) {
-        val jsonArray = JsonArray()
+      if (!value.isNullOrEmpty()) {
+        val jsonArray = JsonArray(value.size)
         value.forEach { jsonArray.add(it) }
         jsonObject.add(PointAnnotationOptions.PROPERTY_TEXT_OFFSET, jsonArray)
       } else {
@@ -504,7 +563,7 @@ class PointAnnotation(
   /**
    * The textRadialOffset property
    *
-   * Radial offset of text, in the direction of the symbol's anchor. Useful in combination with {@link PropertyFactory#textVariableAnchor}, which defaults to using the two-dimensional {@link PropertyFactory#textOffset} if present.
+   * Radial offset of text, in the direction of the symbol's anchor. Useful in combination with `text-variable-anchor`, which defaults to using the two-dimensional `text-offset` if present. Default value: 0. The unit of textRadialOffset is in ems.
    */
   var textRadialOffset: Double?
     /**
@@ -537,7 +596,7 @@ class PointAnnotation(
   /**
    * The textRotate property
    *
-   * Rotates the text clockwise.
+   * Rotates the text clockwise. Default value: 0. The unit of textRotate is in degrees.
    */
   var textRotate: Double?
     /**
@@ -570,7 +629,7 @@ class PointAnnotation(
   /**
    * The textSize property
    *
-   * Font size.
+   * Font size. Default value: 16. Minimum value: 0. The unit of textSize is in pixels.
    */
   var textSize: Double?
     /**
@@ -603,7 +662,7 @@ class PointAnnotation(
   /**
    * The textTransform property
    *
-   * Specifies how to capitalize text, similar to the CSS {@link PropertyFactory#textTransform} property.
+   * Specifies how to capitalize text, similar to the CSS `text-transform` property. Default value: "none".
    */
   var textTransform: TextTransform?
     /**
@@ -614,7 +673,7 @@ class PointAnnotation(
     get() {
       val value = jsonObject.get(PointAnnotationOptions.PROPERTY_TEXT_TRANSFORM)
       value?.let {
-        return TextTransform.valueOf(it.asString.toUpperCase(Locale.US))
+        return TextTransform.valueOf(it.asString.uppercase(Locale.US))
       }
       return null
     }
@@ -635,7 +694,7 @@ class PointAnnotation(
 
   /**
    * The iconColor property in Int
-   * The color of the icon. This can only be used with [SDF icons](/help/troubleshooting/using-recolorable-images-in-mapbox-maps/).
+   * The color of the icon. This can only be used with [SDF icons](/help/troubleshooting/using-recolorable-images-in-mapbox-maps/). Default value: "#000000".
    */
   var iconColorInt: Int?
     /**
@@ -671,7 +730,7 @@ class PointAnnotation(
   /**
    * The iconColor property in String
    *
-   * The color of the icon. This can only be used with [SDF icons](/help/troubleshooting/using-recolorable-images-in-mapbox-maps/).
+   * The color of the icon. This can only be used with [SDF icons](/help/troubleshooting/using-recolorable-images-in-mapbox-maps/). Default value: "#000000".
    */
   var iconColorString: String?
     /**
@@ -700,9 +759,42 @@ class PointAnnotation(
     }
 
   /**
+   * The iconEmissiveStrength property
+   *
+   * Controls the intensity of light emitted on the source features. Default value: 1. Minimum value: 0. The unit of iconEmissiveStrength is in intensity.
+   */
+  var iconEmissiveStrength: Double?
+    /**
+     * Get the iconEmissiveStrength property
+     *
+     * @return property wrapper value around Double
+     */
+    get() {
+      val value = jsonObject.get(PointAnnotationOptions.PROPERTY_ICON_EMISSIVE_STRENGTH)
+      value?.let {
+        return it.asString.toDouble()
+      }
+      return null
+    }
+    /**
+     * Set the iconEmissiveStrength property
+     *
+     * To update the pointAnnotation on the map use {@link pointAnnotationManager#update(Annotation)}.
+     *
+     * @param value constant property value for Double
+     */
+    set(value) {
+      if (value != null) {
+        jsonObject.addProperty(PointAnnotationOptions.PROPERTY_ICON_EMISSIVE_STRENGTH, value)
+      } else {
+        jsonObject.remove(PointAnnotationOptions.PROPERTY_ICON_EMISSIVE_STRENGTH)
+      }
+    }
+
+  /**
    * The iconHaloBlur property
    *
-   * Fade out the halo towards the outside.
+   * Fade out the halo towards the outside. Default value: 0. Minimum value: 0. The unit of iconHaloBlur is in pixels.
    */
   var iconHaloBlur: Double?
     /**
@@ -734,7 +826,7 @@ class PointAnnotation(
 
   /**
    * The iconHaloColor property in Int
-   * The color of the icon's halo. Icon halos can only be used with [SDF icons](/help/troubleshooting/using-recolorable-images-in-mapbox-maps/).
+   * The color of the icon's halo. Icon halos can only be used with [SDF icons](/help/troubleshooting/using-recolorable-images-in-mapbox-maps/). Default value: "rgba(0, 0, 0, 0)".
    */
   var iconHaloColorInt: Int?
     /**
@@ -770,7 +862,7 @@ class PointAnnotation(
   /**
    * The iconHaloColor property in String
    *
-   * The color of the icon's halo. Icon halos can only be used with [SDF icons](/help/troubleshooting/using-recolorable-images-in-mapbox-maps/).
+   * The color of the icon's halo. Icon halos can only be used with [SDF icons](/help/troubleshooting/using-recolorable-images-in-mapbox-maps/). Default value: "rgba(0, 0, 0, 0)".
    */
   var iconHaloColorString: String?
     /**
@@ -801,7 +893,7 @@ class PointAnnotation(
   /**
    * The iconHaloWidth property
    *
-   * Distance of halo to the icon outline.
+   * Distance of halo to the icon outline. Default value: 0. Minimum value: 0. The unit of iconHaloWidth is in pixels.
    */
   var iconHaloWidth: Double?
     /**
@@ -832,9 +924,75 @@ class PointAnnotation(
     }
 
   /**
+   * The iconImageCrossFade property
+   *
+   * Controls the transition progress between the image variants of icon-image. Zero means the first variant is used, one is the second, and in between they are blended together. Default value: 0. Value range: [0, 1]
+   */
+  var iconImageCrossFade: Double?
+    /**
+     * Get the iconImageCrossFade property
+     *
+     * @return property wrapper value around Double
+     */
+    get() {
+      val value = jsonObject.get(PointAnnotationOptions.PROPERTY_ICON_IMAGE_CROSS_FADE)
+      value?.let {
+        return it.asString.toDouble()
+      }
+      return null
+    }
+    /**
+     * Set the iconImageCrossFade property
+     *
+     * To update the pointAnnotation on the map use {@link pointAnnotationManager#update(Annotation)}.
+     *
+     * @param value constant property value for Double
+     */
+    set(value) {
+      if (value != null) {
+        jsonObject.addProperty(PointAnnotationOptions.PROPERTY_ICON_IMAGE_CROSS_FADE, value)
+      } else {
+        jsonObject.remove(PointAnnotationOptions.PROPERTY_ICON_IMAGE_CROSS_FADE)
+      }
+    }
+
+  /**
+   * The iconOcclusionOpacity property
+   *
+   * The opacity at which the icon will be drawn in case of being depth occluded. Absent value means full occlusion against terrain only. Default value: 0. Value range: [0, 1]
+   */
+  var iconOcclusionOpacity: Double?
+    /**
+     * Get the iconOcclusionOpacity property
+     *
+     * @return property wrapper value around Double
+     */
+    get() {
+      val value = jsonObject.get(PointAnnotationOptions.PROPERTY_ICON_OCCLUSION_OPACITY)
+      value?.let {
+        return it.asString.toDouble()
+      }
+      return null
+    }
+    /**
+     * Set the iconOcclusionOpacity property
+     *
+     * To update the pointAnnotation on the map use {@link pointAnnotationManager#update(Annotation)}.
+     *
+     * @param value constant property value for Double
+     */
+    set(value) {
+      if (value != null) {
+        jsonObject.addProperty(PointAnnotationOptions.PROPERTY_ICON_OCCLUSION_OPACITY, value)
+      } else {
+        jsonObject.remove(PointAnnotationOptions.PROPERTY_ICON_OCCLUSION_OPACITY)
+      }
+    }
+
+  /**
    * The iconOpacity property
    *
-   * The opacity at which the icon will be drawn.
+   * The opacity at which the icon will be drawn. Default value: 1. Value range: [0, 1]
    */
   var iconOpacity: Double?
     /**
@@ -865,8 +1023,41 @@ class PointAnnotation(
     }
 
   /**
+   * The symbolZOffset property
+   *
+   * Specifies an uniform elevation from the ground, in meters. Default value: 0. Minimum value: 0.
+   */
+  var symbolZOffset: Double?
+    /**
+     * Get the symbolZOffset property
+     *
+     * @return property wrapper value around Double
+     */
+    get() {
+      val value = jsonObject.get(PointAnnotationOptions.PROPERTY_SYMBOL_Z_OFFSET)
+      value?.let {
+        return it.asString.toDouble()
+      }
+      return null
+    }
+    /**
+     * Set the symbolZOffset property
+     *
+     * To update the pointAnnotation on the map use {@link pointAnnotationManager#update(Annotation)}.
+     *
+     * @param value constant property value for Double
+     */
+    set(value) {
+      if (value != null) {
+        jsonObject.addProperty(PointAnnotationOptions.PROPERTY_SYMBOL_Z_OFFSET, value)
+      } else {
+        jsonObject.remove(PointAnnotationOptions.PROPERTY_SYMBOL_Z_OFFSET)
+      }
+    }
+
+  /**
    * The textColor property in Int
-   * The color with which the text will be drawn.
+   * The color with which the text will be drawn. Default value: "#000000".
    */
   var textColorInt: Int?
     /**
@@ -902,7 +1093,7 @@ class PointAnnotation(
   /**
    * The textColor property in String
    *
-   * The color with which the text will be drawn.
+   * The color with which the text will be drawn. Default value: "#000000".
    */
   var textColorString: String?
     /**
@@ -931,9 +1122,42 @@ class PointAnnotation(
     }
 
   /**
+   * The textEmissiveStrength property
+   *
+   * Controls the intensity of light emitted on the source features. Default value: 1. Minimum value: 0. The unit of textEmissiveStrength is in intensity.
+   */
+  var textEmissiveStrength: Double?
+    /**
+     * Get the textEmissiveStrength property
+     *
+     * @return property wrapper value around Double
+     */
+    get() {
+      val value = jsonObject.get(PointAnnotationOptions.PROPERTY_TEXT_EMISSIVE_STRENGTH)
+      value?.let {
+        return it.asString.toDouble()
+      }
+      return null
+    }
+    /**
+     * Set the textEmissiveStrength property
+     *
+     * To update the pointAnnotation on the map use {@link pointAnnotationManager#update(Annotation)}.
+     *
+     * @param value constant property value for Double
+     */
+    set(value) {
+      if (value != null) {
+        jsonObject.addProperty(PointAnnotationOptions.PROPERTY_TEXT_EMISSIVE_STRENGTH, value)
+      } else {
+        jsonObject.remove(PointAnnotationOptions.PROPERTY_TEXT_EMISSIVE_STRENGTH)
+      }
+    }
+
+  /**
    * The textHaloBlur property
    *
-   * The halo's fadeout distance towards the outside.
+   * The halo's fadeout distance towards the outside. Default value: 0. Minimum value: 0. The unit of textHaloBlur is in pixels.
    */
   var textHaloBlur: Double?
     /**
@@ -965,7 +1189,7 @@ class PointAnnotation(
 
   /**
    * The textHaloColor property in Int
-   * The color of the text's halo, which helps it stand out from backgrounds.
+   * The color of the text's halo, which helps it stand out from backgrounds. Default value: "rgba(0, 0, 0, 0)".
    */
   var textHaloColorInt: Int?
     /**
@@ -1001,7 +1225,7 @@ class PointAnnotation(
   /**
    * The textHaloColor property in String
    *
-   * The color of the text's halo, which helps it stand out from backgrounds.
+   * The color of the text's halo, which helps it stand out from backgrounds. Default value: "rgba(0, 0, 0, 0)".
    */
   var textHaloColorString: String?
     /**
@@ -1032,7 +1256,7 @@ class PointAnnotation(
   /**
    * The textHaloWidth property
    *
-   * Distance of halo to the font outline. Max text halo width is 1/4 of the font-size.
+   * Distance of halo to the font outline. Max text halo width is 1/4 of the font-size. Default value: 0. Minimum value: 0. The unit of textHaloWidth is in pixels.
    */
   var textHaloWidth: Double?
     /**
@@ -1063,9 +1287,42 @@ class PointAnnotation(
     }
 
   /**
+   * The textOcclusionOpacity property
+   *
+   * The opacity at which the text will be drawn in case of being depth occluded. Absent value means full occlusion against terrain only. Default value: 0. Value range: [0, 1]
+   */
+  var textOcclusionOpacity: Double?
+    /**
+     * Get the textOcclusionOpacity property
+     *
+     * @return property wrapper value around Double
+     */
+    get() {
+      val value = jsonObject.get(PointAnnotationOptions.PROPERTY_TEXT_OCCLUSION_OPACITY)
+      value?.let {
+        return it.asString.toDouble()
+      }
+      return null
+    }
+    /**
+     * Set the textOcclusionOpacity property
+     *
+     * To update the pointAnnotation on the map use {@link pointAnnotationManager#update(Annotation)}.
+     *
+     * @param value constant property value for Double
+     */
+    set(value) {
+      if (value != null) {
+        jsonObject.addProperty(PointAnnotationOptions.PROPERTY_TEXT_OCCLUSION_OPACITY, value)
+      } else {
+        jsonObject.remove(PointAnnotationOptions.PROPERTY_TEXT_OCCLUSION_OPACITY)
+      }
+    }
+
+  /**
    * The textOpacity property
    *
-   * The opacity at which the text will be drawn.
+   * The opacity at which the text will be drawn. Default value: 1. Value range: [0, 1]
    */
   var textOpacity: Double?
     /**
@@ -1133,6 +1390,12 @@ class PointAnnotation(
     jsonObject.get(PointAnnotationOptions.PROPERTY_ICON_SIZE)?.let {
       annotationManager.enableDataDrivenProperty(PointAnnotationOptions.PROPERTY_ICON_SIZE)
     }
+    jsonObject.get(PointAnnotationOptions.PROPERTY_ICON_TEXT_FIT)?.let {
+      annotationManager.enableDataDrivenProperty(PointAnnotationOptions.PROPERTY_ICON_TEXT_FIT)
+    }
+    jsonObject.get(PointAnnotationOptions.PROPERTY_ICON_TEXT_FIT_PADDING)?.let {
+      annotationManager.enableDataDrivenProperty(PointAnnotationOptions.PROPERTY_ICON_TEXT_FIT_PADDING)
+    }
     jsonObject.get(PointAnnotationOptions.PROPERTY_SYMBOL_SORT_KEY)?.let {
       annotationManager.enableDataDrivenProperty(PointAnnotationOptions.PROPERTY_SYMBOL_SORT_KEY)
     }
@@ -1172,6 +1435,9 @@ class PointAnnotation(
     jsonObject.get(PointAnnotationOptions.PROPERTY_ICON_COLOR)?.let {
       annotationManager.enableDataDrivenProperty(PointAnnotationOptions.PROPERTY_ICON_COLOR)
     }
+    jsonObject.get(PointAnnotationOptions.PROPERTY_ICON_EMISSIVE_STRENGTH)?.let {
+      annotationManager.enableDataDrivenProperty(PointAnnotationOptions.PROPERTY_ICON_EMISSIVE_STRENGTH)
+    }
     jsonObject.get(PointAnnotationOptions.PROPERTY_ICON_HALO_BLUR)?.let {
       annotationManager.enableDataDrivenProperty(PointAnnotationOptions.PROPERTY_ICON_HALO_BLUR)
     }
@@ -1181,11 +1447,23 @@ class PointAnnotation(
     jsonObject.get(PointAnnotationOptions.PROPERTY_ICON_HALO_WIDTH)?.let {
       annotationManager.enableDataDrivenProperty(PointAnnotationOptions.PROPERTY_ICON_HALO_WIDTH)
     }
+    jsonObject.get(PointAnnotationOptions.PROPERTY_ICON_IMAGE_CROSS_FADE)?.let {
+      annotationManager.enableDataDrivenProperty(PointAnnotationOptions.PROPERTY_ICON_IMAGE_CROSS_FADE)
+    }
+    jsonObject.get(PointAnnotationOptions.PROPERTY_ICON_OCCLUSION_OPACITY)?.let {
+      annotationManager.enableDataDrivenProperty(PointAnnotationOptions.PROPERTY_ICON_OCCLUSION_OPACITY)
+    }
     jsonObject.get(PointAnnotationOptions.PROPERTY_ICON_OPACITY)?.let {
       annotationManager.enableDataDrivenProperty(PointAnnotationOptions.PROPERTY_ICON_OPACITY)
     }
+    jsonObject.get(PointAnnotationOptions.PROPERTY_SYMBOL_Z_OFFSET)?.let {
+      annotationManager.enableDataDrivenProperty(PointAnnotationOptions.PROPERTY_SYMBOL_Z_OFFSET)
+    }
     jsonObject.get(PointAnnotationOptions.PROPERTY_TEXT_COLOR)?.let {
       annotationManager.enableDataDrivenProperty(PointAnnotationOptions.PROPERTY_TEXT_COLOR)
+    }
+    jsonObject.get(PointAnnotationOptions.PROPERTY_TEXT_EMISSIVE_STRENGTH)?.let {
+      annotationManager.enableDataDrivenProperty(PointAnnotationOptions.PROPERTY_TEXT_EMISSIVE_STRENGTH)
     }
     jsonObject.get(PointAnnotationOptions.PROPERTY_TEXT_HALO_BLUR)?.let {
       annotationManager.enableDataDrivenProperty(PointAnnotationOptions.PROPERTY_TEXT_HALO_BLUR)
@@ -1195,6 +1473,9 @@ class PointAnnotation(
     }
     jsonObject.get(PointAnnotationOptions.PROPERTY_TEXT_HALO_WIDTH)?.let {
       annotationManager.enableDataDrivenProperty(PointAnnotationOptions.PROPERTY_TEXT_HALO_WIDTH)
+    }
+    jsonObject.get(PointAnnotationOptions.PROPERTY_TEXT_OCCLUSION_OPACITY)?.let {
+      annotationManager.enableDataDrivenProperty(PointAnnotationOptions.PROPERTY_TEXT_OCCLUSION_OPACITY)
     }
     jsonObject.get(PointAnnotationOptions.PROPERTY_TEXT_OPACITY)?.let {
       annotationManager.enableDataDrivenProperty(PointAnnotationOptions.PROPERTY_TEXT_OPACITY)

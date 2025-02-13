@@ -1,11 +1,16 @@
 package com.mapbox.maps.extension.style.sources
 
 import android.util.Log
+import com.mapbox.bindgen.Expected
+import com.mapbox.bindgen.None
 import com.mapbox.bindgen.Value
+import com.mapbox.maps.MapboxExperimental
 import com.mapbox.maps.MapboxStyleException
+import com.mapbox.maps.MapboxStyleManager
+import com.mapbox.maps.StylePropertyValueKind
 import com.mapbox.maps.extension.style.StyleContract
-import com.mapbox.maps.extension.style.StyleInterface
 import com.mapbox.maps.extension.style.layers.properties.PropertyValue
+import com.mapbox.maps.extension.style.sources.generated.RasterArraySource
 import com.mapbox.maps.extension.style.utils.unwrap
 import com.mapbox.maps.logE
 
@@ -17,6 +22,7 @@ import com.mapbox.maps.logE
  * For image and video sources, a URL must be provided.
  * For GeoJSON sources, a URL or inline GeoJSON must be provided.
  */
+@OptIn(MapboxExperimental::class)
 abstract class Source(
   /**
    * The ID of the Source.
@@ -45,16 +51,20 @@ abstract class Source(
     HashMap<String, PropertyValue<*>>()
   }
 
-  internal var delegate: StyleInterface? = null
+  internal var delegate: MapboxStyleManager? = null
+
+  protected open fun addSource(style: MapboxStyleManager): Expected<String, None> {
+    return style.addStyleSource(sourceId, getCachedSourceProperties())
+  }
 
   /**
    * Add the source to the Style.
    *
    * @param delegate The style delegate
    */
-  override fun bindTo(delegate: StyleInterface) {
+  override fun bindTo(delegate: MapboxStyleManager) {
     this.delegate = delegate
-    val expected = delegate.addStyleSource(sourceId, getCachedSourceProperties())
+    val expected = addSource(delegate)
     expected.error?.let {
       Log.e(TAG, getCachedSourceProperties().toString())
       throw MapboxStyleException("Add source failed: $it")
@@ -117,12 +127,24 @@ abstract class Source(
   }
 
   internal inline fun <reified T> getPropertyValue(propertyName: String): T? {
-    delegate?.let {
+    delegate?.let { styleManager ->
       return try {
-        it.getStyleSourceProperty(sourceId, propertyName).unwrap()
+        val stylePropertyValue = styleManager.getStyleSourceProperty(sourceId, propertyName)
+        if (propertyName == "rasterLayers" && stylePropertyValue.kind == StylePropertyValueKind.CONSTANT) {
+          return (stylePropertyValue.value.contents as HashMap<String, Value>).entries.map { entry ->
+            RasterArraySource.RasterDataLayer(
+              layerId = entry.key,
+              bands = (entry.value.contents as List<Value>).map { it.contents as String }
+            )
+          } as T
+        }
+        if (propertyName == "tile-cache-budget" && stylePropertyValue.kind == StylePropertyValueKind.CONSTANT) {
+          return stylePropertyValue.value.unwrapToTileCacheBudget() as T
+        }
+        stylePropertyValue.unwrap()
       } catch (e: RuntimeException) {
         Log.e(TAG, "Get source property $propertyName failed: ${e.message}")
-        Log.e(TAG, "Value returned: ${it.getStyleSourceProperty(sourceId, propertyName)}")
+        Log.e(TAG, "Value returned: ${styleManager.getStyleSourceProperty(sourceId, propertyName).value.toJson()}")
         null
       }
     }

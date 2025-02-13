@@ -1,10 +1,20 @@
 package com.mapbox.maps.testapp.examples.java;
 
+import static com.mapbox.maps.MapboxLogger.logD;
+import static com.mapbox.maps.MapboxLogger.logE;
+import static com.mapbox.maps.MapboxLogger.logI;
+import static com.mapbox.maps.extension.style.expressions.generated.Expression.eq;
+import static com.mapbox.maps.extension.style.expressions.generated.Expression.get;
+import static com.mapbox.maps.extension.style.expressions.generated.Expression.image;
+import static com.mapbox.maps.extension.style.expressions.generated.Expression.literal;
+import static com.mapbox.maps.extension.style.expressions.generated.Expression.subtract;
+
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 
+import androidx.annotation.OptIn;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.drawable.DrawableKt;
@@ -13,8 +23,9 @@ import com.mapbox.bindgen.Expected;
 import com.mapbox.bindgen.None;
 import com.mapbox.bindgen.Value;
 import com.mapbox.geojson.FeatureCollection;
-import com.mapbox.maps.Image;
+import com.mapbox.maps.ExtensionUtils;
 import com.mapbox.maps.MapView;
+import com.mapbox.maps.MapboxDelicateApi;
 import com.mapbox.maps.MapboxMap;
 import com.mapbox.maps.Style;
 import com.mapbox.maps.extension.style.expressions.generated.Expression;
@@ -28,26 +39,16 @@ import com.mapbox.maps.extension.style.layers.properties.generated.Anchor;
 import com.mapbox.maps.extension.style.layers.properties.generated.IconAnchor;
 import com.mapbox.maps.extension.style.layers.properties.generated.TextAnchor;
 import com.mapbox.maps.extension.style.layers.properties.generated.Visibility;
-import com.mapbox.maps.extension.style.light.generated.Light;
-import com.mapbox.maps.extension.style.light.generated.LightUtils;
+import com.mapbox.maps.extension.style.light.LightUtils;
+import com.mapbox.maps.extension.style.light.generated.FlatLight;
 import com.mapbox.maps.extension.style.sources.SourceUtils;
 import com.mapbox.maps.extension.style.sources.generated.GeoJsonSource;
 import com.mapbox.maps.extension.style.sources.generated.ImageSource;
 import com.mapbox.maps.extension.style.sources.generated.VectorSource;
 import com.mapbox.maps.testapp.R;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
-
-import static com.mapbox.maps.MapboxLogger.logD;
-import static com.mapbox.maps.MapboxLogger.logE;
-import static com.mapbox.maps.MapboxLogger.logI;
-import static com.mapbox.maps.extension.style.expressions.generated.Expression.eq;
-import static com.mapbox.maps.extension.style.expressions.generated.Expression.get;
-import static com.mapbox.maps.extension.style.expressions.generated.Expression.image;
-import static com.mapbox.maps.extension.style.expressions.generated.Expression.literal;
-import static com.mapbox.maps.extension.style.expressions.generated.Expression.subtract;
 
 /**
  * Example showcasing usage of creating runtime style with java codes.
@@ -207,7 +208,7 @@ public class RuntimeStylingJavaActivity extends AppCompatActivity {
         mapView = new MapView(this);
         setContentView(mapView);
         mapboxMap = mapView.getMapboxMap();
-        mapboxMap.loadStyleUri(Style.MAPBOX_STREETS, this::setUpStyle);
+        mapboxMap.loadStyle(Style.MAPBOX_STREETS, this::setUpStyle);
     }
 
     private void setUpStyle(Style style) {
@@ -324,11 +325,10 @@ public class RuntimeStylingJavaActivity extends AppCompatActivity {
     }
 
     private void addFillExtrusionLight(Style style) {
-        final Light light = new Light();
+        final FlatLight light = new FlatLight("flat");
         light.anchor(Anchor.MAP);
         light.color(Color.YELLOW);
         light.position(10.0, 40.0, 50.0);
-
         LightUtils.setLight(style, light);
     }
 
@@ -344,15 +344,14 @@ public class RuntimeStylingJavaActivity extends AppCompatActivity {
         LayerUtils.addLayer(style, raster);
     }
 
+    @OptIn(markerClass = MapboxDelicateApi.class)
     private void addLayerWithoutStyleExtension(Style style) {
         final Drawable drawable = ContextCompat.getDrawable(this, R.drawable.android_symbol);
         final Bitmap bitmap = DrawableKt.toBitmap(drawable, 64, 64, null);
-        final ByteBuffer byteBuffer = ByteBuffer.allocate(bitmap.getByteCount());
-        bitmap.copyPixelsToBuffer(byteBuffer);
         final Expected<String, None> expected = style.addStyleImage(
                 IMAGE_ID,
                 1f,
-                new Image(64, 64, byteBuffer.array()),
+                ExtensionUtils.toMapboxImage(bitmap),
                 false,
                 new ArrayList<>(),
                 new ArrayList<>(),

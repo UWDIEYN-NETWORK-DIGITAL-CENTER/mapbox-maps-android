@@ -1,9 +1,10 @@
 package com.mapbox.maps.plugin.lifecycle
 
 import android.view.View
+import androidx.annotation.RestrictTo
 import androidx.annotation.UiThread
 import androidx.annotation.VisibleForTesting
-import androidx.annotation.VisibleForTesting.PRIVATE
+import androidx.annotation.VisibleForTesting.Companion.PRIVATE
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
@@ -23,6 +24,7 @@ import java.lang.ref.WeakReference
  * This lifecycle reaches [Lifecycle.State.DESTROYED] only when the hosting lifecycle owner is destroyed.
  */
 @UiThread
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 internal class ViewLifecycleOwner(
   view: View,
 ) : LifecycleOwner {

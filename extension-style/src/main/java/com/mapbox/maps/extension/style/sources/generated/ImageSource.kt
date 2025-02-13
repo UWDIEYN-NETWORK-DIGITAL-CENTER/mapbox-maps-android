@@ -13,7 +13,7 @@ import java.util.*
 /**
  * An image data source.
  *
- * @see [The online documentation](https://docs.mapbox.com/mapbox-gl-js/style-spec/sources/#image)
+ * @see [The online documentation](https://docs.mapbox.com/style-spec/reference/sources/#image)
  *
  */
 class ImageSource(builder: Builder) : Source(builder.sourceId) {
@@ -31,14 +31,16 @@ class ImageSource(builder: Builder) : Source(builder.sourceId) {
   }
 
   /**
-   * URL that points to an image.
+   * URL that points to an image. If the URL is not specified, the image is expected
+   * to be loaded directly during runtime.
    */
-  fun url(value: String) = apply {
+  fun url(value: String): ImageSource = apply {
     setProperty(PropertyValue("url", TypeUtils.wrapToValue(value)))
   }
 
   /**
-   * URL that points to an image.
+   * URL that points to an image. If the URL is not specified, the image is expected
+   * to be loaded directly during runtime.
    */
   val url: String?
     /**
@@ -49,14 +51,18 @@ class ImageSource(builder: Builder) : Source(builder.sourceId) {
     get() = getPropertyValue("url")
 
   /**
-   * Corners of image specified in longitude, latitude pairs.
+   * Corners of image specified in longitude, latitude pairs. Note: When using globe projection, the image will
+   * be centered at the North or South Pole in the respective hemisphere if the average latitude
+   * value exceeds 85 degrees or falls below -85 degrees.
    */
-  fun coordinates(value: List<List<Double>>) = apply {
+  fun coordinates(value: List<List<Double>>): ImageSource = apply {
     setProperty(PropertyValue("coordinates", TypeUtils.wrapToValue(value)))
   }
 
   /**
-   * Corners of image specified in longitude, latitude pairs.
+   * Corners of image specified in longitude, latitude pairs. Note: When using globe projection, the image will
+   * be centered at the North or South Pole in the respective hemisphere if the average latitude
+   * value exceeds 85 degrees or falls below -85 degrees.
    */
   val coordinates: List<List<Double>>?
     /**
@@ -71,9 +77,9 @@ class ImageSource(builder: Builder) : Source(builder.sourceId) {
    * will first request a tile at zoom level lower than zoom - delta, but so that
    * the zoom level is multiple of delta, in an attempt to display a full map at
    * lower resolution as quick as possible. It will get clamped at the tile source minimum zoom.
-   * The default delta is 4.
+   * Default value: 4.
    */
-  fun prefetchZoomDelta(value: Long = 4L) = apply {
+  fun prefetchZoomDelta(value: Long = 4L): ImageSource = apply {
     setVolatileProperty(PropertyValue("prefetch-zoom-delta", TypeUtils.wrapToValue(value)))
   }
 
@@ -82,7 +88,7 @@ class ImageSource(builder: Builder) : Source(builder.sourceId) {
    * will first request a tile at zoom level lower than zoom - delta, but so that
    * the zoom level is multiple of delta, in an attempt to display a full map at
    * lower resolution as quick as possible. It will get clamped at the tile source minimum zoom.
-   * The default delta is 4.
+   * Default value: 4.
    */
   val prefetchZoomDelta: Long?
     /**
@@ -106,17 +112,20 @@ class ImageSource(builder: Builder) : Source(builder.sourceId) {
     internal val volatileProperties = HashMap<String, PropertyValue<*>>()
 
     /**
-     * URL that points to an image.
+     * URL that points to an image. If the URL is not specified, the image is expected
+     * to be loaded directly during runtime.
      */
-    fun url(value: String) = apply {
+    fun url(value: String): Builder = apply {
       val propertyValue = PropertyValue("url", TypeUtils.wrapToValue(value))
       properties[propertyValue.propertyName] = propertyValue
     }
 
     /**
-     * Corners of image specified in longitude, latitude pairs.
+     * Corners of image specified in longitude, latitude pairs. Note: When using globe projection, the image will
+     * be centered at the North or South Pole in the respective hemisphere if the average latitude
+     * value exceeds 85 degrees or falls below -85 degrees.
      */
-    fun coordinates(value: List<List<Double>>) = apply {
+    fun coordinates(value: List<List<Double>>): Builder = apply {
       val propertyValue = PropertyValue("coordinates", TypeUtils.wrapToValue(value))
       properties[propertyValue.propertyName] = propertyValue
     }
@@ -126,9 +135,9 @@ class ImageSource(builder: Builder) : Source(builder.sourceId) {
      * will first request a tile at zoom level lower than zoom - delta, but so that
      * the zoom level is multiple of delta, in an attempt to display a full map at
      * lower resolution as quick as possible. It will get clamped at the tile source minimum zoom.
-     * The default delta is 4.
+     * Default value: 4.
      */
-    fun prefetchZoomDelta(value: Long = 4L) = apply {
+    fun prefetchZoomDelta(value: Long = 4L): Builder = apply {
       val propertyValue = PropertyValue("prefetch-zoom-delta", TypeUtils.wrapToValue(value))
       volatileProperties[propertyValue.propertyName] = propertyValue
     }
@@ -137,7 +146,7 @@ class ImageSource(builder: Builder) : Source(builder.sourceId) {
      *
      * @return the ImageSource
      */
-    fun build() = ImageSource(this)
+    fun build(): ImageSource = ImageSource(this)
   }
 
   /**
@@ -150,7 +159,7 @@ class ImageSource(builder: Builder) : Source(builder.sourceId) {
      * will first request a tile at zoom level lower than zoom - delta, but so that
      * the zoom level is multiple of delta, in an attempt to display a full map at
      * lower resolution as quick as possible. It will get clamped at the tile source minimum zoom.
-     * The default delta is 4.
+     * Default value: 4.
      */
     val defaultPrefetchZoomDelta: Long?
       /**

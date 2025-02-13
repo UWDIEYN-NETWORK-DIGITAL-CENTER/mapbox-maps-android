@@ -1,0 +1,6 @@
+<resources>
+    <string name="mapbox_telemetryImproveMap">Improve This Map</string>
+    <string name="mapbox_telemetrySettings">Mapbox Telemetry</string>
+    <string name="mapbox_privacy_policy">Mapbox Privacy Policy</string>
+    <string name="mapbox_geofencing_consent">Mapbox Geofencing</string>
+</resources>

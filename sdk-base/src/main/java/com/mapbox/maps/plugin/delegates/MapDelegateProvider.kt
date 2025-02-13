@@ -1,10 +1,13 @@
 package com.mapbox.maps.plugin.delegates
 
-import com.mapbox.maps.extension.style.StyleInterface
+import androidx.annotation.RestrictTo
+import com.mapbox.maps.MapboxExperimental
+import com.mapbox.maps.MapboxStyleManager
 
 /**
  * Definition of map delegate transporter. Provides hooks to all map delegate instances.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 interface MapDelegateProvider {
 
   /**
@@ -28,9 +31,14 @@ interface MapDelegateProvider {
   val mapAttributionDelegate: MapAttributionDelegate
 
   /**
-   * Delegate used to interact with map's plugins.
+   * Delegate used to interact with map's style.
    */
-  fun getStyle(callback: (StyleInterface) -> Unit)
+  fun getStyle(callback: (MapboxStyleManager) -> Unit)
+
+  /**
+   * Delegate used to interact with map's style manager without waiting for style loading events.
+   */
+  val mapStyleManagerDelegate: MapboxStyleManager
 
   /**
    * Delegate used to interact with map's plugins.
@@ -48,9 +56,13 @@ interface MapDelegateProvider {
   val mapListenerDelegate: MapListenerDelegate
 
   /**
-   * Delegate used for style state.
+   * Delegate used to use feature state APIs.
    */
-  // TODO replace with style.isFullyLoaded
-  // https://github.com/mapbox/mapbox-maps-android/issues/219
-  val styleStateDelegate: MapStyleStateDelegate
+  val mapFeatureStateDelegate: MapFeatureStateDelegate
+
+  /**
+   * Delegate used to manage interactions (click gestures for example).
+   */
+  @MapboxExperimental
+  val mapInteractionDelegate: MapInteractionDelegate
 }

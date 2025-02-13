@@ -6,12 +6,11 @@ import androidx.appcompat.app.AppCompatActivity
 import com.mapbox.geojson.Point
 import com.mapbox.maps.MapView
 import com.mapbox.maps.dsl.cameraOptions
-import com.mapbox.maps.plugin.annotation.generated.*
 import com.mapbox.maps.plugin.gestures.OnMapLongClickListener
 import com.mapbox.maps.plugin.gestures.addOnMapLongClickListener
 import com.mapbox.maps.plugin.gestures.removeOnMapLongClickListener
 import com.mapbox.maps.testapp.R
-import com.mapbox.maps.testapp.utils.BitmapUtils
+import com.mapbox.maps.testapp.utils.BitmapUtils.bitmapFromDrawableRes
 import java.text.DecimalFormat
 
 /**
@@ -33,11 +32,8 @@ class InfoWindowActivity : AppCompatActivity(), OnMapLongClickListener {
     mapView = MapView(this)
     setContentView(mapView)
 
-    icon = BitmapUtils.bitmapFromDrawableRes(
-      this@InfoWindowActivity,
-      R.drawable.blue_marker_view
-    )!!
-    mapView.getMapboxMap().apply {
+    icon = bitmapFromDrawableRes(R.drawable.ic_blue_marker)
+    mapView.mapboxMap.apply {
       setCamera(
         cameraOptions {
           center(Point.fromLngLat(-77.03655168667463, 38.897705003219784))
@@ -100,7 +96,7 @@ class InfoWindowActivity : AppCompatActivity(), OnMapLongClickListener {
   }
 
   override fun onDestroy() {
-    mapView.getMapboxMap().removeOnMapLongClickListener(this)
+    mapView.mapboxMap.removeOnMapLongClickListener(this)
     markerManager.destroy()
     super.onDestroy()
   }

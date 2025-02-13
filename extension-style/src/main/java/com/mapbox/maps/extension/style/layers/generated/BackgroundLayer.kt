@@ -4,6 +4,7 @@ package com.mapbox.maps.extension.style.layers.generated
 
 import androidx.annotation.ColorInt
 import androidx.annotation.UiThread
+import com.mapbox.maps.MapboxExperimental
 import com.mapbox.maps.StyleManager
 import com.mapbox.maps.extension.style.expressions.generated.Expression
 import com.mapbox.maps.extension.style.layers.Layer
@@ -14,18 +15,42 @@ import com.mapbox.maps.extension.style.utils.ColorUtils.colorIntToRgbaExpression
 import com.mapbox.maps.extension.style.utils.ColorUtils.rgbaExpressionToColorInt
 import com.mapbox.maps.extension.style.utils.ColorUtils.rgbaExpressionToColorString
 import com.mapbox.maps.extension.style.utils.silentUnwrap
-import com.mapbox.maps.logE
 import java.util.*
 
 /**
  * The background color or pattern of the map.
  *
- * @see [The online documentation](https://www.mapbox.com/mapbox-gl-style-spec/#layers-background)
+ * @see [The online documentation](https://docs.mapbox.com/style-spec/reference/layers/#background)
  *
  * @param layerId the ID of the layer
  */
 @UiThread
 class BackgroundLayer(override val layerId: String) : BackgroundLayerDsl, Layer() {
+
+  /**
+   * The slot this layer is assigned to. If specified, and a slot with that name exists,
+   * it will be placed at that position in the layer order.
+   *
+   * @param slot value of slot. Setting it to empty string removes the slot.
+   */
+  override fun slot(slot: String): BackgroundLayer = apply {
+    val param = PropertyValue("slot", slot)
+    setProperty(param)
+  }
+
+  /**
+   * The slot this layer is assigned to. If specified, and a slot with that name exists,
+   * it will be placed at that position in the layer order.
+   */
+  override val slot: String?
+    /**
+     * Get the slot property
+     *
+     * @return slot
+     */
+    get() {
+      return getPropertyValue("slot")
+    }
 
   /**
    * Whether this layer is displayed.
@@ -41,7 +66,25 @@ class BackgroundLayer(override val layerId: String) : BackgroundLayerDsl, Layer(
     get() {
       val property: String? = getPropertyValue("visibility")
       property?.let {
-        return Visibility.valueOf(it.toUpperCase(Locale.US).replace('-', '_'))
+        return Visibility.valueOf(it.uppercase(Locale.US).replace('-', '_'))
+      }
+      return null
+    }
+
+  /**
+   * Whether this layer is displayed.
+   */
+  override val visibilityAsExpression: Expression?
+    /**
+     * Whether this layer is displayed.
+     *
+     * Use static method [BackgroundLayer.defaultVisibility] to get the default property value.
+     *
+     * @return VISIBILITY as expression
+     */
+    get() {
+      getPropertyValue<Expression>("visibility")?.let {
+        return it
       }
       return null
     }
@@ -53,7 +96,19 @@ class BackgroundLayer(override val layerId: String) : BackgroundLayerDsl, Layer(
    *
    * @param visibility value of Visibility
    */
-  override fun visibility(visibility: Visibility) = apply {
+  override fun visibility(visibility: Visibility): BackgroundLayer = apply {
+    val propertyValue = PropertyValue("visibility", visibility)
+    setProperty(propertyValue)
+  }
+
+  /**
+   * Whether this layer is displayed.
+   *
+   * Use static method [[BackgroundLayer.defaultVisibility] to get the default property value.
+   *
+   * @param visibility value of Visibility
+   */
+  override fun visibility(visibility: Expression): BackgroundLayer = apply {
     val propertyValue = PropertyValue("visibility", visibility)
     setProperty(propertyValue)
   }
@@ -86,9 +141,9 @@ class BackgroundLayer(override val layerId: String) : BackgroundLayerDsl, Layer(
    *
    * Use static method [BackgroundLayer.defaultMinZoom] to get the default property value.
    *
-   * @param value value of minzoom
+   * @param minZoom value of minzoom
    */
-  override fun minZoom(minZoom: Double) = apply {
+  override fun minZoom(minZoom: Double): BackgroundLayer = apply {
     val param = PropertyValue("minzoom", minZoom)
     setProperty(param)
   }
@@ -121,9 +176,9 @@ class BackgroundLayer(override val layerId: String) : BackgroundLayerDsl, Layer(
    *
    * Use static method [BackgroundLayer.defaultMaxZoom] to get the default property value.
    *
-   * @param value value of maxzoom
+   * @param maxZoom value of maxzoom
    */
-  override fun maxZoom(maxZoom: Double) = apply {
+  override fun maxZoom(maxZoom: Double): BackgroundLayer = apply {
     val param = PropertyValue("maxzoom", maxZoom)
     setProperty(param)
   }
@@ -131,11 +186,11 @@ class BackgroundLayer(override val layerId: String) : BackgroundLayerDsl, Layer(
   // Property getters and setters
 
   /**
-   * The color with which the background will be drawn.
+   * The color with which the background will be drawn. Default value: "#000000".
    */
   val backgroundColor: String?
     /**
-     * The color with which the background will be drawn.
+     * The color with which the background will be drawn. Default value: "#000000".
      *
      * Use static method [BackgroundLayer.defaultBackgroundColor] to get the default property.
      *
@@ -149,26 +204,26 @@ class BackgroundLayer(override val layerId: String) : BackgroundLayerDsl, Layer(
     }
 
   /**
-   * The color with which the background will be drawn.
+   * The color with which the background will be drawn. Default value: "#000000".
    *
    * Use static method [BackgroundLayer.defaultBackgroundColor] to set the default property.
    *
    * @param backgroundColor value of backgroundColor
    */
-  override fun backgroundColor(backgroundColor: String) = apply {
+  override fun backgroundColor(backgroundColor: String): BackgroundLayer = apply {
     val propertyValue = PropertyValue("background-color", backgroundColor)
     setProperty(propertyValue)
   }
 
   /**
-   * The color with which the background will be drawn.
+   * The color with which the background will be drawn. Default value: "#000000".
    *
    * This is an Expression representation of "background-color".
    *
    */
   val backgroundColorAsExpression: Expression?
     /**
-     * The color with which the background will be drawn.
+     * The color with which the background will be drawn. Default value: "#000000".
      *
      * Get the BackgroundColor property as an Expression
      *
@@ -184,23 +239,23 @@ class BackgroundLayer(override val layerId: String) : BackgroundLayerDsl, Layer(
     }
 
   /**
-   * The color with which the background will be drawn.
+   * The color with which the background will be drawn. Default value: "#000000".
    *
    * Use static method [BackgroundLayer.defaultBackgroundColorAsExpression] to set the default property.
    *
    * @param backgroundColor value of backgroundColor as Expression
    */
-  override fun backgroundColor(backgroundColor: Expression) = apply {
+  override fun backgroundColor(backgroundColor: Expression): BackgroundLayer = apply {
     val propertyValue = PropertyValue("background-color", backgroundColor)
     setProperty(propertyValue)
   }
 
   /**
-   * The color with which the background will be drawn.
+   * The color with which the background will be drawn. Default value: "#000000".
    */
   val backgroundColorAsColorInt: Int?
     /**
-     * The color with which the background will be drawn.
+     * The color with which the background will be drawn. Default value: "#000000".
      *
      * Use static method [BackgroundLayer.defaultBackgroundColorAsColorInt] to get the default property.
      *
@@ -215,13 +270,13 @@ class BackgroundLayer(override val layerId: String) : BackgroundLayerDsl, Layer(
     }
 
   /**
-   * The color with which the background will be drawn.
+   * The color with which the background will be drawn. Default value: "#000000".
    *
    * Use static method [BackgroundLayer.defaultBackgroundColorAsColorInt] to set the default property.
    *
    * @param backgroundColor value of backgroundColor
    */
-  override fun backgroundColor(@ColorInt backgroundColor: Int) = apply {
+  override fun backgroundColor(@ColorInt backgroundColor: Int): BackgroundLayer = apply {
     val propertyValue = PropertyValue("background-color", colorIntToRgbaExpression(backgroundColor))
     setProperty(propertyValue)
   }
@@ -248,7 +303,7 @@ class BackgroundLayer(override val layerId: String) : BackgroundLayerDsl, Layer(
    *
    * @param options transition options for String
    */
-  override fun backgroundColorTransition(options: StyleTransition) = apply {
+  override fun backgroundColorTransition(options: StyleTransition): BackgroundLayer = apply {
     val propertyValue = PropertyValue("background-color-transition", options)
     setProperty(propertyValue)
   }
@@ -256,16 +311,144 @@ class BackgroundLayer(override val layerId: String) : BackgroundLayerDsl, Layer(
   /**
    * DSL for [backgroundColorTransition].
    */
-  override fun backgroundColorTransition(block: StyleTransition.Builder.() -> Unit) = apply {
+  override fun backgroundColorTransition(block: StyleTransition.Builder.() -> Unit): BackgroundLayer = apply {
     backgroundColorTransition(StyleTransition.Builder().apply(block).build())
   }
 
   /**
-   * The opacity at which the background will be drawn.
+   * Сolor theme override for [backgroundColor].
+   */
+  @MapboxExperimental
+  val backgroundColorUseTheme: String?
+    /**
+     * Get the BackgroundColorUseTheme property
+     *
+     * Use static method [BackgroundLayer.defaultBackgroundColorUseTheme] to get the default property.
+     *
+     * @return current BackgroundColorUseTheme property as String
+     */
+    get() {
+      return getPropertyValue("background-color-use-theme")
+    }
+
+  /**
+   * Set the BackgroundColorUseTheme as String
+   *
+   * Use static method [BackgroundLayer.defaultBackgroundColorUseTheme] to get the default property.
+   *
+   * @param backgroundColorUseTheme theme value for color. Overrides applying of color theme if "none" string value is set. To follow default theme "default" sting value should be set.
+   */
+  @MapboxExperimental
+  override fun backgroundColorUseTheme(backgroundColorUseTheme: String): BackgroundLayer = apply {
+    val propertyValue = PropertyValue("background-color-use-theme", backgroundColorUseTheme)
+    setProperty(propertyValue)
+  }
+
+  /**
+   * Controls the intensity of light emitted on the source features. Default value: 0. Minimum value: 0. The unit of backgroundEmissiveStrength is in intensity.
+   */
+  val backgroundEmissiveStrength: Double?
+    /**
+     * Controls the intensity of light emitted on the source features. Default value: 0. Minimum value: 0. The unit of backgroundEmissiveStrength is in intensity.
+     *
+     * Use static method [BackgroundLayer.defaultBackgroundEmissiveStrength] to get the default property.
+     *
+     * @return Double
+     */
+    get() {
+      return getPropertyValue("background-emissive-strength")
+    }
+
+  /**
+   * Controls the intensity of light emitted on the source features. Default value: 0. Minimum value: 0. The unit of backgroundEmissiveStrength is in intensity.
+   *
+   * Use static method [BackgroundLayer.defaultBackgroundEmissiveStrength] to set the default property.
+   *
+   * @param backgroundEmissiveStrength value of backgroundEmissiveStrength
+   */
+  override fun backgroundEmissiveStrength(backgroundEmissiveStrength: Double): BackgroundLayer = apply {
+    val propertyValue = PropertyValue("background-emissive-strength", backgroundEmissiveStrength)
+    setProperty(propertyValue)
+  }
+
+  /**
+   * Controls the intensity of light emitted on the source features. Default value: 0. Minimum value: 0. The unit of backgroundEmissiveStrength is in intensity.
+   *
+   * This is an Expression representation of "background-emissive-strength".
+   *
+   */
+  val backgroundEmissiveStrengthAsExpression: Expression?
+    /**
+     * Controls the intensity of light emitted on the source features. Default value: 0. Minimum value: 0. The unit of backgroundEmissiveStrength is in intensity.
+     *
+     * Get the BackgroundEmissiveStrength property as an Expression
+     *
+     * Use static method [BackgroundLayer.defaultBackgroundEmissiveStrengthAsExpression] to get the default property.
+     *
+     * @return Double
+     */
+    get() {
+      getPropertyValue<Expression>("background-emissive-strength")?.let {
+        return it
+      }
+      backgroundEmissiveStrength?.let {
+        return Expression.literal(it)
+      }
+      return null
+    }
+
+  /**
+   * Controls the intensity of light emitted on the source features. Default value: 0. Minimum value: 0. The unit of backgroundEmissiveStrength is in intensity.
+   *
+   * Use static method [BackgroundLayer.defaultBackgroundEmissiveStrengthAsExpression] to set the default property.
+   *
+   * @param backgroundEmissiveStrength value of backgroundEmissiveStrength as Expression
+   */
+  override fun backgroundEmissiveStrength(backgroundEmissiveStrength: Expression): BackgroundLayer = apply {
+    val propertyValue = PropertyValue("background-emissive-strength", backgroundEmissiveStrength)
+    setProperty(propertyValue)
+  }
+
+  /**
+   * Transition options for BackgroundEmissiveStrength.
+   */
+  val backgroundEmissiveStrengthTransition: StyleTransition?
+    /**
+     * Get the BackgroundEmissiveStrength property transition options
+     *
+     * Use static method [BackgroundLayer.defaultBackgroundEmissiveStrengthTransition] to get the default property.
+     *
+     * @return transition options for Double
+     */
+    get() {
+      return getPropertyValue("background-emissive-strength-transition")
+    }
+
+  /**
+   * Set the BackgroundEmissiveStrength property transition options
+   *
+   * Use static method [BackgroundLayer.defaultBackgroundEmissiveStrengthTransition] to set the default property.
+   *
+   * @param options transition options for Double
+   */
+  override fun backgroundEmissiveStrengthTransition(options: StyleTransition): BackgroundLayer = apply {
+    val propertyValue = PropertyValue("background-emissive-strength-transition", options)
+    setProperty(propertyValue)
+  }
+
+  /**
+   * DSL for [backgroundEmissiveStrengthTransition].
+   */
+  override fun backgroundEmissiveStrengthTransition(block: StyleTransition.Builder.() -> Unit): BackgroundLayer = apply {
+    backgroundEmissiveStrengthTransition(StyleTransition.Builder().apply(block).build())
+  }
+
+  /**
+   * The opacity at which the background will be drawn. Default value: 1. Value range: [0, 1]
    */
   val backgroundOpacity: Double?
     /**
-     * The opacity at which the background will be drawn.
+     * The opacity at which the background will be drawn. Default value: 1. Value range: [0, 1]
      *
      * Use static method [BackgroundLayer.defaultBackgroundOpacity] to get the default property.
      *
@@ -276,26 +459,26 @@ class BackgroundLayer(override val layerId: String) : BackgroundLayerDsl, Layer(
     }
 
   /**
-   * The opacity at which the background will be drawn.
+   * The opacity at which the background will be drawn. Default value: 1. Value range: [0, 1]
    *
    * Use static method [BackgroundLayer.defaultBackgroundOpacity] to set the default property.
    *
    * @param backgroundOpacity value of backgroundOpacity
    */
-  override fun backgroundOpacity(backgroundOpacity: Double) = apply {
+  override fun backgroundOpacity(backgroundOpacity: Double): BackgroundLayer = apply {
     val propertyValue = PropertyValue("background-opacity", backgroundOpacity)
     setProperty(propertyValue)
   }
 
   /**
-   * The opacity at which the background will be drawn.
+   * The opacity at which the background will be drawn. Default value: 1. Value range: [0, 1]
    *
    * This is an Expression representation of "background-opacity".
    *
    */
   val backgroundOpacityAsExpression: Expression?
     /**
-     * The opacity at which the background will be drawn.
+     * The opacity at which the background will be drawn. Default value: 1. Value range: [0, 1]
      *
      * Get the BackgroundOpacity property as an Expression
      *
@@ -314,13 +497,13 @@ class BackgroundLayer(override val layerId: String) : BackgroundLayerDsl, Layer(
     }
 
   /**
-   * The opacity at which the background will be drawn.
+   * The opacity at which the background will be drawn. Default value: 1. Value range: [0, 1]
    *
    * Use static method [BackgroundLayer.defaultBackgroundOpacityAsExpression] to set the default property.
    *
    * @param backgroundOpacity value of backgroundOpacity as Expression
    */
-  override fun backgroundOpacity(backgroundOpacity: Expression) = apply {
+  override fun backgroundOpacity(backgroundOpacity: Expression): BackgroundLayer = apply {
     val propertyValue = PropertyValue("background-opacity", backgroundOpacity)
     setProperty(propertyValue)
   }
@@ -347,7 +530,7 @@ class BackgroundLayer(override val layerId: String) : BackgroundLayerDsl, Layer(
    *
    * @param options transition options for Double
    */
-  override fun backgroundOpacityTransition(options: StyleTransition) = apply {
+  override fun backgroundOpacityTransition(options: StyleTransition): BackgroundLayer = apply {
     val propertyValue = PropertyValue("background-opacity-transition", options)
     setProperty(propertyValue)
   }
@@ -355,7 +538,7 @@ class BackgroundLayer(override val layerId: String) : BackgroundLayerDsl, Layer(
   /**
    * DSL for [backgroundOpacityTransition].
    */
-  override fun backgroundOpacityTransition(block: StyleTransition.Builder.() -> Unit) = apply {
+  override fun backgroundOpacityTransition(block: StyleTransition.Builder.() -> Unit): BackgroundLayer = apply {
     backgroundOpacityTransition(StyleTransition.Builder().apply(block).build())
   }
 
@@ -381,7 +564,7 @@ class BackgroundLayer(override val layerId: String) : BackgroundLayerDsl, Layer(
    *
    * @param backgroundPattern value of backgroundPattern
    */
-  override fun backgroundPattern(backgroundPattern: String) = apply {
+  override fun backgroundPattern(backgroundPattern: String): BackgroundLayer = apply {
     val propertyValue = PropertyValue("background-pattern", backgroundPattern)
     setProperty(propertyValue)
   }
@@ -419,46 +602,81 @@ class BackgroundLayer(override val layerId: String) : BackgroundLayerDsl, Layer(
    *
    * @param backgroundPattern value of backgroundPattern as Expression
    */
-  override fun backgroundPattern(backgroundPattern: Expression) = apply {
+  override fun backgroundPattern(backgroundPattern: Expression): BackgroundLayer = apply {
     val propertyValue = PropertyValue("background-pattern", backgroundPattern)
     setProperty(propertyValue)
   }
 
   /**
-   * Transition options for BackgroundPattern.
+   * Orientation of background layer. Default value: "map".
    */
-  @Deprecated("This property has been deprecated and will do no operations")
-  val backgroundPatternTransition: StyleTransition?
+  @MapboxExperimental
+  val backgroundPitchAlignment: BackgroundPitchAlignment?
     /**
-     * Get the BackgroundPattern property transition options
+     * Orientation of background layer. Default value: "map".
      *
-     * Use static method [BackgroundLayer.defaultBackgroundPatternTransition] to get the default property.
+     * Use static method [BackgroundLayer.defaultBackgroundPitchAlignment] to get the default property.
      *
-     * @return transition options for String
+     * @return BackgroundPitchAlignment
      */
     get() {
-      logE("BackgroundLayer", "This property has been deprecated and will return null.")
+      getPropertyValue<String?>("background-pitch-alignment")?.let {
+        return BackgroundPitchAlignment.valueOf(it.uppercase(Locale.US).replace('-', '_'))
+      }
       return null
     }
 
   /**
-   * Set the BackgroundPattern property transition options
+   * Orientation of background layer. Default value: "map".
    *
-   * Use static method [BackgroundLayer.defaultBackgroundPatternTransition] to set the default property.
+   * Use static method [BackgroundLayer.defaultBackgroundPitchAlignment] to set the default property.
    *
-   * @param options transition options for String
+   * @param backgroundPitchAlignment value of backgroundPitchAlignment
    */
-  @Deprecated("This property has been deprecated and will do no operations")
-  override fun backgroundPatternTransition(options: StyleTransition) = apply {
-    // no-op
+  @MapboxExperimental
+  override fun backgroundPitchAlignment(backgroundPitchAlignment: BackgroundPitchAlignment): BackgroundLayer = apply {
+    val propertyValue = PropertyValue("background-pitch-alignment", backgroundPitchAlignment)
+    setProperty(propertyValue)
   }
 
   /**
-   * DSL for [backgroundPatternTransition].
+   * Orientation of background layer. Default value: "map".
+   *
+   * This is an Expression representation of "background-pitch-alignment".
+   *
    */
-  @Deprecated("This property has been deprecated and will do no operations")
-  override fun backgroundPatternTransition(block: StyleTransition.Builder.() -> Unit) = apply {
-    // no-op
+  @MapboxExperimental
+  val backgroundPitchAlignmentAsExpression: Expression?
+    /**
+     * Orientation of background layer. Default value: "map".
+     *
+     * Get the BackgroundPitchAlignment property as an Expression
+     *
+     * Use static method [BackgroundLayer.defaultBackgroundPitchAlignmentAsExpression] to get the default property.
+     *
+     * @return BackgroundPitchAlignment
+     */
+    get() {
+      getPropertyValue<Expression>("background-pitch-alignment")?.let {
+        return it
+      }
+      backgroundPitchAlignment?.let {
+        return Expression.literal(it.value)
+      }
+      return null
+    }
+
+  /**
+   * Orientation of background layer. Default value: "map".
+   *
+   * Use static method [BackgroundLayer.defaultBackgroundPitchAlignmentAsExpression] to set the default property.
+   *
+   * @param backgroundPitchAlignment value of backgroundPitchAlignment as Expression
+   */
+  @MapboxExperimental
+  override fun backgroundPitchAlignment(backgroundPitchAlignment: Expression): BackgroundLayer = apply {
+    val propertyValue = PropertyValue("background-pitch-alignment", backgroundPitchAlignment)
+    setProperty(propertyValue)
   }
 
   /**
@@ -485,7 +703,7 @@ class BackgroundLayer(override val layerId: String) : BackgroundLayerDsl, Layer(
        */
       get() {
         StyleManager.getStyleLayerPropertyDefaultValue("background", "visibility").silentUnwrap<String>()?.let {
-          return Visibility.valueOf(it.toUpperCase(Locale.US).replace('-', '_'))
+          return Visibility.valueOf(it.uppercase(Locale.US).replace('-', '_'))
         }
         return null
       }
@@ -521,11 +739,11 @@ class BackgroundLayer(override val layerId: String) : BackgroundLayerDsl, Layer(
       get() = StyleManager.getStyleLayerPropertyDefaultValue("background", "maxzoom").silentUnwrap()
 
     /**
-     * The color with which the background will be drawn.
+     * The color with which the background will be drawn. Default value: "#000000".
      */
     val defaultBackgroundColor: String?
       /**
-       * The color with which the background will be drawn.
+       * The color with which the background will be drawn. Default value: "#000000".
        *
        * Get the default value of BackgroundColor property
        *
@@ -539,7 +757,7 @@ class BackgroundLayer(override val layerId: String) : BackgroundLayerDsl, Layer(
       }
 
     /**
-     * The color with which the background will be drawn.
+     * The color with which the background will be drawn. Default value: "#000000".
      *
      * This is an Expression representation of "background-color".
      *
@@ -558,11 +776,11 @@ class BackgroundLayer(override val layerId: String) : BackgroundLayerDsl, Layer(
       }
 
     /**
-     * The color with which the background will be drawn.
+     * The color with which the background will be drawn. Default value: "#000000".
      */
     val defaultBackgroundColorAsColorInt: Int?
       /**
-       * The color with which the background will be drawn.
+       * The color with which the background will be drawn. Default value: "#000000".
        *
        * Get the default value of BackgroundColor property as color int.
        *
@@ -588,11 +806,71 @@ class BackgroundLayer(override val layerId: String) : BackgroundLayerDsl, Layer(
       get() = StyleManager.getStyleLayerPropertyDefaultValue("background", "background-color-transition").silentUnwrap()
 
     /**
-     * The opacity at which the background will be drawn.
+     * Default color theme for [backgroundColor].
+     */
+    @MapboxExperimental
+    val defaultBackgroundColorUseTheme: String?
+      /**
+       * Get default value of the BackgroundColor property as String
+       *
+       * @return String
+       */
+      get() = StyleManager.getStyleLayerPropertyDefaultValue("background", "background-color-use-theme").silentUnwrap()
+
+    /**
+     * Controls the intensity of light emitted on the source features. Default value: 0. Minimum value: 0. The unit of backgroundEmissiveStrength is in intensity.
+     */
+    val defaultBackgroundEmissiveStrength: Double?
+      /**
+       * Controls the intensity of light emitted on the source features. Default value: 0. Minimum value: 0. The unit of backgroundEmissiveStrength is in intensity.
+       *
+       * Get the default value of BackgroundEmissiveStrength property
+       *
+       * @return Double
+       */
+      get() {
+        return StyleManager.getStyleLayerPropertyDefaultValue("background", "background-emissive-strength").silentUnwrap()
+      }
+
+    /**
+     * Controls the intensity of light emitted on the source features. Default value: 0. Minimum value: 0. The unit of backgroundEmissiveStrength is in intensity.
+     *
+     * This is an Expression representation of "background-emissive-strength".
+     *
+     */
+    val defaultBackgroundEmissiveStrengthAsExpression: Expression?
+      /**
+       * Get default value of the BackgroundEmissiveStrength property as an Expression
+       *
+       * @return Double
+       */
+      get() {
+        StyleManager.getStyleLayerPropertyDefaultValue("background", "background-emissive-strength").silentUnwrap<Expression>()?.let {
+          return it
+        }
+        defaultBackgroundEmissiveStrength?.let {
+          return Expression.literal(it)
+        }
+        return null
+      }
+
+    /**
+     * Transition options for BackgroundEmissiveStrength.
+     */
+    val defaultBackgroundEmissiveStrengthTransition: StyleTransition?
+      /**
+       * Get the BackgroundEmissiveStrength property transition options
+       *
+       * @return transition options for Double
+       */
+      get() = StyleManager.getStyleLayerPropertyDefaultValue("background", "background-emissive-strength-transition").silentUnwrap()
+
+    /**
+     * The opacity at which the background will be drawn. Default value: 1. Value range: [0, 1]
      */
     val defaultBackgroundOpacity: Double?
       /**
-       * The opacity at which the background will be drawn.
+       * The opacity at which the background will be drawn. Default value: 1. Value range: [0, 1]
        *
        * Get the default value of BackgroundOpacity property
        *
@@ -603,7 +881,7 @@ class BackgroundLayer(override val layerId: String) : BackgroundLayerDsl, Layer(
       }
 
     /**
-     * The opacity at which the background will be drawn.
+     * The opacity at which the background will be drawn. Default value: 1. Value range: [0, 1]
      *
      * This is an Expression representation of "background-opacity".
      *
@@ -673,17 +951,44 @@ class BackgroundLayer(override val layerId: String) : BackgroundLayerDsl, Layer(
       }
 
     /**
-     * Transition options for BackgroundPattern.
+     * Orientation of background layer. Default value: "map".
      */
-    @Deprecated("This property has been deprecated and will do no operations")
-    val defaultBackgroundPatternTransition: StyleTransition?
+    @MapboxExperimental
+    val defaultBackgroundPitchAlignment: BackgroundPitchAlignment?
       /**
-       * Get the BackgroundPattern property transition options
+       * Orientation of background layer. Default value: "map".
        *
-       * @return transition options for String
+       * Get the default value of BackgroundPitchAlignment property
+       *
+       * @return BackgroundPitchAlignment
        */
       get() {
-        logE("BackgroundLayer", "This property has been deprecated and will return null.")
+        StyleManager.getStyleLayerPropertyDefaultValue("background", "background-pitch-alignment").silentUnwrap<String>()?.let {
+          return BackgroundPitchAlignment.valueOf(it.uppercase(Locale.US).replace('-', '_'))
+        }
+        return null
+      }
+
+    /**
+     * Orientation of background layer. Default value: "map".
+     *
+     * This is an Expression representation of "background-pitch-alignment".
+     *
+     */
+    @MapboxExperimental
+    val defaultBackgroundPitchAlignmentAsExpression: Expression?
+      /**
+       * Get default value of the BackgroundPitchAlignment property as an Expression
+       *
+       * @return BackgroundPitchAlignment
+       */
+      get() {
+        StyleManager.getStyleLayerPropertyDefaultValue("background", "background-pitch-alignment").silentUnwrap<Expression>()?.let {
+          return it
+        }
+        defaultBackgroundPitchAlignment?.let {
+          return Expression.literal(it.value)
+        }
         return null
       }
   }
@@ -699,11 +1004,26 @@ class BackgroundLayer(override val layerId: String) : BackgroundLayerDsl, Layer(
 interface BackgroundLayerDsl {
 
   /**
+   * The slot this layer is assigned to. If specified, and a slot with that name exists,
+   * it will be placed at that position in the layer order.
+   *
+   * @param slot value of slot. Setting it to empty string removes the slot.
+   */
+  fun slot(slot: String): BackgroundLayer
+
+  /**
    * Whether this layer is displayed.
    *
    * @param visibility value of Visibility
    */
   fun visibility(visibility: Visibility): BackgroundLayer
+
+  /**
+   * Whether this layer is displayed.
+   *
+   * @param visibility value of Visibility as Expression
+   */
+  fun visibility(visibility: Expression): BackgroundLayer
 
   /**
    * The minimum zoom level for the layer. At zoom levels less than the minzoom, the layer will be hidden.
@@ -712,7 +1032,7 @@ interface BackgroundLayerDsl {
    *       minimum: 0
    *       maximum: 24
    *
-   * @param value value of minzoom
+   * @param minZoom value of minzoom
    */
   fun minZoom(minZoom: Double): BackgroundLayer
 
@@ -723,35 +1043,35 @@ interface BackgroundLayerDsl {
    *       minimum: 0
    *       maximum: 24
    *
-   * @param value value of maxzoom
+   * @param maxZoom value of maxzoom
    */
   fun maxZoom(maxZoom: Double): BackgroundLayer
 
   // Property getters and setters
 
   /**
-   * The color with which the background will be drawn.
+   * The color with which the background will be drawn. Default value: "#000000".
    *
    * @param backgroundColor value of backgroundColor
    */
   fun backgroundColor(backgroundColor: String = "#000000"): BackgroundLayer
 
   /**
-   * The color with which the background will be drawn.
+   * The color with which the background will be drawn. Default value: "#000000".
    *
    * @param backgroundColor value of backgroundColor as Expression
    */
   fun backgroundColor(backgroundColor: Expression): BackgroundLayer
 
   /**
-   * The color with which the background will be drawn.
+   * The color with which the background will be drawn. Default value: "#000000".
    *
    * @param backgroundColor value of backgroundColor
    */
   fun backgroundColor(@ColorInt backgroundColor: Int): BackgroundLayer
 
   /**
-   * The color with which the background will be drawn.
+   * The color with which the background will be drawn. Default value: "#000000".
    *
    * Set the BackgroundColor property transition options
    *
@@ -760,28 +1080,66 @@ interface BackgroundLayerDsl {
   fun backgroundColorTransition(options: StyleTransition): BackgroundLayer
 
   /**
-   * The color with which the background will be drawn.
+   * The color with which the background will be drawn. Default value: "#000000".
    *
    * DSL for [backgroundColorTransition].
    */
   fun backgroundColorTransition(block: StyleTransition.Builder.() -> Unit): BackgroundLayer
 
   /**
-   * The opacity at which the background will be drawn.
+   * Set the backgroundColorUseTheme as String for [backgroundColor].
+   *
+   * @param backgroundColorUseTheme overrides applying of color theme if "none" string value is set. To follow default theme "default" sting value should be set.
+   */
+  @MapboxExperimental
+  fun backgroundColorUseTheme(backgroundColorUseTheme: String): BackgroundLayer
+
+  /**
+   * Controls the intensity of light emitted on the source features. Default value: 0. Minimum value: 0. The unit of backgroundEmissiveStrength is in intensity.
+   *
+   * @param backgroundEmissiveStrength value of backgroundEmissiveStrength
+   */
+  fun backgroundEmissiveStrength(backgroundEmissiveStrength: Double = 0.0): BackgroundLayer
+
+  /**
+   * Controls the intensity of light emitted on the source features. Default value: 0. Minimum value: 0. The unit of backgroundEmissiveStrength is in intensity.
+   *
+   * @param backgroundEmissiveStrength value of backgroundEmissiveStrength as Expression
+   */
+  fun backgroundEmissiveStrength(backgroundEmissiveStrength: Expression): BackgroundLayer
+
+  /**
+   * Controls the intensity of light emitted on the source features. Default value: 0. Minimum value: 0. The unit of backgroundEmissiveStrength is in intensity.
+   *
+   * Set the BackgroundEmissiveStrength property transition options
+   *
+   * @param options transition options for Double
+   */
+  fun backgroundEmissiveStrengthTransition(options: StyleTransition): BackgroundLayer
+
+  /**
+   * Controls the intensity of light emitted on the source features. Default value: 0. Minimum value: 0. The unit of backgroundEmissiveStrength is in intensity.
+   *
+   * DSL for [backgroundEmissiveStrengthTransition].
+   */
+  fun backgroundEmissiveStrengthTransition(block: StyleTransition.Builder.() -> Unit): BackgroundLayer
+
+  /**
+   * The opacity at which the background will be drawn. Default value: 1. Value range: [0, 1]
    *
    * @param backgroundOpacity value of backgroundOpacity
    */
   fun backgroundOpacity(backgroundOpacity: Double = 1.0): BackgroundLayer
 
   /**
-   * The opacity at which the background will be drawn.
+   * The opacity at which the background will be drawn. Default value: 1. Value range: [0, 1]
    *
    * @param backgroundOpacity value of backgroundOpacity as Expression
    */
   fun backgroundOpacity(backgroundOpacity: Expression): BackgroundLayer
 
   /**
-   * The opacity at which the background will be drawn.
+   * The opacity at which the background will be drawn. Default value: 1. Value range: [0, 1]
    *
    * Set the BackgroundOpacity property transition options
    *
@@ -790,7 +1148,7 @@ interface BackgroundLayerDsl {
   fun backgroundOpacityTransition(options: StyleTransition): BackgroundLayer
 
   /**
-   * The opacity at which the background will be drawn.
+   * The opacity at which the background will be drawn. Default value: 1. Value range: [0, 1]
    *
    * DSL for [backgroundOpacityTransition].
    */
@@ -811,24 +1169,24 @@ interface BackgroundLayerDsl {
   fun backgroundPattern(backgroundPattern: Expression): BackgroundLayer
 
   /**
-   * Name of image in sprite to use for drawing an image background. For seamless patterns, image width and height must be a factor of two (2, 4, 8, ..., 512). Note that zoom-dependent expressions will be evaluated only at integer zoom levels.
+   * Orientation of background layer. Default value: "map".
    *
-   * Set the BackgroundPattern property transition options
-   *
-   * @param options transition options for String
+   * @param backgroundPitchAlignment value of backgroundPitchAlignment
    */
-  fun backgroundPatternTransition(options: StyleTransition): BackgroundLayer
+  @MapboxExperimental
+  fun backgroundPitchAlignment(backgroundPitchAlignment: BackgroundPitchAlignment = BackgroundPitchAlignment.MAP): BackgroundLayer
 
   /**
-   * Name of image in sprite to use for drawing an image background. For seamless patterns, image width and height must be a factor of two (2, 4, 8, ..., 512). Note that zoom-dependent expressions will be evaluated only at integer zoom levels.
+   * Orientation of background layer. Default value: "map".
    *
-   * DSL for [backgroundPatternTransition].
+   * @param backgroundPitchAlignment value of backgroundPitchAlignment as Expression
    */
-  fun backgroundPatternTransition(block: StyleTransition.Builder.() -> Unit): BackgroundLayer
+  @MapboxExperimental
+  fun backgroundPitchAlignment(backgroundPitchAlignment: Expression): BackgroundLayer
 }
 
 /**
- * DSL functions for creating a [BackgroundLayer].
+ * DSL function for creating a [BackgroundLayer].
  */
 fun backgroundLayer(layerId: String, block: BackgroundLayerDsl.() -> Unit): BackgroundLayer = BackgroundLayer(layerId).apply(block)
 

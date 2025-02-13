@@ -4,65 +4,62 @@ import android.annotation.SuppressLint
 import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-import androidx.annotation.NonNull
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.mapbox.bindgen.Value
-import com.mapbox.common.*
+import com.mapbox.common.Cancelable
+import com.mapbox.common.MapboxOptions
+import com.mapbox.common.NetworkRestriction
+import com.mapbox.common.OfflineSwitch
+import com.mapbox.common.TileRegionLoadOptions
+import com.mapbox.common.TileStore
 import com.mapbox.geojson.Point
-import com.mapbox.maps.*
+import com.mapbox.maps.CameraOptions
+import com.mapbox.maps.GlyphsRasterizationMode
+import com.mapbox.maps.MapInitOptions
+import com.mapbox.maps.MapView
+import com.mapbox.maps.MapboxMap
+import com.mapbox.maps.OfflineManager
+import com.mapbox.maps.Style
+import com.mapbox.maps.StylePackLoadOptions
+import com.mapbox.maps.TilesetDescriptorOptions
+import com.mapbox.maps.dsl.cameraOptions
+import com.mapbox.maps.mapsOptions
+import com.mapbox.maps.plugin.animation.MapAnimationOptions.Companion.mapAnimationOptions
+import com.mapbox.maps.plugin.animation.flyTo
 import com.mapbox.maps.plugin.annotation.annotations
 import com.mapbox.maps.plugin.annotation.generated.CircleAnnotationOptions
 import com.mapbox.maps.plugin.annotation.generated.createCircleAnnotationManager
 import com.mapbox.maps.testapp.R
 import com.mapbox.maps.testapp.databinding.ActivityOfflineBinding
-import java.util.*
+import kotlinx.coroutines.launch
 
 /**
  * Example app that shows how to use OfflineManager and TileStore to
  * download regions for offline use.
  *
- * By default, users may download up to 250MB of data for offline
- * use without incurring additional charges. This limit is subject
- * to change during the beta.
+ * Please refer to our [offline guide](https://docs.mapbox.com/android/maps/guides/offline/#limits) for the limitations of the offline usage.
  */
 class OfflineActivity : AppCompatActivity() {
-  private val tileStore: TileStore by lazy {
-    TileStore.create().also {
-      // Set default access token for the created tile store instance
-      it.setOption(
-        TileStoreOptions.MAPBOX_ACCESS_TOKEN,
-        TileDataDomain.MAPS,
-        Value(getString(R.string.mapbox_access_token))
-      )
-    }
-  }
-  private val resourceOptions: ResourceOptions by lazy {
-    ResourceOptions.Builder().applyDefaultParams(this).tileStore(tileStore).build()
-  }
-  private val offlineManager: OfflineManager by lazy {
-    OfflineManager(resourceOptions)
-  }
-  private val offlineLogsAdapter: OfflineLogsAdapter by lazy {
-    OfflineLogsAdapter()
-  }
-  private var mapView: MapView? = null
-  private lateinit var handler: Handler
+  // We use the default tile store
+  private val tileStore: TileStore = MapboxOptions.mapsOptions.tileStore!!
+  private val offlineManager: OfflineManager = OfflineManager()
+  private val offlineLogsAdapter: OfflineLogsAdapter = OfflineLogsAdapter()
   private lateinit var binding: ActivityOfflineBinding
-  private var stylePackCancelable: Cancelable? = null
-  private var tilePackCancelable: Cancelable? = null
+  private val cancelables = mutableListOf<Cancelable>()
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     binding = ActivityOfflineBinding.inflate(layoutInflater)
     setContentView(binding.root)
-    handler = Handler()
 
     // Initialize a logger that writes into the recycler view
     binding.recycler.layoutManager = LinearLayoutManager(this)
@@ -79,8 +76,8 @@ class OfflineActivity : AppCompatActivity() {
 
   private fun prepareCancelButton() {
     updateButton("CANCEL DOWNLOAD") {
-      stylePackCancelable?.cancel()
-      tilePackCancelable?.cancel()
+      cancelables.forEach { it.cancel() }
+      cancelables.clear()
       prepareDownloadButton()
     }
   }
@@ -89,30 +86,47 @@ class OfflineActivity : AppCompatActivity() {
     // Disable network stack, so that the map can only load from downloaded region.
     OfflineSwitch.getInstance().isMapboxStackConnected = false
     logInfoMessage("Mapbox network stack disabled.")
-    handler.post {
-      updateButton("VIEW MAP") {
+    lifecycleScope.launch {
+      updateButton("VIEW SATELLITE STREET MAP") {
+        val context = this@OfflineActivity
         // create a Mapbox MapView
-
-        // Note that the MapView must be initialised with the same TileStore that is used to create
-        // the tile regions. (i.e. the tileStorePath must be consistent).
-
-        // If user did not assign the tile store path specifically during the tile region download
-        // and the map initialisation period, the default tile store path will be used and
-        // no extra action is needed.
-        mapView = MapView(this@OfflineActivity).also { mapview ->
-          val mapboxMap = mapview.getMapboxMap()
-          mapboxMap.setCamera(CameraOptions.Builder().zoom(ZOOM).center(TOKYO).build())
-          mapboxMap.loadStyleUri(Style.OUTDOORS) {
-            // Add a circle annotation to the offline geometry.
-            mapview.annotations.createCircleAnnotationManager().create(
-              CircleAnnotationOptions()
-                .withPoint(TOKYO)
-                .withCircleColor(Color.RED)
-            )
-          }
-        }
+        // Note that the MapView will use the current tile store set in MapboxOptions.mapsOptions.tileStore
+        // It must be the same TileStore that is used to create the tile regions. (i.e. the
+        // tileStorePath must be consistent).
+        val mapView = MapView(context, MapInitOptions(context, styleUri = Style.SATELLITE_STREETS))
         binding.container.addView(mapView)
-        mapView?.onStart()
+
+        mapView.mapboxMap.setCamera(CameraOptions.Builder().zoom(ZOOM).center(TOKYO).build())
+        // Add a circle annotation to the offline geometry.
+        mapView.annotations.createCircleAnnotationManager().create(
+          CircleAnnotationOptions()
+            .withPoint(TOKYO)
+            .withCircleColor(Color.RED)
+        )
+        prepareViewStandardMapButton(mapView)
+      }
+    }
+  }
+
+  private fun prepareViewStandardMapButton(mapView: MapView) {
+    lifecycleScope.launch {
+      updateButton("VIEW STANDARD MAP") {
+        // Load standard style and animate camera to show 3D buildings.
+        mapView.mapboxMap.loadStyle(Style.STANDARD)
+        mapView.mapboxMap.flyTo(
+          cameraOptions {
+            center(
+              Point.fromLngLat(
+                139.76567069012344,
+                35.68134814430844
+              )
+            )
+            zoom(15.0)
+            bearing(356.1)
+            pitch(59.8)
+          },
+          mapAnimationOptions { duration(1000L) }
+        )
         prepareShowDownloadedRegionButton()
       }
     }
@@ -145,11 +159,6 @@ class OfflineActivity : AppCompatActivity() {
   }
 
   private fun downloadOfflineRegion() {
-    // By default, users may download up to 250MB of data for offline use without incurring
-    // additional charges. This limit is subject to change during the beta.
-
-    // - - - - - - - -
-
     // 1. Create style package with loadStylePack() call.
 
     // A style pack (a Style offline package) contains the loaded style and its resources: loaded
@@ -157,43 +166,76 @@ class OfflineActivity : AppCompatActivity() {
 
     // Style packs are stored in the disk cache database, but their resources are not subject to
     // the data eviction algorithm and are not considered when calculating the disk cache size.
-    stylePackCancelable = offlineManager.loadStylePack(
-      Style.OUTDOORS,
-      // Build Style pack load options
-      StylePackLoadOptions.Builder()
-        .glyphsRasterizationMode(GlyphsRasterizationMode.IDEOGRAPHS_RASTERIZED_LOCALLY)
-        .metadata(Value(STYLE_PACK_METADATA))
-        .build(),
-      { progress ->
-        // Update the download progress to UI
-        updateStylePackDownloadProgress(
-          progress.completedResourceCount,
-          progress.requiredResourceCount,
-          "StylePackLoadProgress: $progress"
-        )
-      },
-      { expected ->
-        if (expected.isValue) {
+    cancelables.add(
+      offlineManager.loadStylePack(
+        Style.SATELLITE_STREETS,
+        // Build Style pack load options
+        StylePackLoadOptions.Builder()
+          .glyphsRasterizationMode(GlyphsRasterizationMode.IDEOGRAPHS_RASTERIZED_LOCALLY)
+          .metadata(Value(STYLE_PACK_SATELLITE_STREET_METADATA))
+          .build(),
+        { progress ->
+          // Update the download progress to UI
+          updateSatelliteStreetStylePackDownloadProgress(
+            progress.completedResourceCount,
+            progress.requiredResourceCount,
+            "StylePackLoadProgress: $progress"
+          )
+        },
+        { expected ->
           expected.value?.let { stylePack ->
             // Style pack download finishes successfully
             logSuccessMessage("StylePack downloaded: $stylePack")
-            if (binding.tilePackDownloadProgress.progress == binding.tilePackDownloadProgress.max) {
+            if (allResourcesDownloadLoaded()) {
               prepareViewMapButton()
             } else {
               logInfoMessage("Waiting for tile region download to be finished.")
             }
           }
+          expected.error?.let {
+            // Handle error occurred during the style pack download.
+            logErrorMessage("StylePackError: $it")
+          }
         }
-        expected.error?.let {
-          // Handle error occurred during the style pack download.
-          logErrorMessage("StylePackError: $it")
-        }
-      }
+      )
     )
 
-    // - - - - - - - -
+    // Download standard style pack
+    cancelables.add(
+      offlineManager.loadStylePack(
+        Style.STANDARD,
+        // Build Style pack load options
+        StylePackLoadOptions.Builder()
+          .glyphsRasterizationMode(GlyphsRasterizationMode.IDEOGRAPHS_RASTERIZED_LOCALLY)
+          .metadata(Value(STYLE_PACK_STANDARD_METADATA))
+          .build(),
+        { progress ->
+          // Update the download progress to UI
+          updateStandardStylePackDownloadProgress(
+            progress.completedResourceCount,
+            progress.requiredResourceCount,
+            "StylePackStandardLoadProgress: $progress"
+          )
+        },
+        { expected ->
+          expected.value?.let { stylePack ->
+            // Style pack download finishes successfully
+            logSuccessMessage("StylePack downloaded: $stylePack")
+            if (allResourcesDownloadLoaded()) {
+              prepareViewMapButton()
+            } else {
+              logInfoMessage("Waiting for tile region download to be finished.")
+            }
+          }
+          expected.error?.let {
+            // Handle error occurred during the style pack download.
+            logErrorMessage("StylePackError: $it")
+          }
+        }
+      )
+    )
 
-    // 2. Create a tile region with tiles for the outdoors style
+    // 2. Create a tile region with tiles for the satellite street style
 
     // A Tile Region represents an identifiable geographic tile region with metadata, consisting of
     // a set of tiles packs that cover a given area (a polygon). Tile Regions allow caching tiles
@@ -208,61 +250,77 @@ class OfflineActivity : AppCompatActivity() {
     // the region area geometry to load a new Tile Region.
 
     // The OfflineManager is responsible for creating tileset descriptors for the given style and zoom range.
-    val tilesetDescriptor = offlineManager.createTilesetDescriptor(
-      TilesetDescriptorOptions.Builder()
-        .styleURI(Style.OUTDOORS)
-        .minZoom(0)
-        .maxZoom(16)
-        .build()
+    val tilesetDescriptors = listOf(
+      offlineManager.createTilesetDescriptor(
+        TilesetDescriptorOptions.Builder()
+          .styleURI(Style.SATELLITE_STREETS)
+          .pixelRatio(resources.displayMetrics.density)
+          .minZoom(0)
+          .maxZoom(16)
+          .build()
+      ),
+      offlineManager.createTilesetDescriptor(
+        TilesetDescriptorOptions.Builder()
+          .styleURI(Style.STANDARD)
+          .pixelRatio(resources.displayMetrics.density)
+          .minZoom(0)
+          .maxZoom(16)
+          .build()
+      )
     )
 
-    // Use the the default TileStore to load this region. You can create custom TileStores are are
+    // Use the the default TileStore to load this region. You can create custom TileStores that are
     // unique for a particular file path, i.e. there is only ever one TileStore per unique path.
 
     // Note that the TileStore path must be the same with the TileStore used when initialise the MapView.
-    tilePackCancelable = tileStore.loadTileRegion(
-      TILE_REGION_ID,
-      TileRegionLoadOptions.Builder()
-        .geometry(TOKYO)
-        .descriptors(listOf(tilesetDescriptor))
-        .metadata(Value(TILE_REGION_METADATA))
-        .acceptExpired(true)
-        .networkRestriction(NetworkRestriction.NONE)
-        .build(),
-      { progress ->
-        updateTileRegionDownloadProgress(
-          progress.completedResourceCount,
-          progress.requiredResourceCount,
-          "TileRegionLoadProgress: $progress"
-        )
-      }
-    ) { expected ->
-      if (expected.isValue) {
+    cancelables.add(
+      tileStore.loadTileRegion(
+        TILE_REGION_ID,
+        TileRegionLoadOptions.Builder()
+          .geometry(TOKYO)
+          .descriptors(tilesetDescriptors)
+          .metadata(Value(TILE_REGION_METADATA))
+          .acceptExpired(true)
+          .networkRestriction(NetworkRestriction.NONE)
+          .build(),
+        { progress ->
+          updateTileRegionDownloadProgress(
+            progress.completedResourceCount,
+            progress.requiredResourceCount,
+            "TileRegionLoadProgress: $progress"
+          )
+        }
+      ) { expected ->
         // Tile pack download finishes successfully
         expected.value?.let { region ->
           logSuccessMessage("TileRegion downloaded: $region")
-          if (binding.stylePackDownloadProgress.progress == binding.stylePackDownloadProgress.max) {
+          if (allResourcesDownloadLoaded()) {
             prepareViewMapButton()
           } else {
             logInfoMessage("Waiting for style pack download to be finished.")
           }
         }
+        expected.error?.let {
+          // Handle error occurred during the tile region download.
+          logErrorMessage("TileRegionError: $it")
+        }
       }
-      expected.error?.let {
-        // Handle error occurred during the tile region download.
-        logErrorMessage("TileRegionError: $it")
-      }
-    }
+    )
     prepareCancelButton()
   }
+
+  private fun allResourcesDownloadLoaded(): Boolean = binding.satelliteStreetsStylePackDownloadProgress.max > 0 &&
+    binding.standardStylePackDownloadProgress.max > 0 &&
+    binding.tilePackDownloadProgress.max > 0 &&
+    binding.satelliteStreetsStylePackDownloadProgress.progress == binding.satelliteStreetsStylePackDownloadProgress.max &&
+    binding.standardStylePackDownloadProgress.progress == binding.standardStylePackDownloadProgress.max &&
+    binding.tilePackDownloadProgress.progress == binding.tilePackDownloadProgress.max
 
   private fun showDownloadedRegions() {
     // Get a list of tile regions that are currently available.
     tileStore.getAllTileRegions { expected ->
-      if (expected.isValue) {
-        expected.value?.let { tileRegionList ->
-          logInfoMessage("Existing tile regions: $tileRegionList")
-        }
+      expected.value?.let { tileRegionList ->
+        logInfoMessage("Existing tile regions: $tileRegionList")
       }
       expected.error?.let { tileRegionError ->
         logErrorMessage("TileRegionError: $tileRegionError")
@@ -270,10 +328,8 @@ class OfflineActivity : AppCompatActivity() {
     }
     // Get a list of style packs that are currently available.
     offlineManager.getAllStylePacks { expected ->
-      if (expected.isValue) {
-        expected.value?.let { stylePackList ->
-          logInfoMessage("Existing style packs: $stylePackList")
-        }
+      expected.value?.let { stylePackList ->
+        logInfoMessage("Existing style packs: $stylePackList")
       }
       expected.error?.let { stylePackError ->
         logErrorMessage("StylePackError: $stylePackError")
@@ -287,31 +343,44 @@ class OfflineActivity : AppCompatActivity() {
     // not a part of a tile region. The tiles still exists as a predictive cache in TileStore.
     tileStore.removeTileRegion(TILE_REGION_ID)
 
-    // Set the disk quota to zero, so that tile regions are fully evicted
-    // when removed. The TileStore is also used when `ResourceOptions.isLoadTilePacksFromNetwork`
-    // is `true`, and also by the Navigation SDK.
-    // This removes the tiles that do not belong to any tile regions.
-    tileStore.setOption(TileStoreOptions.DISK_QUOTA, Value(0))
-
     // Remove the style pack with the style url.
     // Note this will not remove the downloaded style pack, instead, it will just mark the resources
     // not a part of the existing style pack. The resources still exists as disk cache.
-    offlineManager.removeStylePack(Style.OUTDOORS)
+    offlineManager.removeStylePack(Style.SATELLITE_STREETS)
+    offlineManager.removeStylePack(Style.STANDARD)
 
-    MapboxMap.clearData(resourceOptions) {
+    MapboxMap.clearData {
       it.error?.let { error ->
         logErrorMessage(error)
       }
     }
 
+    // Explicitly clear ambient cache data (so that if we try to download tile store regions again - it would actually truly download it from network).
+    // Ambient cache data is anything not associated with an offline region or a style pack, including predictively cached data.
+    // Note that it is advisable to rely on internal TileStore implementation to clear cache when needed.
+    tileStore.clearAmbientCache {
+      it.error?.let { error ->
+        logErrorMessage(error.message)
+      }
+    }
+
     // Reset progressbar.
-    updateStylePackDownloadProgress(0, 0)
+    updateSatelliteStreetStylePackDownloadProgress(0, 0)
+    updateStandardStylePackDownloadProgress(0, 0)
     updateTileRegionDownloadProgress(0, 0)
   }
 
-  private fun updateStylePackDownloadProgress(progress: Long, max: Long, message: String? = null) {
-    binding.stylePackDownloadProgress.max = max.toInt()
-    binding.stylePackDownloadProgress.progress = progress.toInt()
+  private fun updateSatelliteStreetStylePackDownloadProgress(progress: Long, max: Long, message: String? = null) {
+    binding.satelliteStreetsStylePackDownloadProgress.max = max.toInt()
+    binding.satelliteStreetsStylePackDownloadProgress.progress = progress.toInt()
+    message?.let {
+      offlineLogsAdapter.addLog(OfflineLog.StylePackProgress(it))
+    }
+  }
+
+  private fun updateStandardStylePackDownloadProgress(progress: Long, max: Long, message: String? = null) {
+    binding.standardStylePackDownloadProgress.max = max.toInt()
+    binding.standardStylePackDownloadProgress.progress = progress.toInt()
     message?.let {
       offlineLogsAdapter.addLog(OfflineLog.StylePackProgress(it))
     }
@@ -337,31 +406,20 @@ class OfflineActivity : AppCompatActivity() {
     offlineLogsAdapter.addLog(OfflineLog.Success(message))
   }
 
-  override fun onStart() {
-    super.onStart()
-    mapView?.onStart()
-  }
-
-  override fun onStop() {
-    super.onStop()
-    mapView?.onStop()
-  }
-
   override fun onDestroy() {
     super.onDestroy()
     // Cancel the current downloading jobs
-    stylePackCancelable?.cancel()
-    tilePackCancelable?.cancel()
+    cancelables.forEach { it.cancel() }
+    cancelables.clear()
     // Remove downloaded style packs and tile regions.
     removeOfflineRegions()
     // Bring back the network connectivity when exiting the OfflineActivity.
     OfflineSwitch.getInstance().isMapboxStackConnected = true
-    mapView?.onDestroy()
   }
 
   private class OfflineLogsAdapter : RecyclerView.Adapter<OfflineLogsAdapter.ViewHolder>() {
     private var isUpdating: Boolean = false
-    private val updateHandler = Handler()
+    private val updateHandler = Handler(Looper.getMainLooper())
     private val logs = ArrayList<OfflineLog>()
 
     @SuppressLint("NotifyDataSetChanged")
@@ -374,14 +432,13 @@ class OfflineActivity : AppCompatActivity() {
       internal var alertMessageTv: TextView = view.findViewById(R.id.alert_message)
     }
 
-    @NonNull
-    override fun onCreateViewHolder(@NonNull parent: ViewGroup, viewType: Int): ViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
       val view =
         LayoutInflater.from(parent.context).inflate(R.layout.item_gesture_alert, parent, false)
       return ViewHolder(view)
     }
 
-    override fun onBindViewHolder(@NonNull holder: ViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
       val alert = logs[position]
       holder.alertMessageTv.text = alert.message
       holder.alertMessageTv.setTextColor(
@@ -417,9 +474,10 @@ class OfflineActivity : AppCompatActivity() {
   companion object {
     private const val TAG = "OfflineActivity"
     private const val ZOOM = 12.0
-    private val TOKYO: Point = Point.fromLngLat(139.769305, 35.682027)
+    private val TOKYO = Point.fromLngLat(139.769305, 35.682027)
     private const val TILE_REGION_ID = "myTileRegion"
-    private const val STYLE_PACK_METADATA = "my-outdoor-style-pack"
-    private const val TILE_REGION_METADATA = "my-outdoors-tile-region"
+    private const val STYLE_PACK_SATELLITE_STREET_METADATA = "my-satellite-street-style-pack"
+    private const val STYLE_PACK_STANDARD_METADATA = "my-standard-style-pack"
+    private const val TILE_REGION_METADATA = "my-offline-region"
   }
 }

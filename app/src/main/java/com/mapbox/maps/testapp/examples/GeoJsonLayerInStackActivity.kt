@@ -19,12 +19,12 @@ class GeoJsonLayerInStackActivity : AppCompatActivity() {
     super.onCreate(savedInstanceState)
     val mapView = MapView(this)
     setContentView(mapView)
-    mapboxMap = mapView.getMapboxMap()
+    mapboxMap = mapView.mapboxMap
 
     mapboxMap.loadStyle(
-      style(styleUri = Style.MAPBOX_STREETS) {
+      style(style = Style.MAPBOX_STREETS) {
         +geoJsonSource("urban-areas") {
-          url("https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_urban_areas.geojson")
+          data("https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_urban_areas.geojson")
         }
         +layerAtPosition(
           fillLayer(layerId = "urban-areas-fill", sourceId = "urban-areas") {

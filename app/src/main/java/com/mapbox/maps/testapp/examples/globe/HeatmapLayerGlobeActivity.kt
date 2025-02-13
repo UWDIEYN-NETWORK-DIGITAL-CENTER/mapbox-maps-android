@@ -32,7 +32,7 @@ class HeatmapLayerGlobeActivity : AppCompatActivity() {
     val binding = ActivityHeatmapLayerBinding.inflate(layoutInflater)
     setContentView(binding.root)
 
-    mapboxMap = binding.mapView.getMapboxMap().apply {
+    mapboxMap = binding.mapView.mapboxMap.apply {
       loadStyle(
         style(Style.DARK) {
           +projection(ProjectionName.GLOBE)
@@ -51,7 +51,7 @@ class HeatmapLayerGlobeActivity : AppCompatActivity() {
 
   private fun createEarthquakeSource(): GeoJsonSource {
     return geoJsonSource(EARTHQUAKE_SOURCE_ID) {
-      url(EARTHQUAKE_SOURCE_URL)
+      data(EARTHQUAKE_SOURCE_URL)
     }
   }
 

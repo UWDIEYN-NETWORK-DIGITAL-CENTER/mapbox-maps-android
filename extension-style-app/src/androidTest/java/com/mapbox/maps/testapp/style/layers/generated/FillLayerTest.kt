@@ -5,6 +5,7 @@ package com.mapbox.maps.testapp.style.layers.generated
 import android.graphics.Color
 import androidx.test.annotation.UiThreadTest
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.mapbox.maps.MapboxExperimental
 import com.mapbox.maps.extension.style.expressions.dsl.generated.*
 import com.mapbox.maps.extension.style.layers.generated.*
 import com.mapbox.maps.extension.style.layers.properties.generated.*
@@ -17,6 +18,7 @@ import org.junit.runner.RunWith
 /**
  * Basic smoke tests for FillLayer
  */
+@OptIn(MapboxExperimental::class)
 @RunWith(AndroidJUnit4::class)
 class FillLayerTest : BaseStyleTest() {
 
@@ -67,6 +69,29 @@ class FillLayerTest : BaseStyleTest() {
     assertEquals(expression.toString(), layer.filter.toString())
   }
   // Property getters and setters
+
+  @Test
+  @UiThreadTest
+  fun fillElevationReferenceTest() {
+    val layer = fillLayer("id", "source") {
+      fillElevationReference(FillElevationReference.NONE)
+    }
+    setupLayer(layer)
+    assertEquals(FillElevationReference.NONE, layer.fillElevationReference)
+  }
+
+  @Test
+  @UiThreadTest
+  fun fillElevationReferenceAsExpressionTest() {
+    val expression = literal("none")
+    val layer = fillLayer("id", "source") {
+      fillElevationReference(expression)
+    }
+    setupLayer(layer)
+
+    assertEquals(expression.toString(), layer.fillElevationReferenceAsExpression.toString())
+    assertEquals(FillElevationReference.NONE, layer.fillElevationReference!!)
+  }
 
   @Test
   @UiThreadTest
@@ -160,6 +185,17 @@ class FillLayerTest : BaseStyleTest() {
 
   @Test
   @UiThreadTest
+  fun fillColorUseTheme() {
+    val theme = "none"
+    val layer = fillLayer("id", "source") {
+      fillColorUseTheme(theme)
+    }
+    setupLayer(layer)
+    assertEquals(theme, layer.fillColorUseTheme)
+  }
+
+  @Test
+  @UiThreadTest
   fun fillColorTransitionTest() {
     val transition = transitionOptions {
       duration(100)
@@ -187,6 +223,61 @@ class FillLayerTest : BaseStyleTest() {
     }
     setupLayer(layer)
     assertEquals(transition, layer.fillColorTransition)
+  }
+
+  @Test
+  @UiThreadTest
+  fun fillEmissiveStrengthTest() {
+    val testValue = 1.0
+    val layer = fillLayer("id", "source") {
+      fillEmissiveStrength(testValue)
+    }
+    setupLayer(layer)
+    assertEquals(testValue, layer.fillEmissiveStrength!!, 1E-5)
+  }
+
+  @Test
+  @UiThreadTest
+  fun fillEmissiveStrengthAsExpressionTest() {
+    val expression = literal(1.0)
+    val layer = fillLayer("id", "source") {
+      fillEmissiveStrength(expression)
+    }
+    setupLayer(layer)
+
+    assertEquals(1.0, layer.fillEmissiveStrengthAsExpression?.contents as Double, 1E-5)
+    assertEquals(1.0, layer.fillEmissiveStrength!!, 1E-5)
+  }
+
+  @Test
+  @UiThreadTest
+  fun fillEmissiveStrengthTransitionTest() {
+    val transition = transitionOptions {
+      duration(100)
+      delay(200)
+    }
+    val layer = fillLayer("id", "source") {
+      fillEmissiveStrengthTransition(transition)
+    }
+    setupLayer(layer)
+    assertEquals(transition, layer.fillEmissiveStrengthTransition)
+  }
+
+  @Test
+  @UiThreadTest
+  fun fillEmissiveStrengthTransitionSetDslTest() {
+    val transition = transitionOptions {
+      duration(100)
+      delay(200)
+    }
+    val layer = fillLayer("id", "source") {
+      fillEmissiveStrengthTransition {
+        duration(100)
+        delay(200)
+      }
+    }
+    setupLayer(layer)
+    assertEquals(transition, layer.fillEmissiveStrengthTransition)
   }
 
   @Test
@@ -284,6 +375,17 @@ class FillLayerTest : BaseStyleTest() {
     }
     setupLayer(layer)
     assertEquals(Color.CYAN, layer.fillOutlineColorAsColorInt)
+  }
+
+  @Test
+  @UiThreadTest
+  fun fillOutlineColorUseTheme() {
+    val theme = "none"
+    val layer = fillLayer("id", "source") {
+      fillOutlineColorUseTheme(theme)
+    }
+    setupLayer(layer)
+    assertEquals(theme, layer.fillOutlineColorUseTheme)
   }
 
   @Test
@@ -427,9 +529,83 @@ class FillLayerTest : BaseStyleTest() {
 
   @Test
   @UiThreadTest
+  fun fillZOffsetTest() {
+    val testValue = 1.0
+    val layer = fillLayer("id", "source") {
+      fillZOffset(testValue)
+    }
+    setupLayer(layer)
+    assertEquals(testValue, layer.fillZOffset!!, 1E-5)
+  }
+
+  @Test
+  @UiThreadTest
+  fun fillZOffsetAsExpressionTest() {
+    val expression = number {
+      get {
+        literal("number")
+      }
+    }
+    val layer = fillLayer("id", "source") {
+      fillZOffset(expression)
+    }
+    setupLayer(layer)
+
+    assertEquals(expression.toString(), layer.fillZOffsetAsExpression.toString())
+    assertEquals(null, layer.fillZOffset)
+  }
+
+  @Test
+  @UiThreadTest
+  fun fillZOffsetTransitionTest() {
+    val transition = transitionOptions {
+      duration(100)
+      delay(200)
+    }
+    val layer = fillLayer("id", "source") {
+      fillZOffsetTransition(transition)
+    }
+    setupLayer(layer)
+    assertEquals(transition, layer.fillZOffsetTransition)
+  }
+
+  @Test
+  @UiThreadTest
+  fun fillZOffsetTransitionSetDslTest() {
+    val transition = transitionOptions {
+      duration(100)
+      delay(200)
+    }
+    val layer = fillLayer("id", "source") {
+      fillZOffsetTransition {
+        duration(100)
+        delay(200)
+      }
+    }
+    setupLayer(layer)
+    assertEquals(transition, layer.fillZOffsetTransition)
+  }
+
+  @Test
+  @UiThreadTest
   fun visibilityTest() {
     val layer = fillLayer("id", "source") {
       visibility(Visibility.NONE)
+    }
+    setupLayer(layer)
+    assertEquals(Visibility.NONE, layer.visibility)
+  }
+
+  @Test
+  @UiThreadTest
+  fun visibilityAsExpressionTest() {
+    val layer = fillLayer("id", "source") {
+      visibility(
+        concat {
+          literal("no")
+          literal("ne")
+        }
+      )
     }
     setupLayer(layer)
     assertEquals(Visibility.NONE, layer.visibility)
@@ -443,6 +619,8 @@ class FillLayerTest : BaseStyleTest() {
     assertNotNull("defaultVisibility should not be null", FillLayer.defaultVisibility)
     assertNotNull("defaultMinZoom should not be null", FillLayer.defaultMinZoom)
     assertNotNull("defaultMaxZoom should not be null", FillLayer.defaultMaxZoom)
+    assertNotNull("defaultFillElevationReference should not be null", FillLayer.defaultFillElevationReference)
+    assertNotNull("defaultFillElevationReferenceAsExpression should not be null", FillLayer.defaultFillElevationReferenceAsExpression)
     assertNotNull("defaultFillSortKey should not be null", FillLayer.defaultFillSortKey)
     assertNotNull("defaultFillSortKeyAsExpression should not be null", FillLayer.defaultFillSortKeyAsExpression)
     assertNotNull("defaultFillAntialias should not be null", FillLayer.defaultFillAntialias)
@@ -450,13 +628,18 @@ class FillLayerTest : BaseStyleTest() {
     assertNotNull("defaultFillColor should not be null", FillLayer.defaultFillColor)
     assertNotNull("defaultFillColorAsExpression should not be null", FillLayer.defaultFillColorAsExpression)
     assertNotNull("defaultFillColorAsColorInt should not be null", FillLayer.defaultFillColorAsColorInt)
+    assertNotNull("defaultFillColorUseTheme should not be null", FillLayer.defaultFillColorUseTheme)
     assertNotNull("defaultFillColorTransition should not be null", FillLayer.defaultFillColorTransition)
+    assertNotNull("defaultFillEmissiveStrength should not be null", FillLayer.defaultFillEmissiveStrength)
+    assertNotNull("defaultFillEmissiveStrengthAsExpression should not be null", FillLayer.defaultFillEmissiveStrengthAsExpression)
+    assertNotNull("defaultFillEmissiveStrengthTransition should not be null", FillLayer.defaultFillEmissiveStrengthTransition)
     assertNotNull("defaultFillOpacity should not be null", FillLayer.defaultFillOpacity)
     assertNotNull("defaultFillOpacityAsExpression should not be null", FillLayer.defaultFillOpacityAsExpression)
     assertNotNull("defaultFillOpacityTransition should not be null", FillLayer.defaultFillOpacityTransition)
     assertNotNull("defaultFillOutlineColor should not be null", FillLayer.defaultFillOutlineColor)
     assertNotNull("defaultFillOutlineColorAsExpression should not be null", FillLayer.defaultFillOutlineColorAsExpression)
     assertNotNull("defaultFillOutlineColorAsColorInt should not be null", FillLayer.defaultFillOutlineColorAsColorInt)
+    assertNotNull("defaultFillOutlineColorUseTheme should not be null", FillLayer.defaultFillOutlineColorUseTheme)
     assertNotNull("defaultFillOutlineColorTransition should not be null", FillLayer.defaultFillOutlineColorTransition)
     assertNotNull("defaultFillPattern should not be null", FillLayer.defaultFillPattern)
     assertNotNull("defaultFillPatternAsExpression should not be null", FillLayer.defaultFillPatternAsExpression)
@@ -465,6 +648,9 @@ class FillLayerTest : BaseStyleTest() {
     assertNotNull("defaultFillTranslateTransition should not be null", FillLayer.defaultFillTranslateTransition)
     assertNotNull("defaultFillTranslateAnchor should not be null", FillLayer.defaultFillTranslateAnchor)
     assertNotNull("defaultFillTranslateAnchorAsExpression should not be null", FillLayer.defaultFillTranslateAnchorAsExpression)
+    assertNotNull("defaultFillZOffset should not be null", FillLayer.defaultFillZOffset)
+    assertNotNull("defaultFillZOffsetAsExpression should not be null", FillLayer.defaultFillZOffsetAsExpression)
+    assertNotNull("defaultFillZOffsetTransition should not be null", FillLayer.defaultFillZOffsetTransition)
   }
 
   @Test
@@ -476,14 +662,19 @@ class FillLayerTest : BaseStyleTest() {
       }
       literal(1.0)
     }
+    val fillElevationReferenceTestValue = FillElevationReference.NONE
     val fillSortKeyTestValue = 1.0
     val fillAntialiasTestValue = true
     val fillColorTestValue = "rgba(0, 0, 0, 1)"
+    val fillColorUseThemeTestValue = "default"
+    val fillEmissiveStrengthTestValue = 1.0
     val fillOpacityTestValue = 1.0
     val fillOutlineColorTestValue = "rgba(0, 0, 0, 1)"
+    val fillOutlineColorUseThemeTestValue = "default"
     val fillPatternTestValue = "abc"
     val fillTranslateTestValue = listOf(0.0, 1.0)
     val fillTranslateAnchorTestValue = FillTranslateAnchor.MAP
+    val fillZOffsetTestValue = 1.0
 
     val minZoomTestValue = 10.0
     val maxZoomTestValue = 20.0
@@ -492,14 +683,19 @@ class FillLayerTest : BaseStyleTest() {
       minZoom(minZoomTestValue)
       maxZoom(maxZoomTestValue)
       filter(filterTestValue)
+      fillElevationReference(fillElevationReferenceTestValue)
       fillSortKey(fillSortKeyTestValue)
       fillAntialias(fillAntialiasTestValue)
       fillColor(fillColorTestValue)
+      fillColorUseTheme(fillColorUseThemeTestValue)
+      fillEmissiveStrength(fillEmissiveStrengthTestValue)
       fillOpacity(fillOpacityTestValue)
       fillOutlineColor(fillOutlineColorTestValue)
+      fillOutlineColorUseTheme(fillOutlineColorUseThemeTestValue)
       fillPattern(fillPatternTestValue)
       fillTranslate(fillTranslateTestValue)
       fillTranslateAnchor(fillTranslateAnchorTestValue)
+      fillZOffset(fillZOffsetTestValue)
     }
 
     setupLayer(layer)
@@ -513,14 +709,19 @@ class FillLayerTest : BaseStyleTest() {
     assertEquals(minZoomTestValue, cachedLayer.minZoom)
     assertEquals(maxZoomTestValue, cachedLayer.maxZoom)
     assertEquals(filterTestValue.toString(), cachedLayer.filter.toString())
+    assertEquals(fillElevationReferenceTestValue, cachedLayer.fillElevationReference)
     assertEquals(fillSortKeyTestValue, cachedLayer.fillSortKey)
     assertEquals(fillAntialiasTestValue, cachedLayer.fillAntialias)
     assertEquals(fillColorTestValue, cachedLayer.fillColor)
+    assertEquals(fillColorUseThemeTestValue, cachedLayer.fillColorUseTheme)
+    assertEquals(fillEmissiveStrengthTestValue, cachedLayer.fillEmissiveStrength)
     assertEquals(fillOpacityTestValue, cachedLayer.fillOpacity)
     assertEquals(fillOutlineColorTestValue, cachedLayer.fillOutlineColor)
+    assertEquals(fillOutlineColorUseThemeTestValue, cachedLayer.fillOutlineColorUseTheme)
     assertEquals(fillPatternTestValue, cachedLayer.fillPattern)
     assertEquals(fillTranslateTestValue, cachedLayer.fillTranslate)
     assertEquals(fillTranslateAnchorTestValue, cachedLayer.fillTranslateAnchor)
+    assertEquals(fillZOffsetTestValue, cachedLayer.fillZOffset)
   }
 }
 

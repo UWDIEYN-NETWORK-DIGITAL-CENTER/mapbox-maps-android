@@ -19,7 +19,7 @@ import com.mapbox.maps.plugin.delegates.MapCameraManagerDelegate
  * Class for PolygonAnnotation
  */
 class PolygonAnnotation(
-  id: Long,
+  id: String,
   /** The annotation manager that manipulate this annotation */
   private val annotationManager: AnnotationManager<Polygon, PolygonAnnotation, *, *, *, *, *>,
   jsonObject: JsonObject,
@@ -86,7 +86,7 @@ class PolygonAnnotation(
 
   /**
    * The fillColor property in Int
-   * The color of the filled part of this layer. This color can be specified as `rgba` with an alpha component and the color's opacity will not affect the opacity of the 1px stroke, if it is used.
+   * The color of the filled part of this layer. This color can be specified as `rgba` with an alpha component and the color's opacity will not affect the opacity of the 1px stroke, if it is used. Default value: "#000000".
    */
   var fillColorInt: Int?
     /**
@@ -122,7 +122,7 @@ class PolygonAnnotation(
   /**
    * The fillColor property in String
    *
-   * The color of the filled part of this layer. This color can be specified as `rgba` with an alpha component and the color's opacity will not affect the opacity of the 1px stroke, if it is used.
+   * The color of the filled part of this layer. This color can be specified as `rgba` with an alpha component and the color's opacity will not affect the opacity of the 1px stroke, if it is used. Default value: "#000000".
    */
   var fillColorString: String?
     /**
@@ -153,7 +153,7 @@ class PolygonAnnotation(
   /**
    * The fillOpacity property
    *
-   * The opacity of the entire fill layer. In contrast to the {@link PropertyFactory#fillColor}, this value will also affect the 1px stroke around the fill, if the stroke is used.
+   * The opacity of the entire fill layer. In contrast to the `fill-color`, this value will also affect the 1px stroke around the fill, if the stroke is used. Default value: 1. Value range: [0, 1]
    */
   var fillOpacity: Double?
     /**
@@ -185,7 +185,7 @@ class PolygonAnnotation(
 
   /**
    * The fillOutlineColor property in Int
-   * The outline color of the fill. Matches the value of {@link PropertyFactory#fillColor} if unspecified.
+   * The outline color of the fill. Matches the value of `fill-color` if unspecified.
    */
   var fillOutlineColorInt: Int?
     /**
@@ -221,7 +221,7 @@ class PolygonAnnotation(
   /**
    * The fillOutlineColor property in String
    *
-   * The outline color of the fill. Matches the value of {@link PropertyFactory#fillColor} if unspecified.
+   * The outline color of the fill. Matches the value of `fill-color` if unspecified.
    */
   var fillOutlineColorString: String?
     /**
@@ -283,6 +283,39 @@ class PolygonAnnotation(
     }
 
   /**
+   * The fillZOffset property
+   *
+   * Specifies an uniform elevation in meters. Note: If the value is zero, the layer will be rendered on the ground. Non-zero values will elevate the layer from the sea level, which can cause it to be rendered below the terrain. Default value: 0. Minimum value: 0.
+   */
+  var fillZOffset: Double?
+    /**
+     * Get the fillZOffset property
+     *
+     * @return property wrapper value around Double
+     */
+    get() {
+      val value = jsonObject.get(PolygonAnnotationOptions.PROPERTY_FILL_Z_OFFSET)
+      value?.let {
+        return it.asString.toDouble()
+      }
+      return null
+    }
+    /**
+     * Set the fillZOffset property
+     *
+     * To update the polygonAnnotation on the map use {@link polygonAnnotationManager#update(Annotation)}.
+     *
+     * @param value constant property value for Double
+     */
+    set(value) {
+      if (value != null) {
+        jsonObject.addProperty(PolygonAnnotationOptions.PROPERTY_FILL_Z_OFFSET, value)
+      } else {
+        jsonObject.remove(PolygonAnnotationOptions.PROPERTY_FILL_Z_OFFSET)
+      }
+    }
+
+  /**
    * Get the offset geometry for the touch point
    */
   override fun getOffsetGeometry(
@@ -330,6 +363,9 @@ class PolygonAnnotation(
     }
     jsonObject.get(PolygonAnnotationOptions.PROPERTY_FILL_PATTERN)?.let {
       annotationManager.enableDataDrivenProperty(PolygonAnnotationOptions.PROPERTY_FILL_PATTERN)
+    }
+    jsonObject.get(PolygonAnnotationOptions.PROPERTY_FILL_Z_OFFSET)?.let {
+      annotationManager.enableDataDrivenProperty(PolygonAnnotationOptions.PROPERTY_FILL_Z_OFFSET)
     }
   }
 

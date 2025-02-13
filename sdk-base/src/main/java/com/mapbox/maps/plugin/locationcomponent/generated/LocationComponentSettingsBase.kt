@@ -3,6 +3,7 @@
 package com.mapbox.maps.plugin.locationcomponent.generated
 
 import com.mapbox.maps.plugin.LocationPuck
+import com.mapbox.maps.plugin.PuckBearing
 
 /**
  * Abstract settings class for LocationComponentPlugin.
@@ -26,7 +27,7 @@ abstract class LocationComponentSettingsBase : LocationComponentSettingsInterfac
    * @return locationcomponent settings
    */
   override fun getSettings(): LocationComponentSettings {
-    return internalSettings.copy()
+    return internalSettings.toBuilder().build()
   }
 
   /**
@@ -34,13 +35,13 @@ abstract class LocationComponentSettingsBase : LocationComponentSettingsInterfac
    *
    * @param block the receiver function of LocationComponentSettings
    */
-  override fun updateSettings(block: LocationComponentSettings.() -> Unit) {
-    this.internalSettings.apply(block)
+  override fun updateSettings(block: LocationComponentSettings.Builder.() -> Unit) {
+    this.internalSettings = this.internalSettings.toBuilder().apply(block).build()
     applySettings()
   }
 
   /**
-   * Whether the user location is visible on the map.
+   * Whether the user location is visible on the map. Default value: false.
    */
   override var enabled: Boolean
     get() {
@@ -48,13 +49,13 @@ abstract class LocationComponentSettingsBase : LocationComponentSettingsInterfac
     }
     set(value) {
       if (this.internalSettings.enabled != value) {
-        this.internalSettings.enabled = value
+        this.internalSettings = this.internalSettings.toBuilder().setEnabled(value).build()
         applySettings()
       }
     }
 
   /**
-   * Whether the location puck is pulsing on the map. Works for 2D location puck only.
+   * Whether the location puck is pulsing on the map. Works for 2D location puck only. Default value: false.
    */
   override var pulsingEnabled: Boolean
     get() {
@@ -62,13 +63,13 @@ abstract class LocationComponentSettingsBase : LocationComponentSettingsInterfac
     }
     set(value) {
       if (this.internalSettings.pulsingEnabled != value) {
-        this.internalSettings.pulsingEnabled = value
+        this.internalSettings = this.internalSettings.toBuilder().setPulsingEnabled(value).build()
         applySettings()
       }
     }
 
   /**
-   * The color of the pulsing circle. Works for 2D location puck only.
+   * The color of the pulsing circle. Works for 2D location puck only. Default value: "#4A90E2".
    */
   override var pulsingColor: Int
     get() {
@@ -76,13 +77,13 @@ abstract class LocationComponentSettingsBase : LocationComponentSettingsInterfac
     }
     set(value) {
       if (this.internalSettings.pulsingColor != value) {
-        this.internalSettings.pulsingColor = value
+        this.internalSettings = this.internalSettings.toBuilder().setPulsingColor(value).build()
         applySettings()
       }
     }
 
   /**
-   * The maximum radius of the pulsing circle. Works for 2D location puck only. Note: Setting [pulsingMaxRadius] to LocationComponentConstants.PULSING_MAX_RADIUS_FOLLOW_ACCURACY will set the pulsing circle's maximum radius to follow location accuracy circle.
+   * The maximum radius of the pulsing circle. Works for 2D location puck only. Note: Setting [pulsingMaxRadius] to LocationComponentConstants.PULSING_MAX_RADIUS_FOLLOW_ACCURACY will set the pulsing circle's maximum radius to follow location accuracy circle. Default value: 10.
    */
   override var pulsingMaxRadius: Float
     get() {
@@ -90,7 +91,49 @@ abstract class LocationComponentSettingsBase : LocationComponentSettingsInterfac
     }
     set(value) {
       if (this.internalSettings.pulsingMaxRadius != value) {
-        this.internalSettings.pulsingMaxRadius = value
+        this.internalSettings = this.internalSettings.toBuilder().setPulsingMaxRadius(value).build()
+        applySettings()
+      }
+    }
+
+  /**
+   * Whether show accuracy ring with location puck. Works for 2D location puck only. Default value: false.
+   */
+  override var showAccuracyRing: Boolean
+    get() {
+      return this.internalSettings.showAccuracyRing
+    }
+    set(value) {
+      if (this.internalSettings.showAccuracyRing != value) {
+        this.internalSettings = this.internalSettings.toBuilder().setShowAccuracyRing(value).build()
+        applySettings()
+      }
+    }
+
+  /**
+   * The color of the accuracy ring. Works for 2D location puck only. Default value: "#4d89cff0".
+   */
+  override var accuracyRingColor: Int
+    get() {
+      return this.internalSettings.accuracyRingColor
+    }
+    set(value) {
+      if (this.internalSettings.accuracyRingColor != value) {
+        this.internalSettings = this.internalSettings.toBuilder().setAccuracyRingColor(value).build()
+        applySettings()
+      }
+    }
+
+  /**
+   * The color of the accuracy ring border. Works for 2D location puck only. Default value: "#4d89cff0".
+   */
+  override var accuracyRingBorderColor: Int
+    get() {
+      return this.internalSettings.accuracyRingBorderColor
+    }
+    set(value) {
+      if (this.internalSettings.accuracyRingBorderColor != value) {
+        this.internalSettings = this.internalSettings.toBuilder().setAccuracyRingBorderColor(value).build()
         applySettings()
       }
     }
@@ -104,7 +147,7 @@ abstract class LocationComponentSettingsBase : LocationComponentSettingsInterfac
     }
     set(value) {
       if (this.internalSettings.layerAbove != value) {
-        this.internalSettings.layerAbove = value
+        this.internalSettings = this.internalSettings.toBuilder().setLayerAbove(value).build()
         applySettings()
       }
     }
@@ -118,7 +161,49 @@ abstract class LocationComponentSettingsBase : LocationComponentSettingsInterfac
     }
     set(value) {
       if (this.internalSettings.layerBelow != value) {
-        this.internalSettings.layerBelow = value
+        this.internalSettings = this.internalSettings.toBuilder().setLayerBelow(value).build()
+        applySettings()
+      }
+    }
+
+  /**
+   * Whether the puck rotates to track the bearing source. Default value: false.
+   */
+  override var puckBearingEnabled: Boolean
+    get() {
+      return this.internalSettings.puckBearingEnabled
+    }
+    set(value) {
+      if (this.internalSettings.puckBearingEnabled != value) {
+        this.internalSettings = this.internalSettings.toBuilder().setPuckBearingEnabled(value).build()
+        applySettings()
+      }
+    }
+
+  /**
+   * The enum controls how the puck is oriented Default value: "heading".
+   */
+  override var puckBearing: PuckBearing
+    get() {
+      return this.internalSettings.puckBearing
+    }
+    set(value) {
+      if (this.internalSettings.puckBearing != value) {
+        this.internalSettings = this.internalSettings.toBuilder().setPuckBearing(value).build()
+        applySettings()
+      }
+    }
+
+  /**
+   * The slot this layer is assigned to. If specified, and a slot with that name exists, it will be placed at that position in the layer order.
+   */
+  override var slot: String?
+    get() {
+      return this.internalSettings.slot
+    }
+    set(value) {
+      if (this.internalSettings.slot != value) {
+        this.internalSettings = this.internalSettings.toBuilder().setSlot(value).build()
         applySettings()
       }
     }
@@ -132,7 +217,7 @@ abstract class LocationComponentSettingsBase : LocationComponentSettingsInterfac
     }
     set(value) {
       if (this.internalSettings.locationPuck != value) {
-        this.internalSettings.locationPuck = value
+        this.internalSettings = this.internalSettings.toBuilder().setLocationPuck(value).build()
         applySettings()
       }
     }

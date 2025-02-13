@@ -1,20 +1,22 @@
 package com.mapbox.maps.plugin.locationcomponent
 
+import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
-import androidx.annotation.VisibleForTesting.PRIVATE
+import androidx.annotation.VisibleForTesting.Companion.PRIVATE
 import com.mapbox.bindgen.Value
 import com.mapbox.geojson.Point
-import com.mapbox.maps.extension.style.StyleInterface
+import com.mapbox.maps.MapboxStyleManager
 import com.mapbox.maps.plugin.LocationPuck3D
 import com.mapbox.maps.plugin.locationcomponent.LocationComponentConstants.MODEL_LAYER
 import com.mapbox.maps.plugin.locationcomponent.LocationComponentConstants.MODEL_SOURCE
 
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 internal class ModelLayerRenderer(
   layerSourceProvider: LayerSourceProvider,
   private val locationModelLayerOptions: LocationPuck3D
 ) : LocationLayerRenderer {
 
-  private var style: StyleInterface? = null
+  private var style: MapboxStyleManager? = null
 
   @VisibleForTesting(otherwise = PRIVATE)
   internal var lastLocation: Point? = null
@@ -22,7 +24,7 @@ internal class ModelLayerRenderer(
   private var modelLayer = layerSourceProvider.getModelLayer(locationModelLayerOptions)
   private var source = layerSourceProvider.getModelSource(locationModelLayerOptions)
 
-  override fun initializeComponents(style: StyleInterface) {
+  override fun initializeComponents(style: MapboxStyleManager) {
     this.style = style
     source.bindTo(style)
   }
@@ -40,8 +42,6 @@ internal class ModelLayerRenderer(
   }
 
   override fun addLayers(positionManager: LocationComponentPositionManager) {
-    modelLayer.modelRotation(locationModelLayerOptions.modelRotation.map { it.toDouble() })
-    modelLayer.modelOpacity(locationModelLayerOptions.modelOpacity.toDouble())
     positionManager.addLayerToMap(modelLayer)
   }
 
@@ -113,7 +113,11 @@ internal class ModelLayerRenderer(
   override fun clearBitmaps() {
   }
 
-  override fun updateStyle(style: StyleInterface) {
+  override fun slot(slot: String?) {
+    modelLayer.slot(slot)
+  }
+
+  override fun updateStyle(style: MapboxStyleManager) {
     this.style = style
     modelLayer.updateStyle(style)
     source.updateStyle(style)

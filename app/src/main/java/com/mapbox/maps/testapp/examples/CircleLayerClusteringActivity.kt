@@ -9,16 +9,22 @@ import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.MapView
 import com.mapbox.maps.Style
-import com.mapbox.maps.TransitionOptions
-import com.mapbox.maps.extension.style.expressions.dsl.generated.*
+import com.mapbox.maps.extension.style.expressions.dsl.generated.format
+import com.mapbox.maps.extension.style.expressions.dsl.generated.get
+import com.mapbox.maps.extension.style.expressions.dsl.generated.has
+import com.mapbox.maps.extension.style.expressions.dsl.generated.literal
+import com.mapbox.maps.extension.style.expressions.dsl.generated.toString
 import com.mapbox.maps.extension.style.expressions.generated.Expression.Companion.division
 import com.mapbox.maps.extension.style.expressions.generated.Expression.Companion.interpolate
+import com.mapbox.maps.extension.style.expressions.generated.Expression.Companion.step
 import com.mapbox.maps.extension.style.layers.addLayer
 import com.mapbox.maps.extension.style.layers.generated.circleLayer
 import com.mapbox.maps.extension.style.layers.generated.symbolLayer
 import com.mapbox.maps.extension.style.sources.addSource
 import com.mapbox.maps.extension.style.sources.generated.geoJsonSource
+import com.mapbox.maps.extension.style.style
 import com.mapbox.maps.extension.style.utils.ColorUtils
+import com.mapbox.maps.extension.style.utils.transition
 import com.mapbox.maps.plugin.animation.flyTo
 import com.mapbox.maps.testapp.R
 import com.mapbox.maps.testapp.utils.BitmapUtils.bitmapFromDrawableRes
@@ -32,17 +38,16 @@ class CircleLayerClusteringActivity : AppCompatActivity() {
     super.onCreate(savedInstanceState)
     val mapView = MapView(this)
     setContentView(mapView)
-    val mapboxMap = mapView.getMapboxMap()
+    val mapboxMap = mapView.mapboxMap
 
-    mapboxMap.loadStyleUri(
-      styleUri = Style.LIGHT,
-      // Disable any type of fading transition when icons collide on the map. This enhances the visual
-      // look of the data clustering together and breaking apart.
-      styleTransitionOptions = TransitionOptions.Builder()
-        .duration(0)
-        .delay(0)
-        .enablePlacementTransitions(false)
-        .build(),
+    mapboxMap.loadStyle(
+      styleExtension = style(Style.LIGHT) {
+        +transition {
+            duration(0)
+            delay(0)
+            enablePlacementTransitions(false)
+        }
+      },
       onStyleLoaded = {
         mapboxMap.flyTo(
           CameraOptions.Builder()
@@ -53,9 +58,7 @@ class CircleLayerClusteringActivity : AppCompatActivity() {
 
         addClusteredGeoJsonSource(it)
 
-        bitmapFromDrawableRes(this, R.drawable.ic_cross)?.let { bitmap ->
-          it.addImage(CROSS_ICON_ID, bitmap, true)
-        }
+        it.addImage(CROSS_ICON_ID, bitmapFromDrawableRes(R.drawable.ic_cross), true)
 
         Toast.makeText(
           this@CircleLayerClusteringActivity,
@@ -72,7 +75,7 @@ class CircleLayerClusteringActivity : AppCompatActivity() {
     style.addSource(
       // Point to GeoJSON data. This example visualizes all M1.0+ earthquakes from 12/22/15 to 1/21/16 as logged by USGS' Earthquake hazards program.
       geoJsonSource(GEOJSON_SOURCE_ID) {
-        url("https://www.mapbox.com/mapbox-gl-js/assets/earthquakes.geojson")
+        data("https://www.mapbox.com/mapbox-gl-js/assets/earthquakes.geojson")
         cluster(true)
         maxzoom(14)
         clusterRadius(50)
@@ -145,18 +148,14 @@ class CircleLayerClusteringActivity : AppCompatActivity() {
     style.addLayer(
       circleLayer("clusters", GEOJSON_SOURCE_ID) {
         circleColor(
-          step {
-            get("point_count")
-            literal(ColorUtils.colorToRgbaString(layers[2][1]))
-            stop {
-              literal(layers[1][0].toDouble())
-              literal(ColorUtils.colorToRgbaString(layers[1][1]))
-            }
-            stop {
-              literal(layers[0][0].toDouble())
-              literal(ColorUtils.colorToRgbaString(layers[0][1]))
-            }
-          }
+          step(
+            input = get("point_count"),
+            output = literal(ColorUtils.colorToRgbaString(layers[2][1])),
+            stops = arrayOf(
+              literal(layers[1][0].toDouble()) to literal(ColorUtils.colorToRgbaString(layers[1][1])),
+              literal(layers[0][0].toDouble()) to literal(ColorUtils.colorToRgbaString(layers[0][1]))
+            )
+          )
         )
         circleRadius(18.0)
         filter(

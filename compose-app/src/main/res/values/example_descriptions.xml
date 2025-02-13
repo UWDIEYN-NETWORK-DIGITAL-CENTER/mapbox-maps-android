@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="description_simple_map">Create and display a map that uses the default Mapbox streets style. This example also shows how to update the starting camera for a map.</string>
+    <string name="description_debug_mode">Use variations of debug modes of the Map</string>
+    <string name="description_circle_annotation">Add CircleAnnotation on the Map</string>
+    <string name="description_point_annotation">Add PointAnnotation on the Map</string>
+    <string name="description_point_annotation_cluster">Add PointAnnotation cluster on the Map</string>
+    <string name="description_polygon_annotation">Add PolygonAnnotation on the Map</string>
+    <string name="description_polyline_annotation">Add PolylineAnnotation on the Map</string>
+    <string name="description_view_annotation">Add ViewAnnotation on the Map</string>
+    <string name="description_dynamic_view_annotation">Showcase using dynamic ViewAnnotation</string>
+    <string name="description_map_viewport_animation">Use map viewport animations</string>
+    <string name="description_multiple_display">Display the map on a secondary display</string>
+    <string name="description_ornaments_customisation">Customise ornaments of the Map</string>
+    <string name="description_location_location_component">Show Location on the Map</string>
+    <string name="description_style_composition">Runtime styling with style composition</string>
+    <string name="description_navigation_simulation">Simulate navigation experience with compose</string>
+    <string name="description_multi_map">Showcase displaying two maps in the same Activity</string>
+    <string name="description_style_states">Showcase using style states</string>
+    <string name="description_style_positions">Showcase usage of slotsContent and layerPositionedContent to arrange contents within the base style using GenericStyle API.</string>
+    <string name="description_model_layer">Showcase the usage of a 3D model layer.</string>
+    <string name="description_style_image_source">Use an image source to easily display images on the map.</string>
+    <string name="description_animated_image_source">Load a raster image to a style using ImageSource and display it on a map as animated weather data using RasterLayer.</string>
+    <string name="description_terrain">Add terrain on top of raster-dem source</string>
+    <string name="description_style_imports">Showcase usage of style imports</string>
+    <string name="description_query_rendered_feature">Showcase usage of query rendered features</string>
+    <string name="description_standard_style">Showcase usage of Standard style</string>
+    <string name="description_clip_layer">Showcase the usage of clip layer.</string>
+    <string name="description_interactions">Showcase the interactions.</string>
+    <string name="description_precipitations">Showcase the rain and snow effects.</string>
+    <string name="description_color_theme">Showcase color theme.</string>
+</resources>

@@ -6,11 +6,11 @@ import android.graphics.Color
 import com.mapbox.bindgen.Expected
 import com.mapbox.bindgen.None
 import com.mapbox.bindgen.Value
+import com.mapbox.maps.MapboxStyleManager
 import com.mapbox.maps.StyleManager
 import com.mapbox.maps.StylePropertyValue
 import com.mapbox.maps.StylePropertyValueKind
 import com.mapbox.maps.extension.style.ShadowStyleManager
-import com.mapbox.maps.extension.style.StyleInterface
 import com.mapbox.maps.extension.style.expressions.dsl.generated.*
 import com.mapbox.maps.extension.style.layers.getLayer
 import com.mapbox.maps.extension.style.layers.properties.generated.*
@@ -28,7 +28,7 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(shadows = [ShadowStyleManager::class])
 class SkyLayerTest {
-  private val style = mockk<StyleInterface>(relaxUnitFun = true, relaxed = true)
+  private val style = mockk<MapboxStyleManager>(relaxUnitFun = true, relaxed = true)
   private val expected = mockk<Expected<String, None>>(relaxUnitFun = true, relaxed = true)
   private val valueExpected = mockk<Expected<String, Value>>(relaxUnitFun = true, relaxed = true)
   private val styleProperty = mockk<StylePropertyValue>()
@@ -63,7 +63,7 @@ class SkyLayerTest {
       }
       literal(0)
     }
-    val layer = symbolLayer("id", "source") {}
+    val layer = skyLayer("id") {}
     layer.bindTo(style)
     layer.filter(expression)
     verify { style.setStyleLayerProperty("id", "filter", capture(valueSlot)) }
@@ -81,7 +81,7 @@ class SkyLayerTest {
     every { styleProperty.value } returns expression
     every { styleProperty.kind } returns StylePropertyValueKind.EXPRESSION
 
-    val layer = symbolLayer("id", "source") { }
+    val layer = skyLayer("id") { }
     layer.bindTo(style)
     assertEquals(expression.toString(), layer.filter?.toString())
     verify { style.getStyleLayerProperty("id", "filter") }
@@ -114,6 +114,37 @@ class SkyLayerTest {
     val expectedValue = "rgba(0, 0, 0, 1)"
     assertEquals(expectedValue.toString(), layer.skyAtmosphereColor?.toString())
     verify { style.getStyleLayerProperty("id", "sky-atmosphere-color") }
+  }
+
+  @Test
+  fun skyAtmosphereColorUseThemeSetAfterInitialization() {
+    val layer = skyLayer("id") {}
+    val theme = "none"
+    layer.bindTo(style)
+    layer.skyAtmosphereColorUseTheme(theme)
+    verify { style.setStyleLayerProperty("id", "sky-atmosphere-color-use-theme", capture(valueSlot)) }
+    assertEquals(valueSlot.captured.toString(), theme)
+  }
+
+  @Test
+  fun skyAtmosphereColorUseThemeSet() {
+    val theme = "none"
+    val layer = skyLayer("id") {
+      skyAtmosphereColorUseTheme(theme)
+    }
+    layer.bindTo(style)
+    verify { style.addStyleLayer(capture(valueSlot), any()) }
+    assertTrue(valueSlot.captured.toString().contains("sky-atmosphere-color-use-theme"))
+  }
+
+  @Test
+  fun skyAtmosphereColorUseThemeGet() {
+    val theme = "none"
+    every { styleProperty.value } returns TypeUtils.wrapToValue(theme)
+    val layer = skyLayer("id") {}
+    layer.bindTo(style)
+    assertEquals(theme.toString(), layer.skyAtmosphereColorUseTheme?.toString())
+    verify { style.getStyleLayerProperty("id", "sky-atmosphere-color-use-theme") }
   }
   // Expression Tests
 
@@ -223,6 +254,37 @@ class SkyLayerTest {
     val expectedValue = "rgba(0, 0, 0, 1)"
     assertEquals(expectedValue.toString(), layer.skyAtmosphereHaloColor?.toString())
     verify { style.getStyleLayerProperty("id", "sky-atmosphere-halo-color") }
+  }
+
+  @Test
+  fun skyAtmosphereHaloColorUseThemeSetAfterInitialization() {
+    val layer = skyLayer("id") {}
+    val theme = "none"
+    layer.bindTo(style)
+    layer.skyAtmosphereHaloColorUseTheme(theme)
+    verify { style.setStyleLayerProperty("id", "sky-atmosphere-halo-color-use-theme", capture(valueSlot)) }
+    assertEquals(valueSlot.captured.toString(), theme)
+  }
+
+  @Test
+  fun skyAtmosphereHaloColorUseThemeSet() {
+    val theme = "none"
+    val layer = skyLayer("id") {
+      skyAtmosphereHaloColorUseTheme(theme)
+    }
+    layer.bindTo(style)
+    verify { style.addStyleLayer(capture(valueSlot), any()) }
+    assertTrue(valueSlot.captured.toString().contains("sky-atmosphere-halo-color-use-theme"))
+  }
+
+  @Test
+  fun skyAtmosphereHaloColorUseThemeGet() {
+    val theme = "none"
+    every { styleProperty.value } returns TypeUtils.wrapToValue(theme)
+    val layer = skyLayer("id") {}
+    layer.bindTo(style)
+    assertEquals(theme.toString(), layer.skyAtmosphereHaloColorUseTheme?.toString())
+    verify { style.getStyleLayerProperty("id", "sky-atmosphere-halo-color-use-theme") }
   }
   // Expression Tests
 
@@ -523,6 +585,37 @@ class SkyLayerTest {
     }
     assertEquals(expectedValue.toString(), layer.skyGradient?.toString())
     verify { style.getStyleLayerProperty("id", "sky-gradient") }
+  }
+
+  @Test
+  fun skyGradientUseThemeSetAfterInitialization() {
+    val layer = skyLayer("id") {}
+    val theme = "none"
+    layer.bindTo(style)
+    layer.skyGradientUseTheme(theme)
+    verify { style.setStyleLayerProperty("id", "sky-gradient-use-theme", capture(valueSlot)) }
+    assertEquals(valueSlot.captured.toString(), theme)
+  }
+
+  @Test
+  fun skyGradientUseThemeSet() {
+    val theme = "none"
+    val layer = skyLayer("id") {
+      skyGradientUseTheme(theme)
+    }
+    layer.bindTo(style)
+    verify { style.addStyleLayer(capture(valueSlot), any()) }
+    assertTrue(valueSlot.captured.toString().contains("sky-gradient-use-theme"))
+  }
+
+  @Test
+  fun skyGradientUseThemeGet() {
+    val theme = "none"
+    every { styleProperty.value } returns TypeUtils.wrapToValue(theme)
+    val layer = skyLayer("id") {}
+    layer.bindTo(style)
+    assertEquals(theme.toString(), layer.skyGradientUseTheme?.toString())
+    verify { style.getStyleLayerProperty("id", "sky-gradient-use-theme") }
   }
   // Expression Tests
 
@@ -855,6 +948,26 @@ class SkyLayerTest {
   }
 
   @Test
+  fun visibilityAsExpressionSet() {
+    val layer = skyLayer("id") {}
+    layer.bindTo(style)
+    layer.visibility(literal("none"))
+    verify { style.setStyleLayerProperty("id", "visibility", capture(valueSlot)) }
+    assertEquals(valueSlot.captured.toString(), "none")
+  }
+
+  @Test
+  fun visibilityAsExpressionGet() {
+    every { styleProperty.kind } returns StylePropertyValueKind.EXPRESSION
+    every { styleProperty.value } returns literal("none")
+
+    val layer = skyLayer("id") { }
+    layer.bindTo(style)
+    assertEquals(literal("none"), layer.visibilityAsExpression)
+    verify { style.getStyleLayerProperty("id", "visibility") }
+  }
+
+  @Test
   fun getType() {
     val layer = skyLayer("id") { }
     assertEquals("sky", layer.getType())
@@ -893,6 +1006,15 @@ class SkyLayerTest {
     assertEquals(expectedValue.toString(), SkyLayer.defaultSkyAtmosphereColor?.toString())
     verify { StyleManager.getStyleLayerPropertyDefaultValue("sky", "sky-atmosphere-color") }
   }
+
+  @Test
+  fun defaultSkyAtmosphereColorUseThemeTest() {
+    val testValue = "default"
+    every { styleProperty.value } returns TypeUtils.wrapToValue(testValue)
+    assertEquals(testValue, SkyLayer.defaultSkyAtmosphereColorUseTheme)
+    verify { StyleManager.getStyleLayerPropertyDefaultValue("sky", "sky-atmosphere-color-use-theme") }
+  }
+
   // Expression Tests
 
   @Test
@@ -955,6 +1077,15 @@ class SkyLayerTest {
     assertEquals(expectedValue.toString(), SkyLayer.defaultSkyAtmosphereHaloColor?.toString())
     verify { StyleManager.getStyleLayerPropertyDefaultValue("sky", "sky-atmosphere-halo-color") }
   }
+
+  @Test
+  fun defaultSkyAtmosphereHaloColorUseThemeTest() {
+    val testValue = "default"
+    every { styleProperty.value } returns TypeUtils.wrapToValue(testValue)
+    assertEquals(testValue, SkyLayer.defaultSkyAtmosphereHaloColorUseTheme)
+    verify { StyleManager.getStyleLayerPropertyDefaultValue("sky", "sky-atmosphere-halo-color-use-theme") }
+  }
+
   // Expression Tests
 
   @Test
@@ -1115,6 +1246,15 @@ class SkyLayerTest {
     assertEquals(expectedValue.toString(), SkyLayer.defaultSkyGradient?.toString())
     verify { StyleManager.getStyleLayerPropertyDefaultValue("sky", "sky-gradient") }
   }
+
+  @Test
+  fun defaultSkyGradientUseThemeTest() {
+    val testValue = "default"
+    every { styleProperty.value } returns TypeUtils.wrapToValue(testValue)
+    assertEquals(testValue, SkyLayer.defaultSkyGradientUseTheme)
+    verify { StyleManager.getStyleLayerPropertyDefaultValue("sky", "sky-gradient-use-theme") }
+  }
+
   // Expression Tests
 
   @Test

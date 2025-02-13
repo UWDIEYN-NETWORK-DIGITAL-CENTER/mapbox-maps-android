@@ -1,9 +1,10 @@
 package com.mapbox.maps.testapp.examples.markersandcallouts
 
 import android.animation.ValueAnimator
-import android.graphics.BitmapFactory
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmap
 import com.mapbox.bindgen.Expected
 import com.mapbox.geojson.Feature
 import com.mapbox.geojson.FeatureCollection
@@ -34,7 +35,7 @@ class IconSizeChangeOnClickActivity : AppCompatActivity(), OnMapClickListener {
     val binding = ActivityIconSizeChangeOnClickBinding.inflate(layoutInflater)
     setContentView(binding.root)
 
-    mapboxMap = binding.mapView.getMapboxMap()
+    mapboxMap = binding.mapView.mapboxMap
     mapboxMap.loadStyle(
       styleExtension = style(Style.DARK) {
         +geoJsonSource("marker-source") {
@@ -43,9 +44,10 @@ class IconSizeChangeOnClickActivity : AppCompatActivity(), OnMapClickListener {
           )
         }
         // Add the marker image to map
-        +image("my-marker-image") {
-          bitmap(BitmapFactory.decodeResource(resources, R.drawable.blue_marker_view))
-        }
+        +image(
+          "my-marker-image",
+          ContextCompat.getDrawable(this@IconSizeChangeOnClickActivity, R.drawable.ic_blue_marker)!!.toBitmap()
+        )
         // Adding an offset so that the bottom of the blue icon gets fixed to the coordinate, rather than the
         // middle of the icon being fixed to the coordinate point.
         +symbolLayer("marker-layer", "marker-source") {
@@ -74,7 +76,7 @@ class IconSizeChangeOnClickActivity : AppCompatActivity(), OnMapClickListener {
       val pixel = mapboxMap.pixelForCoordinate(point)
       mapboxMap.queryRenderedFeatures(
         RenderedQueryGeometry(screenBoxFromPixel(pixel)), RenderedQueryOptions(listOf("selected-marker-layer"), null)
-      ) { expected: Expected<String, MutableList<QueriedFeature>> ->
+      ) { expected: Expected<String, MutableList<QueriedRenderedFeature>> ->
         if (expected.value!!.isNotEmpty() && markerSelected) {
           return@queryRenderedFeatures
         }
@@ -91,7 +93,7 @@ class IconSizeChangeOnClickActivity : AppCompatActivity(), OnMapClickListener {
           }
 
           it.getSourceAs<GeoJsonSource>("selected-marker")!!.apply {
-            queriedFeatures[0].feature.geometry()?.let { value ->
+            queriedFeatures[0].queriedFeature.feature.geometry()?.let { value ->
               geometry(value)
             }
           }

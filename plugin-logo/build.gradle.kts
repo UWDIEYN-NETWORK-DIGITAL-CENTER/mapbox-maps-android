@@ -1,57 +1,39 @@
-import org.jetbrains.dokka.gradle.DokkaTask
-
 plugins {
-  id("com.android.library")
-  kotlin("android")
-  id("org.jetbrains.dokka")
-  id("io.gitlab.arturbosch.detekt").version(Versions.detekt)
+  id("com.mapbox.gradle.library")
 }
 
 android {
-  compileSdk = AndroidVersions.compileSdkVersion
+  compileSdk = libs.versions.androidCompileSdkVersion.get().toInt()
+  namespace = "com.mapbox.maps.plugin.logo"
   defaultConfig {
-    minSdk = AndroidVersions.minSdkVersion
-    targetSdk = AndroidVersions.targetSdkVersion
+    minSdk = libs.versions.androidMinSdkVersion.get().toInt()
+    targetSdk = libs.versions.androidTargetSdkVersion.get().toInt()
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
+}
 
-  sourceSets {
-    // limit amount of exposed library resources
-    getByName("main").res.srcDirs("src/main/res-public")
+mapboxLibrary {
+  publish {
+    group = "com.mapbox.plugin"
+    artifactId = "maps-logo"
+    artifactTitle = "The logo module for the Mapbox Maps SDK for Android"
+    artifactDescription = artifactTitle
+    sdkName = "mobile-maps-android-logo"
   }
 }
 
 dependencies {
   implementation(project(":sdk-base"))
-  implementation(Dependencies.mapboxBase)
-  implementation(Dependencies.kotlin)
-  implementation(Dependencies.androidxAppCompat)
-  implementation(Dependencies.androidxCoreKtx)
-  implementation(Dependencies.androidxAnnotations)
-  testImplementation(Dependencies.junit)
-  testImplementation(Dependencies.mockk)
-  testImplementation(Dependencies.androidxTestCore)
-  testImplementation(Dependencies.robolectric)
-  androidTestImplementation(Dependencies.androidxTestRunner)
-  androidTestImplementation(Dependencies.androidxJUnitTestRules)
-  androidTestImplementation(Dependencies.androidxEspresso)
-  detektPlugins(Dependencies.detektFormatting)
-}
+  implementation(libs.bundles.base.dependencies)
 
-tasks.withType<DokkaTask>().configureEach {
-  dokkaSourceSets {
-    configureEach {
-      reportUndocumented.set(true)
-      failOnWarning.set(true)
-    }
-  }
+  testImplementation(libs.bundles.base.dependenciesTests)
+  androidTestImplementation(libs.bundles.base.dependenciesAndroidTests)
+  detektPlugins(libs.detektFormatting)
 }
 
 project.apply {
   from("$rootDir/gradle/ktlint.gradle")
   from("$rootDir/gradle/lint.gradle")
-  from("${rootDir}/gradle/jacoco.gradle")
-  from("$rootDir/gradle/sdk-registry.gradle")
   from("$rootDir/gradle/track-public-apis.gradle")
   from("$rootDir/gradle/detekt.gradle")
   from("$rootDir/gradle/dependency-updates.gradle")

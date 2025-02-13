@@ -1,17 +1,13 @@
-import org.jetbrains.dokka.gradle.DokkaTask
-
 plugins {
-  id("com.android.library")
-  kotlin("android")
-  id("org.jetbrains.dokka")
-  id("io.gitlab.arturbosch.detekt").version(Versions.detekt)
+  id("com.mapbox.gradle.library")
 }
 
 android {
-  compileSdk = AndroidVersions.compileSdkVersion
+  compileSdk = libs.versions.androidCompileSdkVersion.get().toInt()
+  namespace = "com.mapbox.maps.plugin.lifecycle"
   defaultConfig {
-    minSdk = AndroidVersions.minSdkVersion
-    targetSdk = AndroidVersions.targetSdkVersion
+    minSdk = libs.versions.androidMinSdkVersion.get().toInt()
+    targetSdk = libs.versions.androidTargetSdkVersion.get().toInt()
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
   testOptions {
@@ -19,39 +15,36 @@ android {
   }
 }
 
-dependencies {
-  implementation(project(":sdk-base"))
-  implementation(Dependencies.mapboxBase)
-  implementation(Dependencies.kotlin)
-  implementation(Dependencies.androidxCoreKtx)
-  implementation(Dependencies.androidxLifecycle)
-  testImplementation(Dependencies.junit)
-  testImplementation(Dependencies.mockk)
-  testImplementation(Dependencies.androidxTestCore)
-  testImplementation(Dependencies.robolectric)
-  testImplementation(Dependencies.androidxArchCoreTest)
-  testImplementation(Dependencies.androidxLifecycleRuntimeTesting)
-  androidTestImplementation(Dependencies.androidxTestRunner)
-  androidTestImplementation(Dependencies.androidxJUnitTestRules)
-  androidTestImplementation(Dependencies.androidxEspresso)
-  lintPublish(project(":mapbox-lint"))
-  detektPlugins(Dependencies.detektFormatting)
+mapboxLibrary {
+  publish {
+    group = "com.mapbox.plugin"
+    artifactId = "maps-lifecycle"
+    artifactTitle = "The map lifecycle module for the Mapbox Maps SDK for Android"
+    artifactDescription = artifactTitle
+    sdkName = "mobile-maps-android-lifecycle"
+  }
 }
 
-tasks.withType<DokkaTask>().configureEach {
-  dokkaSourceSets {
-    configureEach {
-      reportUndocumented.set(true)
-      failOnWarning.set(true)
-    }
-  }
+dependencies {
+  implementation(project(":sdk-base"))
+  implementation(libs.mapbox.base)
+  implementation(libs.kotlin)
+  implementation(libs.androidx.coreKtx)
+  implementation(libs.androidx.lifecycle)
+
+  testImplementation(libs.coroutinesTest)
+  testImplementation(libs.bundles.base.dependenciesTests)
+  testImplementation(libs.androidx.archCoreTest)
+  testImplementation(libs.androidx.lifecycleRuntimeTesting)
+
+  androidTestImplementation(libs.bundles.base.dependenciesAndroidTests)
+  lintPublish(project(":plugin-lifecycle-lint-rules"))
+  detektPlugins(libs.detektFormatting)
 }
 
 project.apply {
   from("$rootDir/gradle/ktlint.gradle")
   from("$rootDir/gradle/lint.gradle")
-  from("${rootDir}/gradle/jacoco.gradle")
-  from("$rootDir/gradle/sdk-registry.gradle")
   from("$rootDir/gradle/track-public-apis.gradle")
   from("$rootDir/gradle/detekt.gradle")
   from("$rootDir/gradle/dependency-updates.gradle")

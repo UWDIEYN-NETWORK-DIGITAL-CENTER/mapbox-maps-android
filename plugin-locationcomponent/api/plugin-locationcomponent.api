@@ -1,10 +1,11 @@
 public final class com/mapbox/maps/plugin/locationcomponent/DefaultLocationProvider : com/mapbox/maps/plugin/locationcomponent/LocationProvider {
 	public fun <init> (Landroid/content/Context;)V
 	public final fun addOnCompassCalibrationListener (Lcom/mapbox/maps/plugin/locationcomponent/LocationCompassCalibrationListener;)V
+	public final fun locationAnimatorOptions (Lkotlin/jvm/functions/Function1;)V
 	public fun registerLocationConsumer (Lcom/mapbox/maps/plugin/locationcomponent/LocationConsumer;)V
 	public final fun removeCompassCalibrationListener (Lcom/mapbox/maps/plugin/locationcomponent/LocationCompassCalibrationListener;)V
 	public fun unRegisterLocationConsumer (Lcom/mapbox/maps/plugin/locationcomponent/LocationConsumer;)V
-	public final fun updatePuckBearingSource (Lcom/mapbox/maps/plugin/PuckBearingSource;)V
+	public final fun updatePuckBearing (Lcom/mapbox/maps/plugin/PuckBearing;)V
 }
 
 public abstract interface class com/mapbox/maps/plugin/locationcomponent/LocationCompassCalibrationListener {
@@ -17,6 +18,7 @@ public final class com/mapbox/maps/plugin/locationcomponent/LocationComponentCon
 	public static final field COMPASS_UPDATE_RATE_MS J
 	public static final field DEFAULT_FASTEST_INTERVAL_MILLIS J
 	public static final field DEFAULT_INTERVAL_MILLIS J
+	public static final field DEFAULT_MINIMUM_DISPLACEMENT_METERS F
 	public static final field DEFAULT_TRACKING_PADDING_ANIM_DURATION J
 	public static final field DEFAULT_TRACKING_TILT_ANIM_DURATION J
 	public static final field DEFAULT_TRACKING_ZOOM_ANIM_DURATION J
@@ -32,37 +34,62 @@ public final class com/mapbox/maps/plugin/locationcomponent/LocationComponentCon
 	public static final field TRANSITION_ANIMATION_DURATION_MS J
 }
 
-public final class com/mapbox/maps/plugin/locationcomponent/LocationComponentPluginImpl : com/mapbox/maps/plugin/locationcomponent/generated/LocationComponentSettingsBase2, com/mapbox/maps/plugin/locationcomponent/LocationComponentPlugin2, com/mapbox/maps/plugin/locationcomponent/LocationConsumer2 {
-	public fun <init> ()V
-	public fun addOnIndicatorAccuracyRadiusChangedListener (Lcom/mapbox/maps/plugin/locationcomponent/OnIndicatorAccuracyRadiusChangedListener;)V
-	public fun addOnIndicatorBearingChangedListener (Lcom/mapbox/maps/plugin/locationcomponent/OnIndicatorBearingChangedListener;)V
-	public fun addOnIndicatorPositionChangedListener (Lcom/mapbox/maps/plugin/locationcomponent/OnIndicatorPositionChangedListener;)V
-	public fun bind (Landroid/content/Context;Landroid/util/AttributeSet;F)V
-	public fun cleanup ()V
-	public fun getLocationProvider ()Lcom/mapbox/maps/plugin/locationcomponent/LocationProvider;
-	public fun initialize ()V
-	public fun isLocatedAt (Lcom/mapbox/geojson/Point;Lcom/mapbox/maps/plugin/locationcomponent/PuckLocatedAtPointListener;)V
-	public fun onAccuracyRadiusUpdated ([DLkotlin/jvm/functions/Function1;)V
-	public fun onBearingUpdated ([DLkotlin/jvm/functions/Function1;)V
-	public fun onDelegateProvider (Lcom/mapbox/maps/plugin/delegates/MapDelegateProvider;)V
-	public fun onLocationUpdated ([Lcom/mapbox/geojson/Point;Lkotlin/jvm/functions/Function1;)V
-	public fun onPuckAccuracyRadiusAnimatorDefaultOptionsUpdated (Lkotlin/jvm/functions/Function1;)V
-	public fun onPuckBearingAnimatorDefaultOptionsUpdated (Lkotlin/jvm/functions/Function1;)V
-	public fun onPuckLocationAnimatorDefaultOptionsUpdated (Lkotlin/jvm/functions/Function1;)V
-	public fun onStart ()V
-	public fun onStop ()V
-	public fun onStyleChanged (Lcom/mapbox/maps/extension/style/StyleInterface;)V
-	public fun removeOnIndicatorAccuracyRadiusChangedListener (Lcom/mapbox/maps/plugin/locationcomponent/OnIndicatorAccuracyRadiusChangedListener;)V
-	public fun removeOnIndicatorBearingChangedListener (Lcom/mapbox/maps/plugin/locationcomponent/OnIndicatorBearingChangedListener;)V
-	public fun removeOnIndicatorPositionChangedListener (Lcom/mapbox/maps/plugin/locationcomponent/OnIndicatorPositionChangedListener;)V
-	public fun setLocationProvider (Lcom/mapbox/maps/plugin/locationcomponent/LocationProvider;)V
+public final class com/mapbox/maps/plugin/locationcomponent/LocationComponentUtils {
+	public static final fun createDefault2DPuck ()Lcom/mapbox/maps/plugin/LocationPuck2D;
+	public static final fun createDefault2DPuck (Z)Lcom/mapbox/maps/plugin/LocationPuck2D;
+	public static synthetic fun createDefault2DPuck$default (ZILjava/lang/Object;)Lcom/mapbox/maps/plugin/LocationPuck2D;
+	public static final synthetic fun createLocationComponentPlugin ()Lcom/mapbox/maps/plugin/locationcomponent/LocationComponentPlugin;
+	public static final fun getLocationComponent (Lcom/mapbox/maps/plugin/delegates/MapPluginProviderDelegate;)Lcom/mapbox/maps/plugin/locationcomponent/LocationComponentPlugin;
 }
 
-public final class com/mapbox/maps/plugin/locationcomponent/LocationComponentUtils {
-	public static final fun createDefault2DPuck (Lcom/mapbox/maps/plugin/locationcomponent/LocationComponentPlugin;Landroid/content/Context;)Lcom/mapbox/maps/plugin/LocationPuck2D;
-	public static final fun createDefault2DPuck (Lcom/mapbox/maps/plugin/locationcomponent/LocationComponentPlugin;Landroid/content/Context;Z)Lcom/mapbox/maps/plugin/LocationPuck2D;
-	public static synthetic fun createDefault2DPuck$default (Lcom/mapbox/maps/plugin/locationcomponent/LocationComponentPlugin;Landroid/content/Context;ZILjava/lang/Object;)Lcom/mapbox/maps/plugin/LocationPuck2D;
-	public static final fun getLocationComponent (Lcom/mapbox/maps/plugin/delegates/MapPluginProviderDelegate;)Lcom/mapbox/maps/plugin/locationcomponent/LocationComponentPlugin;
-	public static final fun getLocationComponent2 (Lcom/mapbox/maps/plugin/delegates/MapPluginProviderDelegate;)Lcom/mapbox/maps/plugin/locationcomponent/LocationComponentPlugin2;
+public final class com/mapbox/maps/plugin/locationcomponent/model/AnimatableModel {
+	public final fun getColor ()Ljava/lang/String;
+	public final fun getColorMixIntensity ()D
+	public final fun getEmissiveStrength ()D
+	public final fun getLocationPuck3D ()Lcom/mapbox/maps/plugin/LocationPuck3D;
+	public final fun getModelUri ()Ljava/lang/String;
+	public final fun getOpacity ()D
+	public final fun getRotation ()Ljava/util/List;
+	public final fun setColor (Ljava/lang/String;)V
+	public final fun setColorMixIntensity (D)V
+	public final fun setEmissiveStrength (D)V
+	public final fun setOpacity (D)V
+	public final fun setRotation (Ljava/util/List;)V
+}
+
+public final class com/mapbox/maps/plugin/locationcomponent/model/AnimatableModelKt {
+	public static final fun createAnimatableModel (Lcom/mapbox/maps/plugin/locationcomponent/LocationComponentPlugin;Ljava/lang/String;Ljava/util/List;)Lcom/mapbox/maps/plugin/locationcomponent/model/AnimatableModel;
+}
+
+public class com/mapbox/maps/plugin/locationcomponent/model/ModelMaterialPart : com/mapbox/maps/plugin/locationcomponent/model/ModelPart {
+	public fun <init> (Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/util/List;)V
+	public final fun getColor ()Ljava/lang/String;
+	public final fun getColorMixIntensity ()D
+	public final fun getEmissiveStrength ()D
+	public final fun getMaterialOverrides ()Ljava/util/List;
+	public final fun getOpacity ()D
+	public final fun resetColor ()V
+	public final fun setColor (Ljava/lang/String;)V
+	public final fun setColorMixIntensity (D)V
+	public final fun setEmissiveStrength (D)V
+	public final fun setOpacity (D)V
+	public final fun updateColor (ID)V
+	public static synthetic fun updateColor$default (Lcom/mapbox/maps/plugin/locationcomponent/model/ModelMaterialPart;IDILjava/lang/Object;)V
+}
+
+public class com/mapbox/maps/plugin/locationcomponent/model/ModelNodePart : com/mapbox/maps/plugin/locationcomponent/model/ModelPart {
+	public fun <init> (Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/util/List;)V
+	public final fun getNodeOverrides ()Ljava/util/List;
+	public final fun getRotation ()Ljava/util/List;
+	public final fun setRotation (Ljava/util/List;)V
+}
+
+public abstract class com/mapbox/maps/plugin/locationcomponent/model/ModelPart {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun getFeatureStateId ()Ljava/lang/String;
+	protected final fun getUpdateFeatureState ()Lkotlin/jvm/functions/Function1;
+	protected final fun setUpdateFeatureState (Lkotlin/jvm/functions/Function1;)V
 }
 

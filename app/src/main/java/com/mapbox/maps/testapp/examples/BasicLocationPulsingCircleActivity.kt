@@ -11,7 +11,6 @@ import com.mapbox.maps.Style
 import com.mapbox.maps.plugin.gestures.gestures
 import com.mapbox.maps.plugin.locationcomponent.LocationComponentConstants
 import com.mapbox.maps.plugin.locationcomponent.location
-import com.mapbox.maps.plugin.locationcomponent.location2
 import com.mapbox.maps.testapp.R
 import com.mapbox.maps.testapp.databinding.ActivityLocationLayerBasicPulsingCircleBinding
 import com.mapbox.maps.testapp.utils.LocationPermissionHelper
@@ -32,10 +31,10 @@ class BasicLocationPulsingCircleActivity : AppCompatActivity() {
     super.onCreate(savedInstanceState)
     binding = ActivityLocationLayerBasicPulsingCircleBinding.inflate(layoutInflater)
     setContentView(binding.root)
-    mapboxMap = binding.mapView.getMapboxMap()
+    mapboxMap = binding.mapView.mapboxMap
     binding.mapView.location.addOnIndicatorPositionChangedListener {
       mapboxMap.setCamera(CameraOptions.Builder().center(it).build())
-      binding.mapView.gestures.focalPoint = binding.mapView.getMapboxMap().pixelForCoordinate(it)
+      binding.mapView.gestures.focalPoint = binding.mapView.mapboxMap.pixelForCoordinate(it)
     }
     locationPermissionHelper = LocationPermissionHelper(WeakReference(this))
     locationPermissionHelper.checkPermissions {
@@ -44,8 +43,8 @@ class BasicLocationPulsingCircleActivity : AppCompatActivity() {
   }
 
   private fun onMapReady() {
-    mapboxMap.loadStyleUri(
-      Style.MAPBOX_STREETS
+    mapboxMap.loadStyle(
+      Style.STANDARD
     ) {
       lastStyleUri = it.styleURI
     }
@@ -83,8 +82,8 @@ class BasicLocationPulsingCircleActivity : AppCompatActivity() {
         return true
       }
       R.id.action_pulsing_follow_accuracy_radius -> {
-        binding.mapView.location2.showAccuracyRing = true
         binding.mapView.location.apply {
+          showAccuracyRing = true
           pulsingEnabled = true
           pulsingMaxRadius = LocationComponentConstants.PULSING_MAX_RADIUS_FOLLOW_ACCURACY
         }
@@ -96,7 +95,7 @@ class BasicLocationPulsingCircleActivity : AppCompatActivity() {
 
   private fun loadNewStyle() {
     val styleUrl = if (lastStyleUri == Style.DARK) Style.LIGHT else Style.DARK
-    mapboxMap.loadStyleUri(
+    mapboxMap.loadStyle(
       styleUrl
     ) { lastStyleUri = styleUrl }
   }

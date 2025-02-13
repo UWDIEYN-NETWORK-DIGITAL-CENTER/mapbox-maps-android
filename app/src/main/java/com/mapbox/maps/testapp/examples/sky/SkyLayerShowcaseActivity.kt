@@ -5,6 +5,7 @@ import android.view.View
 import android.widget.SeekBar
 import androidx.appcompat.app.AppCompatActivity
 import com.mapbox.maps.Style
+import com.mapbox.maps.dsl.cameraOptions
 import com.mapbox.maps.extension.style.expressions.dsl.generated.interpolate
 import com.mapbox.maps.extension.style.layers.generated.SkyLayer
 import com.mapbox.maps.extension.style.layers.generated.skyLayer
@@ -48,7 +49,7 @@ class SkyLayerShowcaseActivity : AppCompatActivity() {
     binding = ActivitySkyLayerBinding.inflate(layoutInflater)
     setContentView(binding.root)
     applyControls()
-    binding.mapView.getMapboxMap().loadStyle(
+    binding.mapView.mapboxMap.loadStyle(
       styleExtension = style(Style.SATELLITE_STREETS) {
         +skyLayer(SKY_LAYER) {
           skyType(skyType)
@@ -77,6 +78,12 @@ class SkyLayerShowcaseActivity : AppCompatActivity() {
         }
       }
     ) {
+      binding.mapView.mapboxMap.setCamera(
+        cameraOptions {
+          zoom(16.0)
+          pitch(85.0)
+        }
+      )
       binding.mapView.scalebar.enabled = false
       skyLayer = it.getLayerAs(SKY_LAYER)
     }
@@ -87,12 +94,12 @@ class SkyLayerShowcaseActivity : AppCompatActivity() {
     binding.switchSkyMode.setOnCheckedChangeListener { _, isChecked ->
       if (isChecked) {
         skyType = SkyType.ATMOSPHERE
-        binding.textSkyMode.text = getString(R.string.sky_mode, skyType.name)
+        binding.textSkyMode.text = getString(R.string.sky_mode, skyType.value)
         binding.layoutGradient.visibility = View.GONE
         binding.layoutAtmosphere.visibility = View.VISIBLE
       } else {
         skyType = SkyType.GRADIENT
-        binding.textSkyMode.text = getString(R.string.sky_mode, skyType.name)
+        binding.textSkyMode.text = getString(R.string.sky_mode, skyType.value)
         binding.layoutGradient.visibility = View.VISIBLE
         binding.layoutAtmosphere.visibility = View.GONE
       }
@@ -103,7 +110,7 @@ class SkyLayerShowcaseActivity : AppCompatActivity() {
   }
 
   private fun applyInitials() {
-    binding.textSkyMode.text = getString(R.string.sky_mode, skyType.name)
+    binding.textSkyMode.text = getString(R.string.sky_mode, skyType.value)
     binding.captionAtmosphereCenterA.text = getString(R.string.sky_center_azimuth, skyAtmosphereCenterA.toInt())
     binding.captionAtmosphereCenterP.text = getString(R.string.sky_center_polar, skyAtmosphereCenterP.toInt())
     binding.captionGradientCenterA.text = getString(R.string.sky_center_azimuth, skyGradientCenterA.toInt())

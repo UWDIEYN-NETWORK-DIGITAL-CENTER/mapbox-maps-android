@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="activity_simple_map">Display a map view</string>
+    <string name="activity_standard_style">Work with the Standard style</string>
     <string name="activity_studio_style">Mapbox Studio style</string>
     <string name="activity_runtime_styling">Runtime styling</string>
     <string name="activity_tint_fill">Tint a fill layer</string>
     <string name="activity_dsl_styling">DSL styling</string>
+    <string name="activity_java_dsl_styling">Java DSL styling</string>
+    <string name="activity_java_runtime_dsl_styling">Runtime Java DSL styling</string>
     <string name="activity_heatmap_layer">Visualize data as a heatmap</string>
     <string name="activity_default_styles">Change the map\'s style</string>
     <string name="activity_map_recycle">RecyclerView</string>
@@ -17,7 +20,9 @@
     <string name="activity_map_viewpager">ViewPager</string>
     <string name="activity_map_multi">Multi map fragments</string>
     <string name="activity_debug_mode">Debug mode</string>
+    <string name="activity_mapbox_recorder">Mapbox Recorder</string>
     <string name="activity_fill_extrusion">Display 3D buildings</string>
+    <string name="activity_lights3d">Display 3D buildings with 3D lights</string>
     <string name="activity_icon_property">Display multiple icon images in a symbol layer</string>
     <string name="activity_snapshotter">Create a snapshot</string>
     <string name="activity_snapshotter_dds">DDS MapSnapshotter</string>
@@ -25,6 +30,8 @@
     <string name="activity_location_tracking">Display the user\'s location	</string>
     <string name="activity_simulate_navigation_route">Simulate a navigation route</string>
     <string name="activity_basic_location_pulsing_circle">Basic Pulsing Circle</string>
+    <string name="activity_simple_geofencing">Simple Geofencing</string>
+    <string name="activity_extended_geofencing">Extended Geofencing</string>
     <string name="activity_restrict_bounds">Restrict map panning</string>
     <string name="activity_texture_view">TextureView</string>
     <string name="activity_texture_view_animation">Animated TextureView</string>
@@ -91,8 +98,20 @@
     <string name="activity_view_annotations_basic">View annotations: basic example</string>
     <string name="activity_view_annotations_point_annotation">View annotation with point annotation</string>
     <string name="activity_view_annotations_animation">View annotations: animation</string>
+    <string name="activity_dynamic_view_annotations">Dynamic view annotations</string>
     <string name="activity_info_window">View annotation as InfoWindow</string>
     <string name="activity_viewport">Viewport camera</string>
     <string name="activity_advanced_viewport">Advanced Viewport with gestures</string>
     <string name="activity_third_party_source">External Vector Source</string>
+    <string name="activity_raster_colorization">Raster Colorization</string>
+    <string name="activity_secondary_display_presentation">Secondary Display using Presentation</string>
+    <string name="activity_model_layer">Display 3D model in a model layer</string>
+    <string name="activity_custom_raster_source">Custom Raster Source</string>
+    <string name="actvity_slot_layer">Slot layer example</string>
+    <string name="activity_raster_particles">Raster Particles</string>
+    <string name="activity_clip_layer">Clip layer example</string>
+    <string name="activity_standard_interactions">Standard Style interactions</string>
+    <string name="activity_location_component_model_animation">Location component model animation</string>
+    <string name="activity_precipitation">Precipitations example</string>
+    <string name="activity_color_theme">Color theme example</string>
 </resources>

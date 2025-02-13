@@ -4,20 +4,38 @@ import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.animation.AnimatorSet
 import android.animation.ValueAnimator
-import android.os.Handler
-import android.os.Looper
+import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
-import androidx.annotation.VisibleForTesting.PRIVATE
+import androidx.annotation.VisibleForTesting.Companion.PRIVATE
+import com.mapbox.common.Cancelable
 import com.mapbox.geojson.Point
-import com.mapbox.maps.*
+import com.mapbox.maps.CameraOptions
+import com.mapbox.maps.EdgeInsets
+import com.mapbox.maps.MapboxCameraAnimationException
+import com.mapbox.maps.MapboxExperimental
+import com.mapbox.maps.ScreenCoordinate
+import com.mapbox.maps.logE
+import com.mapbox.maps.logI
+import com.mapbox.maps.logW
 import com.mapbox.maps.plugin.MapCameraPlugin
-import com.mapbox.maps.plugin.animation.animator.*
-import com.mapbox.maps.plugin.delegates.*
+import com.mapbox.maps.plugin.animation.CameraTransform.wrapCoordinate
+import com.mapbox.maps.plugin.animation.animator.CameraAnchorAnimator
+import com.mapbox.maps.plugin.animation.animator.CameraAnimator
+import com.mapbox.maps.plugin.animation.animator.CameraBearingAnimator
+import com.mapbox.maps.plugin.animation.animator.CameraCenterAnimator
+import com.mapbox.maps.plugin.animation.animator.CameraPaddingAnimator
+import com.mapbox.maps.plugin.animation.animator.CameraPitchAnimator
+import com.mapbox.maps.plugin.animation.animator.CameraZoomAnimator
+import com.mapbox.maps.plugin.delegates.MapCameraManagerDelegate
+import com.mapbox.maps.plugin.delegates.MapDelegateProvider
+import com.mapbox.maps.plugin.delegates.MapProjectionDelegate
+import com.mapbox.maps.plugin.delegates.MapTransformDelegate
 import com.mapbox.maps.threading.AnimationThreadController.postOnAnimatorThread
 import com.mapbox.maps.threading.AnimationThreadController.postOnMainThread
 import com.mapbox.maps.threading.AnimationThreadController.usingBackgroundThread
 import com.mapbox.maps.util.MathUtils
-import java.util.*
+import com.mapbox.maps.util.isEmpty
+import java.util.Objects
 import java.util.concurrent.CopyOnWriteArraySet
 import kotlin.properties.Delegates
 
@@ -36,9 +54,9 @@ import kotlin.properties.Delegates
  * [CameraAnimationsPluginImpl] is NOT thread-safe meaning all animations must be started from one thread.
  * However, it doesn't have to be the UI thread.
  */
-
-class CameraAnimationsPluginImpl : CameraAnimationsPlugin, MapCameraPlugin {
-
+@OptIn(MapboxExperimental::class)
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+internal class CameraAnimationsPluginImpl : CameraAnimationsPlugin, MapCameraPlugin {
   @VisibleForTesting(otherwise = PRIVATE)
   internal val animators = hashSetOf<CameraAnimator<*>>()
   private val runningAnimatorsQueue = LinkedHashSet<ValueAnimator>()
@@ -59,17 +77,6 @@ class CameraAnimationsPluginImpl : CameraAnimationsPlugin, MapCameraPlugin {
   private val pitchListeners = CopyOnWriteArraySet<CameraAnimatorChangeListener<Double>>()
 
   private val lifecycleListeners = CopyOnWriteArraySet<CameraAnimationsLifecycleListener>()
-
-  private val handler = Handler(Looper.getMainLooper())
-
-  private var commitScheduled = false
-  private val commitChangesRunnable = Runnable {
-    performMapJump(cameraOptionsBuilder.anchor(anchor).build())
-
-    // reset values
-    cameraOptionsBuilder = CameraOptions.Builder()
-    commitScheduled = false
-  }
 
   /**
    * If debug mode is enabled extra logs will be written about animation lifecycle and
@@ -166,34 +173,22 @@ class CameraAnimationsPluginImpl : CameraAnimationsPlugin, MapCameraPlugin {
   /**
    * Called whenever camera position changes.
    *
-   * @param lat latitude
-   * @param lon longitude
+   * @param center camera center
    * @param zoom zoom
    * @param pitch pitch in degrees
    * @param bearing bearing in degrees
-   * @param padding padding ordered as [left, top, right, bottom]
+   * @param padding padding
    */
   override fun onCameraMove(
-    lat: Double,
-    lon: Double,
+    center: Point,
     zoom: Double,
     pitch: Double,
     bearing: Double,
-    padding: Array<Double>
+    padding: EdgeInsets
   ) {
     this.bearing = bearing
-    this.center = Point.fromLngLat(lon, lat)
-    // Insets array order : [left, top, right, bottom]
-    this.padding = EdgeInsets(
-      /* top = */
-      padding[1],
-      /* left = */
-      padding[0],
-      /* bottom = */
-      padding[3],
-      /* right = */
-      padding[2],
-    )
+    this.center = center
+    this.padding = padding
     this.pitch = pitch
     this.zoom = zoom
   }
@@ -213,7 +208,6 @@ class CameraAnimationsPluginImpl : CameraAnimationsPlugin, MapCameraPlugin {
     paddingListeners.clear()
     lifecycleListeners.clear()
     animators.clear()
-    handler.removeCallbacks(commitChangesRunnable)
   }
 
   /*
@@ -279,7 +273,6 @@ class CameraAnimationsPluginImpl : CameraAnimationsPlugin, MapCameraPlugin {
       )
       return false
     }
-    @Suppress("IMPLICIT_CAST_TO_ANY")
     val startValue = cameraAnimator.startValue ?: when (cameraAnimator.type) {
       CameraAnimatorType.CENTER -> center ?: mapCameraManagerDelegate.cameraState.center
       CameraAnimatorType.ZOOM -> zoom ?: mapCameraManagerDelegate.cameraState.zoom
@@ -295,25 +288,46 @@ class CameraAnimationsPluginImpl : CameraAnimationsPlugin, MapCameraPlugin {
         )
       }
     }
-    val animationObjectValues = if (cameraAnimator is CameraBearingAnimator && cameraAnimator.useShortestPath) {
-      MathUtils.prepareOptimalBearingPath(
-        DoubleArray(cameraAnimator.targets.size + 1) { index ->
+    val animationObjectValues =
+      if (cameraAnimator is CameraBearingAnimator && cameraAnimator.useShortestPath) {
+        MathUtils.prepareOptimalBearingPath(
+          DoubleArray(cameraAnimator.targets.size + 1) { index ->
+            if (index == 0) {
+              startValue as Double
+            } else {
+              cameraAnimator.targets[index - 1]
+            }
+          }
+        ).toTypedArray()
+      } else if (cameraAnimator is CameraCenterAnimator && cameraAnimator.useShortestPath) {
+        // assemble the original targets by inserting the start point
+        val originalTargets: List<Point> = listOf(startValue as Point) + cameraAnimator.targets
+        // Build the reversed target list with wrapped coordinates
+        val mutableTargetReversedList = mutableListOf<Point>()
+        originalTargets.map { it.wrapCoordinate() }.reversed().forEach {
+          if (mutableTargetReversedList.isEmpty()) {
+            // insert the raw end point
+            mutableTargetReversedList.add(it)
+          } else {
+            // calculate the previous point
+            mutableTargetReversedList.add(
+              CameraTransform.unwrapForShortestPath(
+                start = it,
+                end = mutableTargetReversedList.last()
+              )
+            )
+          }
+        }
+        mutableTargetReversedList.reversed().toTypedArray()
+      } else {
+        Array(cameraAnimator.targets.size + 1) { index ->
           if (index == 0) {
-            startValue as Double
+            startValue
           } else {
             cameraAnimator.targets[index - 1]
           }
         }
-      ).toTypedArray()
-    } else {
-      Array(cameraAnimator.targets.size + 1) { index ->
-        if (index == 0) {
-          startValue
-        } else {
-          cameraAnimator.targets[index - 1]
-        }
       }
-    }
     if (skipRedundantAnimator(animationObjectValues, cameraAnimator.type)) {
       if (debugMode) {
         logI(
@@ -327,7 +341,10 @@ class CameraAnimationsPluginImpl : CameraAnimationsPlugin, MapCameraPlugin {
     return true
   }
 
-  private fun skipRedundantAnimator(animationObjectValues: Array<out Any?>, type: CameraAnimatorType) = when (type) {
+  private fun skipRedundantAnimator(
+    animationObjectValues: Array<out Any?>,
+    type: CameraAnimatorType
+  ) = when (type) {
     CameraAnimatorType.ANCHOR -> false // anchor animations are never skipped
     CameraAnimatorType.CENTER -> animationObjectValues.all { Objects.equals(center, it) }
     CameraAnimatorType.ZOOM -> animationObjectValues.all { Objects.equals(zoom, it) }
@@ -427,23 +444,24 @@ class CameraAnimationsPluginImpl : CameraAnimationsPlugin, MapCameraPlugin {
 
         private fun finishAnimation(animation: Animator, finishStatus: AnimationFinishStatus) {
           (animation as? CameraAnimator<*>)?.apply {
-            if (skipped) {
-              return
-            }
-            runningAnimatorsQueue.remove(animation)
             if (debugMode) {
               val logText = when (finishStatus) {
                 AnimationFinishStatus.CANCELED -> "was canceled."
                 AnimationFinishStatus.ENDED -> "ended."
               }
-              logI(TAG, "Animation ${type.name}(${hashCode()}) $logText")
+              logI(TAG, "Animation ${type.name}(${hashCode()})${if (skipped) " skipped" else ""} $logText")
             }
+            // Even if skipped we need to unregister it
             if (isInternal) {
-              if (debugMode) {
-                logI(TAG, "Internal Animator ${type.name}(${hashCode()}) was unregistered")
-              }
               unregisterAnimators(this, cancelAnimators = false)
+              if (debugMode) {
+                logI(TAG, "Internal Animator ${type.name}(${hashCode()}) was unregistered (${animators.size})")
+              }
             }
+            if (skipped) {
+              return
+            }
+            runningAnimatorsQueue.remove(animation)
             if (runningAnimatorsQueue.isEmpty()) {
               mapTransformDelegate.setUserAnimationInProgress(false)
             }
@@ -457,7 +475,7 @@ class CameraAnimationsPluginImpl : CameraAnimationsPlugin, MapCameraPlugin {
               commitChanges()
             }
           } ?: throw MapboxCameraAnimationException(
-            "Could not start animation as it must be an instance of CameraAnimator and not null!"
+            "Could not finish animation as it must be an instance of CameraAnimator and not null!"
           )
         }
       })
@@ -481,25 +499,15 @@ class CameraAnimationsPluginImpl : CameraAnimationsPlugin, MapCameraPlugin {
       anchor = valueAnimator.animatedValue as ScreenCoordinate
     }
 
-    if (animator.hasUserListeners) {
-      // If the animator have third-party listeners camera changes must be applied immediately
-      // to be seen from the listeners.
-      commitChanges()
-    } else {
-      // main idea here is not to update map on each option change.
-      // the runnable posted here will be executed right after all the animators are applied.
-      if (!commitScheduled) {
-        handler.postAtFrontOfQueue(commitChangesRunnable)
-        commitScheduled = true
-      }
-    }
+    // commit applies changes immediately
+    // this helps to avoid camera animations jitter noticeable on high zoom levels using location puck following mode.
+    commitChanges()
   }
 
   private fun commitChanges() {
-    if (commitScheduled) {
-      handler.removeCallbacks(commitChangesRunnable)
-    }
-    commitChangesRunnable.run()
+    performMapJump(cameraOptionsBuilder.anchor(anchor).build())
+    // reset values
+    cameraOptionsBuilder = CameraOptions.Builder()
   }
 
   private fun cancelAnimatorSet() {
@@ -531,6 +539,9 @@ class CameraAnimationsPluginImpl : CameraAnimationsPlugin, MapCameraPlugin {
         }
       }
       animators.addAll(cameraAnimators.map { it as CameraAnimator<*> })
+      if (debugMode) {
+        logI(TAG, "Registered ${cameraAnimators.size} animators. Currently, ${animators.size} animators registered.")
+      }
     }
   }
 
@@ -723,11 +734,19 @@ class CameraAnimationsPluginImpl : CameraAnimationsPlugin, MapCameraPlugin {
    */
   override fun easeTo(
     cameraOptions: CameraOptions,
-    animationOptions: MapAnimationOptions?
-  ) = startHighLevelAnimation(
-    cameraAnimationsFactory.getEaseTo(cameraOptions),
-    animationOptions
-  )
+    animationOptions: MapAnimationOptions?,
+    animatorListener: Animator.AnimatorListener?
+  ): Cancelable {
+    if (cameraOptions.isEmpty) {
+      logW(TAG, "No-op easeTo camera high-level animation as CameraOptions.isEmpty == true.")
+      return Cancelable { }
+    }
+    return startHighLevelAnimation(
+      cameraAnimationsFactory.getEaseTo(cameraOptions),
+      animationOptions,
+      animatorListener
+    )
+  }
 
   /**
    * Move the map by a given screen coordinate with optional animation.
@@ -739,10 +758,12 @@ class CameraAnimationsPluginImpl : CameraAnimationsPlugin, MapCameraPlugin {
    */
   override fun moveBy(
     screenCoordinate: ScreenCoordinate,
-    animationOptions: MapAnimationOptions?
+    animationOptions: MapAnimationOptions?,
+    animatorListener: Animator.AnimatorListener?
   ) = startHighLevelAnimation(
     cameraAnimationsFactory.getMoveBy(screenCoordinate),
-    animationOptions
+    animationOptions,
+    animatorListener
   )
 
   /**
@@ -757,10 +778,12 @@ class CameraAnimationsPluginImpl : CameraAnimationsPlugin, MapCameraPlugin {
   override fun scaleBy(
     amount: Double,
     screenCoordinate: ScreenCoordinate?,
-    animationOptions: MapAnimationOptions?
+    animationOptions: MapAnimationOptions?,
+    animatorListener: Animator.AnimatorListener?
   ) = startHighLevelAnimation(
     cameraAnimationsFactory.getScaleBy(amount, screenCoordinate),
-    animationOptions
+    animationOptions,
+    animatorListener
   )
 
   /**
@@ -786,10 +809,12 @@ class CameraAnimationsPluginImpl : CameraAnimationsPlugin, MapCameraPlugin {
   override fun rotateBy(
     first: ScreenCoordinate,
     second: ScreenCoordinate,
-    animationOptions: MapAnimationOptions?
+    animationOptions: MapAnimationOptions?,
+    animatorListener: Animator.AnimatorListener?
   ) = startHighLevelAnimation(
     cameraAnimationsFactory.getRotateBy(first, second),
-    animationOptions
+    animationOptions,
+    animatorListener
   )
 
   /**
@@ -802,10 +827,12 @@ class CameraAnimationsPluginImpl : CameraAnimationsPlugin, MapCameraPlugin {
    */
   override fun pitchBy(
     pitch: Double,
-    animationOptions: MapAnimationOptions?
+    animationOptions: MapAnimationOptions?,
+    animatorListener: Animator.AnimatorListener?
   ) = startHighLevelAnimation(
     cameraAnimationsFactory.getPitchBy(pitch),
-    animationOptions
+    animationOptions,
+    animatorListener
   )
 
   /**
@@ -825,11 +852,19 @@ class CameraAnimationsPluginImpl : CameraAnimationsPlugin, MapCameraPlugin {
    */
   override fun flyTo(
     cameraOptions: CameraOptions,
-    animationOptions: MapAnimationOptions?
-  ) = startHighLevelAnimation(
-    cameraAnimationsFactory.getFlyTo(cameraOptions),
-    animationOptions
-  )
+    animationOptions: MapAnimationOptions?,
+    animatorListener: Animator.AnimatorListener?
+  ): Cancelable {
+    if (cameraOptions.isEmpty) {
+      logW(TAG, "No-op flyTo camera high-level animation as CameraOptions.isEmpty == true.")
+      return Cancelable { }
+    }
+    return startHighLevelAnimation(
+      cameraAnimationsFactory.getFlyTo(cameraOptions),
+      animationOptions,
+      animatorListener
+    )
+  }
 
   /**
    * Create CameraZoomAnimator
@@ -854,7 +889,7 @@ class CameraAnimationsPluginImpl : CameraAnimationsPlugin, MapCameraPlugin {
   ): ValueAnimator = CameraAnchorAnimator(options, block)
 
   /**
-   * Create CameraBearingAnimator. Current map camera option will be applied on animation start if not specified explicitly with [options.startValue].
+   * Create CameraBearingAnimator. Current map camera option will be applied on animation start if not specified explicitly with [options.startValue][CameraAnimatorOptions.startValue].
    *
    * @param options animator options object to set targets and other non mandatory options
    * @param useShortestPath if set to True shortest bearing path will be applied while animating bearing values.
@@ -869,7 +904,7 @@ class CameraAnimationsPluginImpl : CameraAnimationsPlugin, MapCameraPlugin {
   ): ValueAnimator = CameraBearingAnimator(options, useShortestPath, block)
 
   /**
-   * Create CameraPitchAnimator. Current map camera option will be applied on animation start if not specified explicitly with [options.startValue].
+   * Create CameraPitchAnimator. Current map camera option will be applied on animation start if not specified explicitly with [options.startValue][CameraAnimatorOptions.startValue].
    *
    * @param options animator options object to set targets and other non mandatory options
    * @param block optional block to apply any [ValueAnimator] parameters
@@ -880,7 +915,7 @@ class CameraAnimationsPluginImpl : CameraAnimationsPlugin, MapCameraPlugin {
   ): ValueAnimator = CameraPitchAnimator(options, block)
 
   /**
-   * Create CameraPaddingAnimator. Current map camera option will be applied on animation start if not specified explicitly with [options.startValue].
+   * Create CameraPaddingAnimator. Current map camera option will be applied on animation start if not specified explicitly with [options.startValue][CameraAnimatorOptions.startValue].
    *
    * @param options animator options object to set targets and other non mandatory options
    * @param block optional block to apply any [ValueAnimator] parameters
@@ -891,22 +926,35 @@ class CameraAnimationsPluginImpl : CameraAnimationsPlugin, MapCameraPlugin {
   ): ValueAnimator = CameraPaddingAnimator(options, block)
 
   /**
-   * Create CameraCenterAnimator. Current map camera option will be applied on animation start if not specified explicitly with [options.startValue].
+   * Create CameraCenterAnimator. Current map camera option will be applied on animation start if not specified explicitly with [options.startValue][CameraAnimatorOptions.startValue].
    *
    * @param options animator options object to set targets and other non mandatory options
+   * @param useShortestPath if set to True, shortest path will be applied when the start and end camera center is across the antimeridian, for example from -170 to 170 longitude.
    * @param block optional block to apply any [ValueAnimator] parameters
    */
   override fun createCenterAnimator(
     options: CameraAnimatorOptions<Point>,
+    useShortestPath: Boolean,
     block: (ValueAnimator.() -> Unit)?
-  ): ValueAnimator = CameraCenterAnimator(options, block)
+  ): ValueAnimator =
+    CameraCenterAnimator(options = options, useShortestPath = useShortestPath, block = block)
 
   /**
-   * Play given [ValueAnimator]'s together
+   * Play given [ValueAnimator]'s together.
+   *
+   * Note: [animators] will get registered and run in the same order as passed here.
+   * This is important if any actions should be run before or after all the animators, e.g. [Animator.AnimatorListener.onAnimationEnd] should be registered for the **last** animator from [animators] to be run after all the [animators] ended.
    *
    * @param animators Variable number of [ValueAnimator]'s
    */
   override fun playAnimatorsTogether(vararg animators: ValueAnimator) {
+    if (animators.isEmpty()) {
+      logW(
+        TAG,
+        "No-op playAnimatorsTogether() as no animators are passed"
+      )
+      return
+    }
     val cameraAnimators = mutableListOf<CameraAnimator<*>>()
     for (cameraAnimator in animators) {
       if (cameraAnimator is CameraAnimator<*>) {
@@ -927,11 +975,18 @@ class CameraAnimationsPluginImpl : CameraAnimationsPlugin, MapCameraPlugin {
   }
 
   /**
-   * Play given [ValueAnimator]'s sequentially
+   * Play given [ValueAnimator]'s sequentially.
    *
    * @param animators Variable number of [ValueAnimator]'s
    */
   override fun playAnimatorsSequentially(vararg animators: ValueAnimator) {
+    if (animators.isEmpty()) {
+      logW(
+        TAG,
+        "No-op playAnimatorsSequentially() as no animators are passed"
+      )
+      return
+    }
     val cameraAnimators = mutableListOf<CameraAnimator<*>>()
     for (cameraAnimator in animators) {
       if (cameraAnimator is CameraAnimator<*>) {
@@ -953,8 +1008,17 @@ class CameraAnimationsPluginImpl : CameraAnimationsPlugin, MapCameraPlugin {
 
   private fun startHighLevelAnimation(
     animators: Array<CameraAnimator<*>>,
-    animationOptions: MapAnimationOptions?
+    animationOptions: MapAnimationOptions?,
+    animatorListener: Animator.AnimatorListener?
   ): Cancelable {
+    if (animators.isEmpty()) {
+      logW(
+        TAG,
+        "No-op camera high-level animation as CameraOptions are empty."
+      )
+      return Cancelable { }
+    }
+
     animators.forEach {
       it.isInternal = true
       it.owner = animationOptions?.owner
@@ -971,7 +1035,7 @@ class CameraAnimationsPluginImpl : CameraAnimationsPlugin, MapCameraPlugin {
       animationOptions?.interpolator?.let {
         interpolator = it
       }
-      animationOptions?.animatorListener?.let {
+      animatorListener?.let {
         // listeners in Android SDK use non thread safe lists
         postOnAnimatorThread {
           addListener(object : AnimatorListenerAdapter() {
@@ -999,7 +1063,7 @@ class CameraAnimationsPluginImpl : CameraAnimationsPlugin, MapCameraPlugin {
   /**
    * Static variables and methods.
    */
-  companion object {
+  internal companion object {
     internal const val TAG = "Mbgl-CameraManager"
   }
 }

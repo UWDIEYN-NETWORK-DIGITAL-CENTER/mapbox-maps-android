@@ -2,46 +2,16 @@
 check:
 	./gradlew ktlint lint;
 	python scripts/license-validate.py;
-	sh scripts/kdoc-validate.sh;
+	./gradlew clean dokkaHtml -Pmapbox.dokkaHtmlFlavor=release
 
 .PHONY: test
 test:
 	./gradlew test -i
 
-.PHONY: build
-build:
-	./gradlew sdk-base:assembleRelease;
-	./gradlew sdk:assembleRelease;
-	./gradlew extension-style:assembleRelease;
-	./gradlew extension-localization:assembleRelease;
-	./gradlew extension-androidauto:assembleRelease;
-	./gradlew module-telemetry:assembleRelease;
-	./gradlew plugin-animation:assembleRelease;
-	./gradlew plugin-annotation:assembleRelease;
-	./gradlew plugin-attribution:assembleRelease;
-	./gradlew plugin-compass:assembleRelease;
-	./gradlew plugin-gestures:assembleRelease;
-	./gradlew plugin-locationcomponent:assembleRelease;
-	./gradlew plugin-logo:assembleRelease;
-	./gradlew plugin-overlay:assembleRelease;
-	./gradlew plugin-scalebar:assembleRelease;
-	./gradlew plugin-lifecycle:assembleRelease;
-	./gradlew plugin-viewport:assembleRelease;
-
-# Use `make checkApi TAG=ReleaseTag` to check the release tag or `make checkApi` to check current branch while running locally.
-# Note: if run locally, execute `mbx env` and `./gradlew assembleRelease` first.
-.PHONY: checkApi
-checkApi:
-	unset GITHUB_TOKEN; \
-	echo "$(shell mbx-ci github reader token)" > gh_token.txt;\
-	sh scripts/java-api-check-all.sh "$(TAG)"
-
-# Note: if run locally, execute `mbx env` first.
-.PHONY: checkChangelog
-checkChangelog:
-	unset GITHUB_TOKEN; \
-	echo "$(shell mbx-ci github reader token)" > gh_token.txt;\
-	sh scripts/check-changelog.sh
+.PHONY: sdk-build
+sdk-build:
+	./gradlew assembleRelease -x app:assembleRelease -x android-auto-app:assembleRelease\
+		-x compose-app:assembleRelease -x extension-style-app:assembleRelease
 
 .PHONY: proguard
 proguard:
@@ -54,47 +24,13 @@ proguard:
 fix:
 	./gradlew ktlintFormat
 
-.PHONY: sdkRegistryUpload
-sdkRegistryUpload:
-	./gradlew mapboxSDKRegistryUpload -x extension-androidauto:mapboxSDKRegistryUpload --no-parallel --no-daemon;
-
-.PHONY: sdkRegistryPublish
-sdkRegistryPublish:
-	python3 -m pip install git-pull-request;
-	./gradlew mapboxSDKRegistryPublishAll;
-
-.PHONY: sdkRegistryUploadAndroidAutoExtension
-sdkRegistryUploadAndroidAutoExtension:
-	./gradlew extension-androidauto:mapboxSDKRegistryUpload;
-
-.PHONY: sdkRegistryPublishAndroidAutoExtension
-sdkRegistryPublishAndroidAutoExtension:
-	python3 -m pip install git-pull-request;
-	./gradlew extension-androidauto:mapboxSDKRegistryPublish;
-
 .PHONY: clean
 clean:
 	./gradlew clean
 
 .PHONY: codecoverage
 codecoverage:
-	./gradlew sdk:jacocoTestDebugUnitTestReport && google-chrome sdk/build/jacoco/jacocoHtml/index.html
-
-# Use `make generate-changelog TAG=LastReleaseTag` while running locally.
-.PHONY: generate-changelog
-generate-changelog:
-	unset GITHUB_TOKEN; \
-	export GITHUB_TOKEN=$(shell mbx-ci github reader token); \
-	changelog-draft -b main -p $(TAG) -o CHANGELOG.md
-
-# Use `make update-android-docs TAG=YourReleaseTag` while running locally.
-# Run `make prepare-release-doc` first in the internal repository,
-# Note: if run locally, execute `mbx env` first.
-.PHONY: update-android-docs
-update-android-docs:
-	unset GITHUB_TOKEN; \
-	echo "$(shell mbx-ci github writer private token)" > gh_token.txt;\
-	sh scripts/update-android-docs.sh -s $(TAG)
+	./gradlew maps-sdk:jacocoTestDebugUnitTestReport && google-chrome maps-sdk/build/jacoco/jacocoHtml/index.html
 
 .PHONY: unit-tests
 unit-tests:
@@ -102,7 +38,7 @@ unit-tests:
 
 .PHONY: instrumentation-tests
 instrumentation-tests:
-	./gradlew sdk:connectedDebugAndroidTest && ./gradlew app:connectedDebugAndroidTest
+	./gradlew maps-sdk:connectedDebugAndroidTest && ./gradlew app:connectedDebugAndroidTest
 
 .PHONY: instrumentation-clean
 instrumentation-clean:
@@ -141,7 +77,7 @@ start-android-auto-dhu:
 .PHONY: check-permissions
 check-permissions:
 	 python3 scripts/check-permissions.py \
-	 	--apk app/build/outputs/apk/debug/app-debug.apk \
+	 	--apk app/build/outputs/apk/release/app-release.apk \
 		--file app/permission.json
 
 # Update permissions app module, requires app:assembleDebug first

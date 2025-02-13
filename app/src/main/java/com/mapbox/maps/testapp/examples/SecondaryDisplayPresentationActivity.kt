@@ -16,7 +16,7 @@ import androidx.core.view.children
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
-import androidx.lifecycle.ViewTreeLifecycleOwner
+import androidx.lifecycle.setViewTreeLifecycleOwner
 import com.mapbox.maps.MapView
 import com.mapbox.maps.testapp.R
 import com.mapbox.maps.testapp.databinding.ActivitySecondaryDisplayPresentationBinding
@@ -91,6 +91,7 @@ class SecondaryDisplayPresentationActivity : AppCompatActivity() {
   private fun updateDisplaysInfo() {
     clearDisplaysInfo()
 
+    @Suppress("DEPRECATION")
     val thisActivityDisplay = windowManager.defaultDisplay
     val displays = displayManager.displays
     val secondaryDisplays = displays.filterNot { it.displayId == thisActivityDisplay.displayId }
@@ -198,7 +199,7 @@ class SecondaryDisplayPresentationActivity : AppCompatActivity() {
       val decorView: View = window!!.decorView
       // Set the lifecycle owner for this dialog to be this class. This allows Mapview to get the
       // right lifecycle registry
-      ViewTreeLifecycleOwner.set(decorView, this)
+      decorView.setViewTreeLifecycleOwner(this)
       lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START)
     }
 
@@ -208,6 +209,7 @@ class SecondaryDisplayPresentationActivity : AppCompatActivity() {
       super.onStop()
     }
 
-    override fun getLifecycle(): Lifecycle = lifecycleRegistry
+    override val lifecycle: Lifecycle
+      get() = lifecycleRegistry
   }
 }

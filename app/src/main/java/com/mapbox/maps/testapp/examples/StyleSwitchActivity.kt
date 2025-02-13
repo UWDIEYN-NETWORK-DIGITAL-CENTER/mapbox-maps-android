@@ -19,27 +19,34 @@ class StyleSwitchActivity : AppCompatActivity() {
     binding = ActivityStyleSwitchBinding.inflate(layoutInflater)
     setContentView(binding.root)
 
-    mapboxMap = binding.mapView.getMapboxMap()
+    mapboxMap = binding.mapView.mapboxMap
 
-    mapboxMap.loadStyleUri(Style.MAPBOX_STREETS)
+    // Instead of this you can add your default style to the map layout with xml attribute `app:mapbox_styleUri="mapbox://styles/streets-v12"`
+    mapboxMap.loadStyle(Style.MAPBOX_STREETS)
 
     binding.streetsButton.setOnClickListener {
-      mapboxMap.loadStyleUri(Style.MAPBOX_STREETS)
+      mapboxMap.loadStyle(Style.MAPBOX_STREETS)
     }
     binding.lightButton.setOnClickListener {
-      mapboxMap.loadStyleUri(Style.LIGHT)
+      mapboxMap.loadStyle(Style.LIGHT)
     }
     binding.darkButton.setOnClickListener {
-      mapboxMap.loadStyleUri(Style.DARK)
+      mapboxMap.loadStyle(Style.DARK)
     }
     binding.satelliteStreetsButton.setOnClickListener {
-      mapboxMap.loadStyleUri(Style.SATELLITE_STREETS)
+      mapboxMap.loadStyle(Style.SATELLITE_STREETS)
     }
     binding.satelliteButton.setOnClickListener {
-      mapboxMap.loadStyleUri(Style.SATELLITE)
+      mapboxMap.loadStyle(Style.SATELLITE)
     }
     binding.outdoorsButton.setOnClickListener {
-      mapboxMap.loadStyleUri(Style.OUTDOORS)
+      mapboxMap.loadStyle(Style.OUTDOORS)
+    }
+    binding.standardButton.setOnClickListener {
+      mapboxMap.loadStyle(Style.STANDARD)
+    }
+    binding.standardSatelliteButton.setOnClickListener {
+      mapboxMap.loadStyle(Style.STANDARD_SATELLITE)
     }
   }
 }

@@ -5,6 +5,11 @@ import com.google.gson.annotations.SerializedName
 /**
  * The data class for style-loaded event data in Observer
  */
+@Deprecated(
+  message = "This data class is deprecated, and will be removed in next major release.",
+  replaceWith = ReplaceWith("StyleLoaded"),
+  level = DeprecationLevel.WARNING
+)
 data class StyleLoadedEventData(
   /**
    * Representing timestamp taken at the time of an event creation, in microseconds, since the epoch.

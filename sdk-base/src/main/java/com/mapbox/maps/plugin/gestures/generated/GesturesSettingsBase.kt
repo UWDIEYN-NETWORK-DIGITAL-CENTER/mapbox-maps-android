@@ -27,7 +27,7 @@ abstract class GesturesSettingsBase : GesturesSettingsInterface {
    * @return gestures settings
    */
   override fun getSettings(): GesturesSettings {
-    return internalSettings.copy()
+    return internalSettings.toBuilder().build()
   }
 
   /**
@@ -35,13 +35,13 @@ abstract class GesturesSettingsBase : GesturesSettingsInterface {
    *
    * @param block the receiver function of GesturesSettings
    */
-  override fun updateSettings(block: GesturesSettings.() -> Unit) {
-    this.internalSettings.apply(block)
+  override fun updateSettings(block: GesturesSettings.Builder.() -> Unit) {
+    this.internalSettings = this.internalSettings.toBuilder().apply(block).build()
     applySettings()
   }
 
   /**
-   * Whether the rotate gesture is enabled.
+   * Whether the rotate gesture is enabled. Default value: true.
    */
   override var rotateEnabled: Boolean
     get() {
@@ -49,13 +49,13 @@ abstract class GesturesSettingsBase : GesturesSettingsInterface {
     }
     set(value) {
       if (this.internalSettings.rotateEnabled != value) {
-        this.internalSettings.rotateEnabled = value
+        this.internalSettings = this.internalSettings.toBuilder().setRotateEnabled(value).build()
         applySettings()
       }
     }
 
   /**
-   * Whether the pinch to zoom gesture is enabled.
+   * Whether the pinch to zoom gesture is enabled. Default value: true.
    */
   override var pinchToZoomEnabled: Boolean
     get() {
@@ -63,13 +63,13 @@ abstract class GesturesSettingsBase : GesturesSettingsInterface {
     }
     set(value) {
       if (this.internalSettings.pinchToZoomEnabled != value) {
-        this.internalSettings.pinchToZoomEnabled = value
+        this.internalSettings = this.internalSettings.toBuilder().setPinchToZoomEnabled(value).build()
         applySettings()
       }
     }
 
   /**
-   * Whether the single-touch scroll gesture is enabled.
+   * Whether the single-touch scroll gesture is enabled. Default value: true.
    */
   override var scrollEnabled: Boolean
     get() {
@@ -77,13 +77,13 @@ abstract class GesturesSettingsBase : GesturesSettingsInterface {
     }
     set(value) {
       if (this.internalSettings.scrollEnabled != value) {
-        this.internalSettings.scrollEnabled = value
+        this.internalSettings = this.internalSettings.toBuilder().setScrollEnabled(value).build()
         applySettings()
       }
     }
 
   /**
-   * Whether rotation is enabled for the pinch to zoom gesture.
+   * Whether rotation is enabled for the pinch to zoom gesture. Default value: true.
    */
   override var simultaneousRotateAndPinchToZoomEnabled: Boolean
     get() {
@@ -91,13 +91,13 @@ abstract class GesturesSettingsBase : GesturesSettingsInterface {
     }
     set(value) {
       if (this.internalSettings.simultaneousRotateAndPinchToZoomEnabled != value) {
-        this.internalSettings.simultaneousRotateAndPinchToZoomEnabled = value
+        this.internalSettings = this.internalSettings.toBuilder().setSimultaneousRotateAndPinchToZoomEnabled(value).build()
         applySettings()
       }
     }
 
   /**
-   * Whether the pitch gesture is enabled.
+   * Whether the pitch gesture is enabled. Default value: true.
    */
   override var pitchEnabled: Boolean
     get() {
@@ -105,13 +105,13 @@ abstract class GesturesSettingsBase : GesturesSettingsInterface {
     }
     set(value) {
       if (this.internalSettings.pitchEnabled != value) {
-        this.internalSettings.pitchEnabled = value
+        this.internalSettings = this.internalSettings.toBuilder().setPitchEnabled(value).build()
         applySettings()
       }
     }
 
   /**
-   * Configures the directions in which the map is allowed to move during a scroll gesture.
+   * Configures the directions in which the map is allowed to move during a scroll gesture. Default value: "horizontal-and-vertical".
    */
   override var scrollMode: ScrollMode
     get() {
@@ -119,13 +119,13 @@ abstract class GesturesSettingsBase : GesturesSettingsInterface {
     }
     set(value) {
       if (this.internalSettings.scrollMode != value) {
-        this.internalSettings.scrollMode = value
+        this.internalSettings = this.internalSettings.toBuilder().setScrollMode(value).build()
         applySettings()
       }
     }
 
   /**
-   * Whether double tapping the map with one touch results in a zoom-in animation.
+   * Whether double tapping the map with one touch results in a zoom-in animation. Default value: true.
    */
   override var doubleTapToZoomInEnabled: Boolean
     get() {
@@ -133,13 +133,13 @@ abstract class GesturesSettingsBase : GesturesSettingsInterface {
     }
     set(value) {
       if (this.internalSettings.doubleTapToZoomInEnabled != value) {
-        this.internalSettings.doubleTapToZoomInEnabled = value
+        this.internalSettings = this.internalSettings.toBuilder().setDoubleTapToZoomInEnabled(value).build()
         applySettings()
       }
     }
 
   /**
-   * Whether single tapping the map with two touches results in a zoom-out animation.
+   * Whether single tapping the map with two touches results in a zoom-out animation. Default value: true.
    */
   override var doubleTouchToZoomOutEnabled: Boolean
     get() {
@@ -147,13 +147,13 @@ abstract class GesturesSettingsBase : GesturesSettingsInterface {
     }
     set(value) {
       if (this.internalSettings.doubleTouchToZoomOutEnabled != value) {
-        this.internalSettings.doubleTouchToZoomOutEnabled = value
+        this.internalSettings = this.internalSettings.toBuilder().setDoubleTouchToZoomOutEnabled(value).build()
         applySettings()
       }
     }
 
   /**
-   * Whether the quick zoom gesture is enabled.
+   * Whether the quick zoom gesture is enabled. Default value: true.
    */
   override var quickZoomEnabled: Boolean
     get() {
@@ -161,7 +161,7 @@ abstract class GesturesSettingsBase : GesturesSettingsInterface {
     }
     set(value) {
       if (this.internalSettings.quickZoomEnabled != value) {
-        this.internalSettings.quickZoomEnabled = value
+        this.internalSettings = this.internalSettings.toBuilder().setQuickZoomEnabled(value).build()
         applySettings()
       }
     }
@@ -175,13 +175,13 @@ abstract class GesturesSettingsBase : GesturesSettingsInterface {
     }
     set(value) {
       if (this.internalSettings.focalPoint != value) {
-        this.internalSettings.focalPoint = value
+        this.internalSettings = this.internalSettings.toBuilder().setFocalPoint(value).build()
         applySettings()
       }
     }
 
   /**
-   * Whether a deceleration animation following a pinch-to-zoom gesture is enabled. True by default.
+   * Whether a deceleration animation following a pinch-to-zoom gesture is enabled. True by default. Default value: true.
    */
   override var pinchToZoomDecelerationEnabled: Boolean
     get() {
@@ -189,13 +189,13 @@ abstract class GesturesSettingsBase : GesturesSettingsInterface {
     }
     set(value) {
       if (this.internalSettings.pinchToZoomDecelerationEnabled != value) {
-        this.internalSettings.pinchToZoomDecelerationEnabled = value
+        this.internalSettings = this.internalSettings.toBuilder().setPinchToZoomDecelerationEnabled(value).build()
         applySettings()
       }
     }
 
   /**
-   * Whether a deceleration animation following a rotate gesture is enabled. True by default.
+   * Whether a deceleration animation following a rotate gesture is enabled. True by default. Default value: true.
    */
   override var rotateDecelerationEnabled: Boolean
     get() {
@@ -203,13 +203,13 @@ abstract class GesturesSettingsBase : GesturesSettingsInterface {
     }
     set(value) {
       if (this.internalSettings.rotateDecelerationEnabled != value) {
-        this.internalSettings.rotateDecelerationEnabled = value
+        this.internalSettings = this.internalSettings.toBuilder().setRotateDecelerationEnabled(value).build()
         applySettings()
       }
     }
 
   /**
-   * Whether a deceleration animation following a scroll gesture is enabled. True by default.
+   * Whether a deceleration animation following a scroll gesture is enabled. True by default. Default value: true.
    */
   override var scrollDecelerationEnabled: Boolean
     get() {
@@ -217,27 +217,28 @@ abstract class GesturesSettingsBase : GesturesSettingsInterface {
     }
     set(value) {
       if (this.internalSettings.scrollDecelerationEnabled != value) {
-        this.internalSettings.scrollDecelerationEnabled = value
+        this.internalSettings = this.internalSettings.toBuilder().setScrollDecelerationEnabled(value).build()
         applySettings()
       }
     }
 
   /**
-   * Whether rotate threshold increases when pinching to zoom. true by default.
+   * Whether rotate threshold increases when pinching to zoom. true by default. Default value: true.
    */
+  @Deprecated(message = "This property has no effect")
   override var increaseRotateThresholdWhenPinchingToZoom: Boolean
     get() {
       return this.internalSettings.increaseRotateThresholdWhenPinchingToZoom
     }
     set(value) {
       if (this.internalSettings.increaseRotateThresholdWhenPinchingToZoom != value) {
-        this.internalSettings.increaseRotateThresholdWhenPinchingToZoom = value
+        this.internalSettings = this.internalSettings.toBuilder().setIncreaseRotateThresholdWhenPinchingToZoom(value).build()
         applySettings()
       }
     }
 
   /**
-   * Whether pinch to zoom threshold increases when rotating. true by default.
+   * Whether pinch to zoom threshold increases when rotating. true by default. Default value: true.
    */
   override var increasePinchToZoomThresholdWhenRotating: Boolean
     get() {
@@ -245,13 +246,13 @@ abstract class GesturesSettingsBase : GesturesSettingsInterface {
     }
     set(value) {
       if (this.internalSettings.increasePinchToZoomThresholdWhenRotating != value) {
-        this.internalSettings.increasePinchToZoomThresholdWhenRotating = value
+        this.internalSettings = this.internalSettings.toBuilder().setIncreasePinchToZoomThresholdWhenRotating(value).build()
         applySettings()
       }
     }
 
   /**
-   * The amount by which the zoom level increases or decreases during a double-tap-to-zoom-in or double-touch-to-zoom-out gesture. 1.0 by default. Must be positive.
+   * The amount by which the zoom level increases or decreases during a double-tap-to-zoom-in or double-touch-to-zoom-out gesture. 1.0 by default. Must be positive. Default value: 1.
    */
   override var zoomAnimationAmount: Float
     get() {
@@ -259,13 +260,13 @@ abstract class GesturesSettingsBase : GesturesSettingsInterface {
     }
     set(value) {
       if (this.internalSettings.zoomAnimationAmount != value) {
-        this.internalSettings.zoomAnimationAmount = value
+        this.internalSettings = this.internalSettings.toBuilder().setZoomAnimationAmount(value).build()
         applySettings()
       }
     }
 
   /**
-   * Whether pan is enabled for the pinch gesture.
+   * Whether pan is enabled for the pinch gesture. Default value: true.
    */
   override var pinchScrollEnabled: Boolean
     get() {
@@ -273,7 +274,7 @@ abstract class GesturesSettingsBase : GesturesSettingsInterface {
     }
     set(value) {
       if (this.internalSettings.pinchScrollEnabled != value) {
-        this.internalSettings.pinchScrollEnabled = value
+        this.internalSettings = this.internalSettings.toBuilder().setPinchScrollEnabled(value).build()
         applySettings()
       }
     }

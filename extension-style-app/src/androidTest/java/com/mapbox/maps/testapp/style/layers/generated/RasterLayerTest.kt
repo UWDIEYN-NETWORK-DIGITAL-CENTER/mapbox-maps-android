@@ -4,6 +4,7 @@ package com.mapbox.maps.testapp.style.layers.generated
 
 import androidx.test.annotation.UiThreadTest
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.mapbox.maps.MapboxExperimental
 import com.mapbox.maps.extension.style.expressions.dsl.generated.*
 import com.mapbox.maps.extension.style.layers.generated.*
 import com.mapbox.maps.extension.style.layers.properties.generated.*
@@ -16,6 +17,7 @@ import org.junit.runner.RunWith
 /**
  * Basic smoke tests for RasterLayer
  */
+@OptIn(MapboxExperimental::class)
 @RunWith(AndroidJUnit4::class)
 class RasterLayerTest : BaseStyleTest() {
 
@@ -49,6 +51,30 @@ class RasterLayerTest : BaseStyleTest() {
     assertEquals(10.0, layer.maxZoom)
   }
   // Property getters and setters
+
+  @Test
+  @UiThreadTest
+  fun rasterArrayBandTest() {
+    val testValue = "abc"
+    val layer = rasterLayer("id", "source") {
+      rasterArrayBand(testValue)
+    }
+    setupLayer(layer)
+    assertEquals(testValue.toString(), layer.rasterArrayBand?.toString())
+  }
+
+  @Test
+  @UiThreadTest
+  fun rasterArrayBandAsExpressionTest() {
+    val expression = literal("abc")
+    val layer = rasterLayer("id", "source") {
+      rasterArrayBand(expression)
+    }
+    setupLayer(layer)
+
+    assertEquals(expression.toString(), layer.rasterArrayBandAsExpression.toString())
+    assertEquals("abc", layer.rasterArrayBand!!)
+  }
 
   @Test
   @UiThreadTest
@@ -162,6 +188,159 @@ class RasterLayerTest : BaseStyleTest() {
 
   @Test
   @UiThreadTest
+  fun rasterColorTest() {
+    val testValue = interpolate {
+      linear()
+      heatmapDensity()
+      stop {
+        literal(0.0)
+        rgba {
+          literal(0.0)
+          literal(0.0)
+          literal(0.0)
+          literal(0.0)
+        }
+      }
+      stop {
+        literal(1.0)
+        rgba {
+          literal(0.0)
+          literal(255.0)
+          literal(0.0)
+          literal(1.0)
+        }
+      }
+    }
+    val layer = rasterLayer("id", "source") {
+      rasterColor(testValue)
+    }
+    setupLayer(layer)
+    assertEquals(testValue.toString(), layer.rasterColor?.toString())
+  }
+
+  @Test
+  @UiThreadTest
+  fun rasterColorUseTheme() {
+    val theme = "none"
+    val layer = rasterLayer("id", "source") {
+      rasterColorUseTheme(theme)
+    }
+    setupLayer(layer)
+    assertEquals(theme, layer.rasterColorUseTheme)
+  }
+
+  @Test
+  @UiThreadTest
+  fun rasterColorMixTest() {
+    val testValue = listOf(0.0, 1.0, 2.0, 3.0)
+    val layer = rasterLayer("id", "source") {
+      rasterColorMix(testValue)
+    }
+    setupLayer(layer)
+    assertEquals(testValue.toString(), layer.rasterColorMix?.toString())
+  }
+
+  @Test
+  @UiThreadTest
+  fun rasterColorMixAsExpressionTest() {
+    val expression = literal(listOf(0.0, 1.0, 2.0, 3.0))
+    val layer = rasterLayer("id", "source") {
+      rasterColorMix(expression)
+    }
+    setupLayer(layer)
+
+    assertEquals(expression.toString(), layer.rasterColorMixAsExpression.toString())
+    assertEquals(listOf(0.0, 1.0, 2.0, 3.0), layer.rasterColorMix!!)
+  }
+
+  @Test
+  @UiThreadTest
+  fun rasterColorMixTransitionTest() {
+    val transition = transitionOptions {
+      duration(100)
+      delay(200)
+    }
+    val layer = rasterLayer("id", "source") {
+      rasterColorMixTransition(transition)
+    }
+    setupLayer(layer)
+    assertEquals(transition, layer.rasterColorMixTransition)
+  }
+
+  @Test
+  @UiThreadTest
+  fun rasterColorMixTransitionSetDslTest() {
+    val transition = transitionOptions {
+      duration(100)
+      delay(200)
+    }
+    val layer = rasterLayer("id", "source") {
+      rasterColorMixTransition {
+        duration(100)
+        delay(200)
+      }
+    }
+    setupLayer(layer)
+    assertEquals(transition, layer.rasterColorMixTransition)
+  }
+
+  @Test
+  @UiThreadTest
+  fun rasterColorRangeTest() {
+    val testValue = listOf(0.0, 1.0)
+    val layer = rasterLayer("id", "source") {
+      rasterColorRange(testValue)
+    }
+    setupLayer(layer)
+    assertEquals(testValue.toString(), layer.rasterColorRange?.toString())
+  }
+
+  @Test
+  @UiThreadTest
+  fun rasterColorRangeAsExpressionTest() {
+    val expression = literal(listOf(0.0, 1.0))
+    val layer = rasterLayer("id", "source") {
+      rasterColorRange(expression)
+    }
+    setupLayer(layer)
+
+    assertEquals(expression.toString(), layer.rasterColorRangeAsExpression.toString())
+    assertEquals(listOf(0.0, 1.0), layer.rasterColorRange!!)
+  }
+
+  @Test
+  @UiThreadTest
+  fun rasterColorRangeTransitionTest() {
+    val transition = transitionOptions {
+      duration(100)
+      delay(200)
+    }
+    val layer = rasterLayer("id", "source") {
+      rasterColorRangeTransition(transition)
+    }
+    setupLayer(layer)
+    assertEquals(transition, layer.rasterColorRangeTransition)
+  }
+
+  @Test
+  @UiThreadTest
+  fun rasterColorRangeTransitionSetDslTest() {
+    val transition = transitionOptions {
+      duration(100)
+      delay(200)
+    }
+    val layer = rasterLayer("id", "source") {
+      rasterColorRangeTransition {
+        duration(100)
+        delay(200)
+      }
+    }
+    setupLayer(layer)
+    assertEquals(transition, layer.rasterColorRangeTransition)
+  }
+
+  @Test
+  @UiThreadTest
   fun rasterContrastTest() {
     val testValue = 1.0
     val layer = rasterLayer("id", "source") {
@@ -213,6 +392,116 @@ class RasterLayerTest : BaseStyleTest() {
     }
     setupLayer(layer)
     assertEquals(transition, layer.rasterContrastTransition)
+  }
+
+  @Test
+  @UiThreadTest
+  fun rasterElevationTest() {
+    val testValue = 1.0
+    val layer = rasterLayer("id", "source") {
+      rasterElevation(testValue)
+    }
+    setupLayer(layer)
+    assertEquals(testValue, layer.rasterElevation!!, 1E-5)
+  }
+
+  @Test
+  @UiThreadTest
+  fun rasterElevationAsExpressionTest() {
+    val expression = literal(1.0)
+    val layer = rasterLayer("id", "source") {
+      rasterElevation(expression)
+    }
+    setupLayer(layer)
+
+    assertEquals(1.0, layer.rasterElevationAsExpression?.contents as Double, 1E-5)
+    assertEquals(1.0, layer.rasterElevation!!, 1E-5)
+  }
+
+  @Test
+  @UiThreadTest
+  fun rasterElevationTransitionTest() {
+    val transition = transitionOptions {
+      duration(100)
+      delay(200)
+    }
+    val layer = rasterLayer("id", "source") {
+      rasterElevationTransition(transition)
+    }
+    setupLayer(layer)
+    assertEquals(transition, layer.rasterElevationTransition)
+  }
+
+  @Test
+  @UiThreadTest
+  fun rasterElevationTransitionSetDslTest() {
+    val transition = transitionOptions {
+      duration(100)
+      delay(200)
+    }
+    val layer = rasterLayer("id", "source") {
+      rasterElevationTransition {
+        duration(100)
+        delay(200)
+      }
+    }
+    setupLayer(layer)
+    assertEquals(transition, layer.rasterElevationTransition)
+  }
+
+  @Test
+  @UiThreadTest
+  fun rasterEmissiveStrengthTest() {
+    val testValue = 1.0
+    val layer = rasterLayer("id", "source") {
+      rasterEmissiveStrength(testValue)
+    }
+    setupLayer(layer)
+    assertEquals(testValue, layer.rasterEmissiveStrength!!, 1E-5)
+  }
+
+  @Test
+  @UiThreadTest
+  fun rasterEmissiveStrengthAsExpressionTest() {
+    val expression = literal(1.0)
+    val layer = rasterLayer("id", "source") {
+      rasterEmissiveStrength(expression)
+    }
+    setupLayer(layer)
+
+    assertEquals(1.0, layer.rasterEmissiveStrengthAsExpression?.contents as Double, 1E-5)
+    assertEquals(1.0, layer.rasterEmissiveStrength!!, 1E-5)
+  }
+
+  @Test
+  @UiThreadTest
+  fun rasterEmissiveStrengthTransitionTest() {
+    val transition = transitionOptions {
+      duration(100)
+      delay(200)
+    }
+    val layer = rasterLayer("id", "source") {
+      rasterEmissiveStrengthTransition(transition)
+    }
+    setupLayer(layer)
+    assertEquals(transition, layer.rasterEmissiveStrengthTransition)
+  }
+
+  @Test
+  @UiThreadTest
+  fun rasterEmissiveStrengthTransitionSetDslTest() {
+    val transition = transitionOptions {
+      duration(100)
+      delay(200)
+    }
+    val layer = rasterLayer("id", "source") {
+      rasterEmissiveStrengthTransition {
+        duration(100)
+        delay(200)
+      }
+    }
+    setupLayer(layer)
+    assertEquals(transition, layer.rasterEmissiveStrengthTransition)
   }
 
   @Test
@@ -437,6 +726,21 @@ class RasterLayerTest : BaseStyleTest() {
     assertEquals(Visibility.NONE, layer.visibility)
   }
 
+  @Test
+  @UiThreadTest
+  fun visibilityAsExpressionTest() {
+    val layer = rasterLayer("id", "source") {
+      visibility(
+        concat {
+          literal("no")
+          literal("ne")
+        }
+      )
+    }
+    setupLayer(layer)
+    assertEquals(Visibility.NONE, layer.visibility)
+  }
+
   // Default property getter tests
 
   @Test
@@ -445,15 +749,30 @@ class RasterLayerTest : BaseStyleTest() {
     assertNotNull("defaultVisibility should not be null", RasterLayer.defaultVisibility)
     assertNotNull("defaultMinZoom should not be null", RasterLayer.defaultMinZoom)
     assertNotNull("defaultMaxZoom should not be null", RasterLayer.defaultMaxZoom)
+    assertNotNull("defaultRasterArrayBand should not be null", RasterLayer.defaultRasterArrayBand)
+    assertNotNull("defaultRasterArrayBandAsExpression should not be null", RasterLayer.defaultRasterArrayBandAsExpression)
     assertNotNull("defaultRasterBrightnessMax should not be null", RasterLayer.defaultRasterBrightnessMax)
     assertNotNull("defaultRasterBrightnessMaxAsExpression should not be null", RasterLayer.defaultRasterBrightnessMaxAsExpression)
     assertNotNull("defaultRasterBrightnessMaxTransition should not be null", RasterLayer.defaultRasterBrightnessMaxTransition)
     assertNotNull("defaultRasterBrightnessMin should not be null", RasterLayer.defaultRasterBrightnessMin)
     assertNotNull("defaultRasterBrightnessMinAsExpression should not be null", RasterLayer.defaultRasterBrightnessMinAsExpression)
     assertNotNull("defaultRasterBrightnessMinTransition should not be null", RasterLayer.defaultRasterBrightnessMinTransition)
+    assertNotNull("defaultRasterColorUseTheme should not be null", RasterLayer.defaultRasterColorUseTheme)
+    assertNotNull("defaultRasterColorMix should not be null", RasterLayer.defaultRasterColorMix)
+    assertNotNull("defaultRasterColorMixAsExpression should not be null", RasterLayer.defaultRasterColorMixAsExpression)
+    assertNotNull("defaultRasterColorMixTransition should not be null", RasterLayer.defaultRasterColorMixTransition)
+    assertNotNull("defaultRasterColorRange should not be null", RasterLayer.defaultRasterColorRange)
+    assertNotNull("defaultRasterColorRangeAsExpression should not be null", RasterLayer.defaultRasterColorRangeAsExpression)
+    assertNotNull("defaultRasterColorRangeTransition should not be null", RasterLayer.defaultRasterColorRangeTransition)
     assertNotNull("defaultRasterContrast should not be null", RasterLayer.defaultRasterContrast)
     assertNotNull("defaultRasterContrastAsExpression should not be null", RasterLayer.defaultRasterContrastAsExpression)
     assertNotNull("defaultRasterContrastTransition should not be null", RasterLayer.defaultRasterContrastTransition)
+    assertNotNull("defaultRasterElevation should not be null", RasterLayer.defaultRasterElevation)
+    assertNotNull("defaultRasterElevationAsExpression should not be null", RasterLayer.defaultRasterElevationAsExpression)
+    assertNotNull("defaultRasterElevationTransition should not be null", RasterLayer.defaultRasterElevationTransition)
+    assertNotNull("defaultRasterEmissiveStrength should not be null", RasterLayer.defaultRasterEmissiveStrength)
+    assertNotNull("defaultRasterEmissiveStrengthAsExpression should not be null", RasterLayer.defaultRasterEmissiveStrengthAsExpression)
+    assertNotNull("defaultRasterEmissiveStrengthTransition should not be null", RasterLayer.defaultRasterEmissiveStrengthTransition)
     assertNotNull("defaultRasterFadeDuration should not be null", RasterLayer.defaultRasterFadeDuration)
     assertNotNull("defaultRasterFadeDurationAsExpression should not be null", RasterLayer.defaultRasterFadeDurationAsExpression)
     assertNotNull("defaultRasterHueRotate should not be null", RasterLayer.defaultRasterHueRotate)
@@ -472,9 +791,37 @@ class RasterLayerTest : BaseStyleTest() {
   @Test
   @UiThreadTest
   fun getLayerTest() {
+    val rasterArrayBandTestValue = "abc"
     val rasterBrightnessMaxTestValue = 1.0
     val rasterBrightnessMinTestValue = 1.0
+    val rasterColorTestValue = interpolate {
+      linear()
+      heatmapDensity()
+      stop {
+        literal(0.0)
+        rgba {
+          literal(0.0)
+          literal(0.0)
+          literal(0.0)
+          literal(0.0)
+        }
+      }
+      stop {
+        literal(1.0)
+        rgba {
+          literal(0.0)
+          literal(255.0)
+          literal(0.0)
+          literal(1.0)
+        }
+      }
+    }
+    val rasterColorUseThemeTestValue = "default"
+    val rasterColorMixTestValue = listOf(0.0, 1.0, 2.0, 3.0)
+    val rasterColorRangeTestValue = listOf(0.0, 1.0)
     val rasterContrastTestValue = 1.0
+    val rasterElevationTestValue = 1.0
+    val rasterEmissiveStrengthTestValue = 1.0
     val rasterFadeDurationTestValue = 1.0
     val rasterHueRotateTestValue = 1.0
     val rasterOpacityTestValue = 1.0
@@ -487,9 +834,16 @@ class RasterLayerTest : BaseStyleTest() {
       sourceLayer("test")
       minZoom(minZoomTestValue)
       maxZoom(maxZoomTestValue)
+      rasterArrayBand(rasterArrayBandTestValue)
       rasterBrightnessMax(rasterBrightnessMaxTestValue)
       rasterBrightnessMin(rasterBrightnessMinTestValue)
+      rasterColor(rasterColorTestValue)
+      rasterColorUseTheme(rasterColorUseThemeTestValue)
+      rasterColorMix(rasterColorMixTestValue)
+      rasterColorRange(rasterColorRangeTestValue)
       rasterContrast(rasterContrastTestValue)
+      rasterElevation(rasterElevationTestValue)
+      rasterEmissiveStrength(rasterEmissiveStrengthTestValue)
       rasterFadeDuration(rasterFadeDurationTestValue)
       rasterHueRotate(rasterHueRotateTestValue)
       rasterOpacity(rasterOpacityTestValue)
@@ -507,9 +861,16 @@ class RasterLayerTest : BaseStyleTest() {
     assertEquals("test", cachedLayer.sourceLayer)
     assertEquals(minZoomTestValue, cachedLayer.minZoom)
     assertEquals(maxZoomTestValue, cachedLayer.maxZoom)
+    assertEquals(rasterArrayBandTestValue, cachedLayer.rasterArrayBand)
     assertEquals(rasterBrightnessMaxTestValue, cachedLayer.rasterBrightnessMax)
     assertEquals(rasterBrightnessMinTestValue, cachedLayer.rasterBrightnessMin)
+    assertEquals(rasterColorTestValue, cachedLayer.rasterColor)
+    assertEquals(rasterColorUseThemeTestValue, cachedLayer.rasterColorUseTheme)
+    assertEquals(rasterColorMixTestValue, cachedLayer.rasterColorMix)
+    assertEquals(rasterColorRangeTestValue, cachedLayer.rasterColorRange)
     assertEquals(rasterContrastTestValue, cachedLayer.rasterContrast)
+    assertEquals(rasterElevationTestValue, cachedLayer.rasterElevation)
+    assertEquals(rasterEmissiveStrengthTestValue, cachedLayer.rasterEmissiveStrength)
     assertEquals(rasterFadeDurationTestValue, cachedLayer.rasterFadeDuration)
     assertEquals(rasterHueRotateTestValue, cachedLayer.rasterHueRotate)
     assertEquals(rasterOpacityTestValue, cachedLayer.rasterOpacity)

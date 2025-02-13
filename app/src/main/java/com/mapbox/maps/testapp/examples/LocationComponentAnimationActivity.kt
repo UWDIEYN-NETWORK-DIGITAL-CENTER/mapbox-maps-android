@@ -2,19 +2,21 @@ package com.mapbox.maps.testapp.examples
 
 import android.os.Bundle
 import android.os.Handler
+import android.os.Looper
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.content.res.AppCompatResources
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
+import com.mapbox.maps.ImageHolder
 import com.mapbox.maps.MapboxMap
 import com.mapbox.maps.Style
 import com.mapbox.maps.plugin.LocationPuck2D
+import com.mapbox.maps.plugin.PuckBearing
 import com.mapbox.maps.plugin.locationcomponent.LocationConsumer
 import com.mapbox.maps.plugin.locationcomponent.LocationProvider
 import com.mapbox.maps.plugin.locationcomponent.location
 import com.mapbox.maps.testapp.R
-import com.mapbox.maps.testapp.databinding.ActivityLocationComponentAmimationBinding
+import com.mapbox.maps.testapp.databinding.ActivityLocationComponentAnimationBinding
 
 /**
  * Example that demonstrates using custom [LocationProvider] and sending custom location updates
@@ -26,7 +28,7 @@ class LocationComponentAnimationActivity : AppCompatActivity() {
 
   private var emitCount = 0
   private var delta = 0f
-  private val handler = Handler()
+  private val handler = Handler(Looper.getMainLooper())
 
   private inner class FakeLocationProvider : LocationProvider {
 
@@ -96,26 +98,28 @@ class LocationComponentAnimationActivity : AppCompatActivity() {
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-    val binding = ActivityLocationComponentAmimationBinding.inflate(layoutInflater)
+    val binding = ActivityLocationComponentAnimationBinding.inflate(layoutInflater)
     setContentView(binding.root)
-    mapboxMap = binding.mapView.getMapboxMap().apply {
-      loadStyleUri(
-        Style.MAPBOX_STREETS
+    mapboxMap = binding.mapView.mapboxMap.apply {
+      loadStyle(
+        Style.STANDARD
       ) {
         setCamera(
           CameraOptions.Builder()
             .zoom(14.0)
+            .pitch(0.0)
+            .bearing(0.0)
             .center(Point.fromLngLat(POINT_LNG, POINT_LAT))
             .build()
         )
         binding.mapView.location.apply {
           setLocationProvider(FakeLocationProvider())
           updateSettings {
+            puckBearingEnabled = true
+            puckBearing = PuckBearing.COURSE
+            enabled = true
             locationPuck = LocationPuck2D(
-              bearingImage = AppCompatResources.getDrawable(
-                this@LocationComponentAnimationActivity,
-                R.drawable.mapbox_mylocation_icon_bearing,
-              ),
+              bearingImage = ImageHolder.from(R.drawable.mapbox_mylocation_icon_bearing),
             )
           }
         }

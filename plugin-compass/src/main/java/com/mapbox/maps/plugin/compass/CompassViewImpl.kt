@@ -40,7 +40,8 @@ open class CompassViewImpl
     layoutParams = FrameLayout.LayoutParams(compassViewSize, compassViewSize)
 
     // click listener
-    setOnClickListener { presenter.onCompassClicked() }
+    setOnClickListener { if (::presenter.isInitialized) presenter.onCompassClicked() }
+    contentDescription = context.getString(R.string.mapbox_compassContentDescription)
   }
 
   /**
@@ -80,7 +81,9 @@ open class CompassViewImpl
   override var isCompassEnabled: Boolean
     get() = isEnabled
     set(value) {
-      isEnabled = value
+      if (isEnabled != value) {
+        isEnabled = value
+      }
     }
 
   /**

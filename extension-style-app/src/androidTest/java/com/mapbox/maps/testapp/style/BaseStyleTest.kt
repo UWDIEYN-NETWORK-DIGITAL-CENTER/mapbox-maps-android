@@ -6,6 +6,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.mapbox.maps.MapView
+import com.mapbox.maps.MapboxExperimental
 import com.mapbox.maps.MapboxMap
 import com.mapbox.maps.Style
 import com.mapbox.maps.extension.style.StyleContract
@@ -13,7 +14,16 @@ import com.mapbox.maps.extension.style.atmosphere.generated.setAtmosphere
 import com.mapbox.maps.extension.style.layers.Layer
 import com.mapbox.maps.extension.style.layers.addLayer
 import com.mapbox.maps.extension.style.layers.getLayer
-import com.mapbox.maps.extension.style.light.generated.setLight
+import com.mapbox.maps.extension.style.light.Light
+import com.mapbox.maps.extension.style.light.generated.AmbientLight
+import com.mapbox.maps.extension.style.light.generated.DirectionalLight
+import com.mapbox.maps.extension.style.light.generated.FlatLight
+import com.mapbox.maps.extension.style.light.getLight
+import com.mapbox.maps.extension.style.light.setLight
+import com.mapbox.maps.extension.style.precipitations.generated.Rain
+import com.mapbox.maps.extension.style.precipitations.generated.Snow
+import com.mapbox.maps.extension.style.precipitations.generated.setRain
+import com.mapbox.maps.extension.style.precipitations.generated.setSnow
 import com.mapbox.maps.extension.style.sources.addSource
 import com.mapbox.maps.extension.style.terrain.generated.setTerrain
 import org.junit.After
@@ -46,11 +56,11 @@ abstract class BaseStyleTest {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         mapView = MapView(context)
 
-        mapboxMap = mapView.getMapboxMap()
-        mapboxMap.loadStyleUri(
+        mapboxMap = mapView.mapboxMap
+        mapboxMap.loadStyle(
           "mapbox://styles/mapbox/empty-v9"
-        ) {
-          this@BaseStyleTest.style = it
+        ) { style ->
+          this@BaseStyleTest.style = style
           latch.countDown()
         }
         mapView.onStart()
@@ -84,10 +94,6 @@ abstract class BaseStyleTest {
     style.removeStyleLayer(layer.layerId)
   }
 
-  fun setupLight(light: StyleContract.StyleLightExtension) {
-    style.setLight(light)
-  }
-
   fun setupTerrain(terrain: StyleContract.StyleTerrainExtension) {
     style.setTerrain(terrain)
   }
@@ -100,7 +106,29 @@ abstract class BaseStyleTest {
     style.addSource(source)
   }
 
+  fun setupLight(light: FlatLight) {
+    style.setLight(light)
+  }
+
+  fun setupLight(ambientLight: AmbientLight, directionalLight: DirectionalLight) {
+    style.setLight(ambientLight, directionalLight)
+  }
+
+  @OptIn(MapboxExperimental::class)
+  fun setupSnow(snow: Snow) {
+    style.setSnow(snow)
+  }
+
+  @OptIn(MapboxExperimental::class)
+  fun setupRain(rain: Rain) {
+    style.setRain(rain)
+  }
+
   fun getLayer(id: String): Layer? {
     return style.getLayer(id)
+  }
+
+  fun getLight(id: String): Light? {
+    return style.getLight(id)
   }
 }

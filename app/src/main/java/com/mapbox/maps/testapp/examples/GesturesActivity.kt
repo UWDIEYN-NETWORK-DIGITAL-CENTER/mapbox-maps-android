@@ -1,10 +1,15 @@
 package com.mapbox.maps.testapp.examples
 
 import android.annotation.SuppressLint
-import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.os.Handler
-import android.view.*
+import android.os.Looper
+import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuItem
+import android.view.View
+import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.annotation.ColorInt
@@ -14,7 +19,11 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.mapbox.android.gestures.*
+import com.mapbox.android.gestures.AndroidGesturesManager
+import com.mapbox.android.gestures.MoveGestureDetector
+import com.mapbox.android.gestures.RotateGestureDetector
+import com.mapbox.android.gestures.ShoveGestureDetector
+import com.mapbox.android.gestures.StandardScaleGestureDetector
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.MapboxMap
@@ -24,10 +33,15 @@ import com.mapbox.maps.plugin.annotation.annotations
 import com.mapbox.maps.plugin.annotation.generated.PointAnnotationManager
 import com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions
 import com.mapbox.maps.plugin.annotation.generated.createPointAnnotationManager
-import com.mapbox.maps.plugin.gestures.*
+import com.mapbox.maps.plugin.gestures.GesturesPlugin
+import com.mapbox.maps.plugin.gestures.OnMoveListener
+import com.mapbox.maps.plugin.gestures.OnRotateListener
+import com.mapbox.maps.plugin.gestures.OnScaleListener
+import com.mapbox.maps.plugin.gestures.OnShoveListener
+import com.mapbox.maps.plugin.gestures.gestures
 import com.mapbox.maps.testapp.R
 import com.mapbox.maps.testapp.databinding.ActivityGesturesBinding
-import java.util.*
+import com.mapbox.maps.testapp.utils.BitmapUtils.bitmapFromDrawableRes
 
 /**
  * Test activity showcasing APIs around gestures implementation.
@@ -129,15 +143,15 @@ class GesturesActivity : AppCompatActivity() {
     super.onCreate(savedInstanceState)
     binding = ActivityGesturesBinding.inflate(layoutInflater)
     setContentView(binding.root)
-    mapboxMap = binding.mapView.getMapboxMap()
+    mapboxMap = binding.mapView.mapboxMap
     mapboxMap.setCamera(
       CameraOptions.Builder()
         .center(Point.fromLngLat(-0.11968, 51.50325))
         .zoom(15.0)
         .build()
     )
-    mapboxMap.loadStyleUri(Style.MAPBOX_STREETS) {
-      it.addImage(MARKER_IMAGE_ID, BitmapFactory.decodeResource(resources, R.drawable.red_marker))
+    mapboxMap.loadStyle(Style.STANDARD) {
+      it.addImage(MARKER_IMAGE_ID, bitmapFromDrawableRes(R.drawable.ic_red_marker))
     }
 
     binding.mapView.waitForLayout {
@@ -172,7 +186,7 @@ class GesturesActivity : AppCompatActivity() {
 
     attachListeners()
 
-    fixedFocalPointEnabled(mapboxMap.getGesturesSettings()?.focalPoint != null)
+    fixedFocalPointEnabled(gesturesPlugin.getSettings().focalPoint != null)
   }
 
   private fun attachListeners() {
@@ -258,7 +272,6 @@ class GesturesActivity : AppCompatActivity() {
   }
 
   private fun fixedFocalPointEnabled(enabled: Boolean) {
-
     if (enabled) {
       focalPointLatLng = FOCAL_POINT
       pointAnnotationManager =
@@ -290,7 +303,7 @@ class GesturesActivity : AppCompatActivity() {
   private class GestureAlertsAdapter : RecyclerView.Adapter<GestureAlertsAdapter.ViewHolder>() {
 
     private var isUpdating: Boolean = false
-    private val updateHandler = Handler()
+    private val updateHandler = Handler(Looper.getMainLooper())
     private val alerts = ArrayList<GestureAlert>()
 
     @SuppressLint("NotifyDataSetChanged")

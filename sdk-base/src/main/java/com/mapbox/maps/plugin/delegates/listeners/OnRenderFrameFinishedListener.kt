@@ -5,6 +5,10 @@ import com.mapbox.maps.extension.observable.eventdata.RenderFrameFinishedEventDa
 /**
  * Definition for listener invoked whenever the Map finished rendering a frame.
  */
+@Deprecated(
+  message = "This listener is deprecated, and will be removed in next major release. use RenderFrameFinishedCallback instead.",
+  replaceWith = ReplaceWith("RenderFrameFinishedCallback")
+)
 fun interface OnRenderFrameFinishedListener {
   /**
    * Invoked whenever the Map finished rendering a frame.

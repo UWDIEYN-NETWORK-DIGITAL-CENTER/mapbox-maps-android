@@ -1,13 +1,14 @@
 package com.mapbox.maps.plugin.locationcomponent
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
-import android.graphics.drawable.Drawable
 import com.mapbox.bindgen.Expected
 import com.mapbox.bindgen.None
 import com.mapbox.bindgen.Value
 import com.mapbox.geojson.Point
-import com.mapbox.maps.extension.style.StyleInterface
+import com.mapbox.maps.ImageHolder
+import com.mapbox.maps.MapboxStyleManager
 import com.mapbox.maps.plugin.LocationPuck2D
 import com.mapbox.maps.plugin.locationcomponent.LocationComponentConstants.BEARING_ICON
 import com.mapbox.maps.plugin.locationcomponent.LocationComponentConstants.SHADOW_ICON
@@ -20,12 +21,12 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import java.lang.ref.WeakReference
 
 @RunWith(RobolectricTestRunner::class)
 class LocationIndicatorLayerRendererTest {
 
-  private val style: StyleInterface = mockk(relaxed = true)
-  private val layerSourceProvider: LayerSourceProvider = mockk(relaxed = true)
+  private val style: MapboxStyleManager = mockk(relaxed = true)
   private val layerWrapper: LocationIndicatorLayerWrapper = mockk(relaxed = true)
   private val expected: Expected<String, None> = mockk(relaxed = true)
 
@@ -33,26 +34,39 @@ class LocationIndicatorLayerRendererTest {
   private val doubleListSlot = CapturingSlot<List<Double>>()
 
   private val puckOptions = mockk<LocationPuck2D>(relaxed = true)
-  private val bitmap = mockk<Bitmap>(relaxed = true)
-  private val drawable = mockk<Drawable>(relaxed = true)
+  private val topBitmap = mockk<Bitmap>(relaxed = true)
+  private val bearingBitmap = mockk<Bitmap>(relaxed = true)
+  private val shadowBitmap = mockk<Bitmap>(relaxed = true)
+  private val topDrawableResId = 1
+  private val bearingDrawableResId = 2
+  private val shadowDrawableResId = 3
+  private val topImageHolder = ImageHolder.from(topDrawableResId)
+  private val bearingImageHolder = ImageHolder.from(bearingDrawableResId)
+  private val shadowImageHolder = ImageHolder.from(shadowDrawableResId)
 
   private lateinit var locationLayerRenderer: LocationIndicatorLayerRenderer
 
   @Before
   fun setup() {
     mockkObject(BitmapUtils)
-    every { puckOptions.topImage } returns drawable
-    every { puckOptions.bearingImage } returns drawable
-    every { puckOptions.shadowImage } returns drawable
+    every { puckOptions.topImage } returns topImageHolder
+    every { puckOptions.bearingImage } returns bearingImageHolder
+    every { puckOptions.shadowImage } returns shadowImageHolder
     every { puckOptions.opacity } returns 0.5f
-    every { BitmapUtils.getBitmapFromDrawable(drawable) } returns bitmap
+    every { BitmapUtils.getBitmapFromDrawableRes(any(), topDrawableResId) } returns topBitmap
+    every { BitmapUtils.getBitmapFromDrawableRes(any(), bearingDrawableResId) } returns bearingBitmap
+    every { BitmapUtils.getBitmapFromDrawableRes(any(), shadowDrawableResId) } returns shadowBitmap
     every { style.removeStyleLayer(any()) } returns expected
     every { style.styleLayerExists(any()) } returns true
     every { expected.error } returns null
-    every { layerSourceProvider.getLocationIndicatorLayer() } returns layerWrapper
+    mockkObject(LayerSourceProvider)
+    every { LayerSourceProvider.getLocationIndicatorLayer() } returns layerWrapper
     every { layerWrapper.layerId } returns "id"
 
-    locationLayerRenderer = LocationIndicatorLayerRenderer(puckOptions, layerSourceProvider)
+    locationLayerRenderer = LocationIndicatorLayerRenderer(
+      puckOptions,
+      WeakReference(mockk<Context>(relaxed = true)),
+    )
     locationLayerRenderer.initializeComponents(style)
   }
 
@@ -68,15 +82,37 @@ class LocationIndicatorLayerRendererTest {
   @Test
   fun initializeComponents() {
     verify(exactly = 1) { layerWrapper.topImage(TOP_ICON) }
-    verify(exactly = 1) { style.addImage(TOP_ICON, bitmap) }
+    verify(exactly = 1) { style.addImage(TOP_ICON, topBitmap) }
 
     verify(exactly = 1) { layerWrapper.bearingImage(BEARING_ICON) }
-    verify(exactly = 1) { style.addImage(BEARING_ICON, bitmap) }
+    verify(exactly = 1) { style.addImage(BEARING_ICON, bearingBitmap) }
 
     verify(exactly = 1) { layerWrapper.shadowImage(SHADOW_ICON) }
-    verify(exactly = 1) { style.addImage(SHADOW_ICON, bitmap) }
+    verify(exactly = 1) { style.addImage(SHADOW_ICON, shadowBitmap) }
 
     verify(exactly = 1) { layerWrapper.opacity(eq(0.5)) }
+  }
+
+  @Test
+  fun verifyUseBitmapImage() {
+    val topBitmap2 = mockk<Bitmap>(relaxed = true)
+    val bearingBitmap2 = mockk<Bitmap>(relaxed = true)
+    val shadowBitmap2 = mockk<Bitmap>(relaxed = true)
+    val puckOptions2 = mockk<LocationPuck2D>(relaxed = true) {
+      every { topImage } returns ImageHolder.from(topBitmap2)
+      every { bearingImage } returns ImageHolder.from(bearingBitmap2)
+      every { shadowImage } returns ImageHolder.from(shadowBitmap2)
+      every { opacity } returns 0.3F
+    }
+    val locationLayerRenderer2 = LocationIndicatorLayerRenderer(
+      puckOptions2,
+      WeakReference(mockk<Context>(relaxed = true)),
+    )
+    locationLayerRenderer2.initializeComponents(style)
+
+    verify(exactly = 1) { style.addImage(TOP_ICON, topBitmap2) }
+    verify(exactly = 1) { style.addImage(BEARING_ICON, bearingBitmap2) }
+    verify(exactly = 1) { style.addImage(SHADOW_ICON, shadowBitmap2) }
   }
 
   @Test
@@ -179,26 +215,26 @@ class LocationIndicatorLayerRendererTest {
     verify {
       style.addImage(
         TOP_ICON,
-        any()
+        any() as Bitmap
       )
     }
     verify(exactly = 1) {
       style.addImage(
         BEARING_ICON,
-        any()
+        any() as Bitmap
       )
     }
     verify {
       style.addImage(
         SHADOW_ICON,
-        any()
+        any() as Bitmap
       )
     }
   }
 
   @Test
   fun updateStyle() {
-    val newStyle = mockk<StyleInterface>(relaxed = true)
+    val newStyle = mockk<MapboxStyleManager>(relaxed = true)
     locationLayerRenderer.updateStyle(newStyle)
     verify { layerWrapper.updateStyle(newStyle) }
     locationLayerRenderer.removeLayers()

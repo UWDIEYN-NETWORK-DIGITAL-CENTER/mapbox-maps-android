@@ -1,12 +1,13 @@
 package com.mapbox.maps.extension.style.image
 
 import android.graphics.Bitmap
+import com.mapbox.bindgen.DataRef
 import com.mapbox.bindgen.Expected
 import com.mapbox.bindgen.None
 import com.mapbox.maps.Image
 import com.mapbox.maps.ImageContent
 import com.mapbox.maps.ImageStretches
-import com.mapbox.maps.extension.style.StyleInterface
+import com.mapbox.maps.MapboxStyleManager
 import io.mockk.*
 import org.junit.After
 import org.junit.Before
@@ -17,24 +18,29 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class ImageNinePatchExtensionImplTest {
 
-  private val style = mockk<StyleInterface>(relaxed = true)
+  private val style = mockk<MapboxStyleManager>(relaxed = true)
   private val pixelRatio = mockk<Float>(relaxed = true)
   private val expected = mockk<Expected<String, None>>(relaxed = true)
   private val bitmap = Bitmap.createBitmap(400, 400, Bitmap.Config.ARGB_8888)
   private val imageContent = ImageContent(1f, 1f, 1f, 1f)
   private val stretchX = listOf(ImageStretches(1f, 1f))
   private val stretchY = listOf(ImageStretches(2f, 2f))
-  val image = Image(20, 20, byteArrayOf())
-  private val ninePatchImage = NinePatchImage(
-    image,
-    stretchX,
-    stretchY,
-    imageContent
-  )
+  private lateinit var image: Image
+  private lateinit var ninePatchImage: NinePatchImage
 
   @Before
   fun prepareTest() {
     mockkStatic("com.mapbox.maps.extension.style.image.NinePatchUtils")
+    mockkStatic(DataRef::class)
+    val nativeDataRef = mockk<DataRef>(relaxed = true)
+    every { DataRef.allocateNative(any()) } returns nativeDataRef
+    image = Image(20, 20, nativeDataRef)
+    ninePatchImage = NinePatchImage(
+      image,
+      stretchX,
+      stretchY,
+      imageContent
+    )
     every { style.pixelRatio } returns pixelRatio
     every { style.addStyleImage(any(), any(), any(), any(), any(), any(), any()) } returns expected
     every { expected.error } returns null

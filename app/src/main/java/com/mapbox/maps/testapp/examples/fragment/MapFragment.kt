@@ -22,14 +22,15 @@ class MapFragment : Fragment() {
   ): View {
     mapView = MapView(
       inflater.context,
-      MapInitOptions(inflater.context)
+      // Use TextureView as render surface for the MapView, for smooth transitions following holding views, e.g. in a ViewPager.
+      MapInitOptions(inflater.context, textureView = true, mapName = "fragmentMap")
     )
     return mapView
   }
 
   override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
     super.onViewCreated(view, savedInstanceState)
-    mapboxMap = mapView.getMapboxMap()
+    mapboxMap = mapView.mapboxMap
     if (::onMapReady.isInitialized) {
       onMapReady.invoke(mapboxMap)
     }

@@ -1,16 +1,15 @@
 package com.mapbox.maps.extension.style.sources
 
+import com.mapbox.bindgen.Expected
+import com.mapbox.bindgen.None
 import com.mapbox.geojson.Feature
-import com.mapbox.maps.CanonicalTileID
-import com.mapbox.maps.CoordinateBounds
-import com.mapbox.maps.CustomGeometrySourceOptions
-import com.mapbox.maps.StyleManagerInterface
-import com.mapbox.maps.extension.style.StyleContract
-import com.mapbox.maps.extension.style.StyleInterface
+import com.mapbox.maps.*
+import com.mapbox.maps.extension.style.layers.properties.PropertyValue
+import com.mapbox.maps.extension.style.utils.TypeUtils
 import com.mapbox.maps.extension.style.utils.check
 
 /**
- * Custom Vector Source, allows using FeatureCollections.
+ * Custom Geometry Source, allows using FeatureCollections.
  *
  * CustomGeometrySource uses a coalescing model for frequent data updates targeting the same tile id,
  * which means, that the in-progress request as well as the last scheduled request are guaranteed to finish.
@@ -20,22 +19,31 @@ class CustomGeometrySource(
   /**
    * Style source identifier.
    */
-  val id: String,
+  id: String,
   /**
    * Settings for the custom geometry.
    */
-  val options: CustomGeometrySourceOptions
-) : StyleContract.StyleSourceExtension {
-  private var delegate: StyleManagerInterface? = null
+  private val options: CustomGeometrySourceOptions,
+) : Source(id) {
+  /**
+   * Get the type of the current source as a String.
+   */
+  override fun getType(): String {
+    return "custom-geometry"
+  }
+
+  override fun addSource(style: MapboxStyleManager): Expected<String, None> {
+    return style.addStyleCustomGeometrySource(sourceId, options)
+  }
 
   /**
    * Set tile data of a custom geometry.
    *
    * @param tileID Identifier of the tile
-   * @param tileData JSON string representing the data in GeoJSON format. See RFC7946
+   * @param featureCollection An array with the features to add.
    */
   fun setTileData(tileID: CanonicalTileID, featureCollection: MutableList<Feature>) {
-    delegate?.setStyleCustomGeometrySourceTileData(id, tileID, featureCollection).check()
+    delegate?.setStyleCustomGeometrySourceTileData(sourceId, tileID, featureCollection).check()
   }
 
   /**
@@ -43,8 +51,22 @@ class CustomGeometrySource(
    *
    * @param coordinateBounds Coordinate bounds.
    */
+  @Deprecated(
+    message = "This method is deprecated because of confusing naming.",
+    replaceWith = ReplaceWith("invalidateRegion(coordinateBounds)"),
+    level = DeprecationLevel.WARNING
+  )
   fun invalidRegion(coordinateBounds: CoordinateBounds) {
-    delegate?.invalidateStyleCustomGeometrySourceRegion(id, coordinateBounds).check()
+    invalidateRegion(coordinateBounds)
+  }
+
+  /**
+   * Invalidate region for provided custom geometry source.
+   *
+   * @param coordinateBounds Coordinate bounds.
+   */
+  fun invalidateRegion(coordinateBounds: CoordinateBounds) {
+    delegate?.invalidateStyleCustomGeometrySourceRegion(sourceId, coordinateBounds).check()
   }
 
   /**
@@ -52,19 +74,71 @@ class CustomGeometrySource(
    *
    * @param tileID Identifier of the tile
    */
+  @Deprecated(
+    message = "This method is deprecated because of confusing naming.",
+    replaceWith = ReplaceWith("invalidateTile(tileID)"),
+    level = DeprecationLevel.WARNING
+  )
   fun invalidTile(tileID: CanonicalTileID) {
-    delegate?.invalidateStyleCustomGeometrySourceTile(id, tileID).check()
+    invalidateTile(tileID)
   }
 
   /**
-   * Add the source to the Style.
+   * Invalidate tile for provided custom geometry source.
    *
-   * @param delegate The style delegate
+   * @param tileID Identifier of the tile
    */
-  override fun bindTo(delegate: StyleInterface) {
-    this.delegate = delegate
-    delegate.addStyleCustomGeometrySource(id, options).check()
+  fun invalidateTile(tileID: CanonicalTileID) {
+    delegate?.invalidateStyleCustomGeometrySourceTile(sourceId, tileID).check()
   }
+
+  /**
+   * The property allows to define source specific resource budget, either in tile units or in megabytes.
+   * Whenever tile cache goes over the defined limit, least recently used tile will be evicted from
+   * the in-memory cache. Note that the current implementation does not take into account resources allocated by
+   * the visible tiles.
+   */
+  fun setTileCacheBudget(value: TileCacheBudget) {
+    setVolatileProperty(PropertyValue("tile-cache-budget", TypeUtils.wrapToValue(value)))
+  }
+
+  /**
+   * The property allows to define source specific resource budget, either in tile units or in megabytes.
+   * Whenever tile cache goes over the defined limit, least recently used tile will be evicted from
+   * the in-memory cache. Note that the current implementation does not take into account resources allocated by
+   * the visible tiles.
+   */
+  val tileCacheBudget: TileCacheBudget?
+    /**
+     * Get the TileCacheBudget property
+     *
+     * @return TileCacheBudget
+     */
+    get() = getPropertyValue("tile-cache-budget")
+
+  /**
+   * When a set of tiles for a current zoom level is being rendered and some of
+   * the ideal tiles that cover the screen are not yet loaded, parent tile could be used
+   * instead. This might introduce unwanted rendering side-effects, especially for raster tiles that are overscaled multiple times.
+   * This property sets the maximum limit for how much a parent tile can be overscaled.
+   */
+  fun setMaxOverscaleFactorForParentTiles(value: Long) {
+    setVolatileProperty(PropertyValue("max-overscale-factor-for-parent-tiles", TypeUtils.wrapToValue(value)))
+  }
+
+  /**
+   * When a set of tiles for a current zoom level is being rendered and some of
+   * the ideal tiles that cover the screen are not yet loaded, parent tile could be used
+   * instead. This might introduce unwanted rendering side-effects, especially for raster tiles that are overscaled multiple times.
+   * This property sets the maximum limit for how much a parent tile can be overscaled.
+   */
+  val maxOverscaleFactorForParentTiles: Long?
+    /**
+     * Get the MaxOverscaleFactorForParentTiles property
+     *
+     * @return Long
+     */
+    get() = getPropertyValue("max-overscale-factor-for-parent-tiles")
 }
 
 /**

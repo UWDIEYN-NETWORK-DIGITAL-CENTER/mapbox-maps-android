@@ -8,12 +8,13 @@ import com.mapbox.bindgen.Expected
 import com.mapbox.geojson.Point
 import com.mapbox.maps.MapView
 import com.mapbox.maps.MapboxMap
-import com.mapbox.maps.QueriedFeature
+import com.mapbox.maps.QueriedRenderedFeature
 import com.mapbox.maps.RenderedQueryGeometry
 import com.mapbox.maps.RenderedQueryOptions
 import com.mapbox.maps.ScreenBox
 import com.mapbox.maps.ScreenCoordinate
 import com.mapbox.maps.Style
+import com.mapbox.maps.dsl.cameraOptions
 import com.mapbox.maps.extension.style.expressions.dsl.generated.concat
 import com.mapbox.maps.extension.style.expressions.dsl.generated.format
 import com.mapbox.maps.extension.style.expressions.dsl.generated.get
@@ -25,6 +26,9 @@ import com.mapbox.maps.extension.style.layers.generated.circleLayer
 import com.mapbox.maps.extension.style.layers.generated.rasterLayer
 import com.mapbox.maps.extension.style.layers.generated.symbolLayer
 import com.mapbox.maps.extension.style.layers.properties.generated.TextAnchor
+import com.mapbox.maps.extension.style.light.dynamicLight
+import com.mapbox.maps.extension.style.light.generated.ambientLight
+import com.mapbox.maps.extension.style.light.generated.directionalLight
 import com.mapbox.maps.extension.style.sources.generated.geoJsonSource
 import com.mapbox.maps.extension.style.sources.generated.imageSource
 import com.mapbox.maps.extension.style.style
@@ -44,8 +48,17 @@ class DSLStylingActivity : AppCompatActivity(), OnMapClickListener {
     val mapView = MapView(this)
     setContentView(mapView)
 
-    mapboxMap = mapView.getMapboxMap()
-    mapboxMap.loadStyle(createStyle())
+    mapboxMap = mapView.mapboxMap
+    mapboxMap.loadStyle(createStyle()) {
+      mapboxMap.setCamera(
+        cameraOptions {
+          center(Point.fromLngLat(-122.40276277449118, 37.79608281254676))
+          zoom(15.7)
+          bearing(359.63)
+          pitch(60.0)
+        }
+      )
+    }
     mapboxMap.addOnMapClickListener(this)
   }
 
@@ -59,11 +72,17 @@ class DSLStylingActivity : AppCompatActivity(), OnMapClickListener {
         )
       ),
       RenderedQueryOptions(listOf("earthquakeCircle", "earthquakeText"), literal(true))
-    ) { expected: Expected<String, MutableList<QueriedFeature>> ->
+    ) { expected: Expected<String, MutableList<QueriedRenderedFeature>> ->
       val features = expected.value!!
       features.takeIf { it.isNotEmpty() }?.let {
-        val time = it.first().feature.getNumberProperty("time")
-        Toast.makeText(this, getDateTime(time.toLong()), Toast.LENGTH_SHORT).show()
+        val time = it.first().queriedFeature.feature.getNumberProperty("time")
+        // log feature layers
+        val featureLayer = it.first().layers.joinToString(" ")
+        Toast.makeText(
+          this,
+          "time = ${getDateTime(time.toLong())}, layers = $featureLayer",
+          Toast.LENGTH_SHORT
+        ).show()
       }
     }
     return true
@@ -77,7 +96,7 @@ class DSLStylingActivity : AppCompatActivity(), OnMapClickListener {
     e.toString()
   }
 
-  private fun createStyle() = style(styleUri = Style.TRAFFIC_DAY) {
+  private fun createStyle() = style(style = Style.STANDARD) {
     +imageSource("imag") {
       url(IMAGE_URL)
       coordinates(
@@ -90,7 +109,7 @@ class DSLStylingActivity : AppCompatActivity(), OnMapClickListener {
       )
     }
     +geoJsonSource(id = "earthquakes") {
-      url(GEOJSON_URL)
+      data(GEOJSON_URL)
       cluster(false)
     }
     +circleLayer(layerId = "earthquakeCircle", sourceId = "earthquakes") {
@@ -173,6 +192,17 @@ class DSLStylingActivity : AppCompatActivity(), OnMapClickListener {
     +rasterLayer("raster", "imag") {
       rasterOpacity(0.8)
     }
+    +dynamicLight(
+      ambientLight {
+        intensity(0.2)
+        color(Color.YELLOW)
+      },
+      directionalLight {
+        shadowIntensity(0.5)
+        castShadows(true)
+        color(Color.WHITE)
+      }
+    )
   }
 
   companion object {

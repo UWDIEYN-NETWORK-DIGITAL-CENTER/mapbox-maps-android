@@ -1,18 +1,14 @@
-import org.jetbrains.dokka.gradle.DokkaTask
-
 plugins {
-  id("com.android.library")
-  kotlin("android")
+  id("com.mapbox.gradle.library")
   kotlin("kapt")
-  id("org.jetbrains.dokka")
-  id("io.gitlab.arturbosch.detekt").version(Versions.detekt)
 }
 
 android {
-  compileSdk = AndroidVersions.compileSdkVersion
+  compileSdk = libs.versions.androidCompileSdkVersion.get().toInt()
+  namespace = "com.mapbox.maps.plugin.camera.animation"
   defaultConfig {
-    minSdk = AndroidVersions.minSdkVersion
-    targetSdk = AndroidVersions.targetSdkVersion
+    minSdk = libs.versions.androidMinSdkVersion.get().toInt()
+    targetSdk = libs.versions.androidTargetSdkVersion.get().toInt()
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
 
@@ -23,27 +19,25 @@ android {
   }
 }
 
-dependencies {
-  implementation(project(":sdk-base"))
-  implementation(Dependencies.androidxInterpolators)
-  implementation(Dependencies.kotlin)
-  implementation(Dependencies.androidxCoreKtx)
-  testImplementation(Dependencies.junit)
-  testImplementation(Dependencies.mockk)
-  testImplementation(Dependencies.robolectric)
-  androidTestImplementation(Dependencies.androidxTestRunner)
-  androidTestImplementation(Dependencies.androidxJUnitTestRules)
-  androidTestImplementation(Dependencies.androidxEspresso)
-  detektPlugins(Dependencies.detektFormatting)
+mapboxLibrary {
+  publish {
+    group = "com.mapbox.plugin"
+    artifactId = "maps-animation"
+    artifactTitle = "The camera animation module for the Mapbox Maps SDK for Android"
+    artifactDescription = artifactTitle
+    sdkName = "mobile-maps-android-animation"
+  }
 }
 
-tasks.withType<DokkaTask>().configureEach {
-  dokkaSourceSets {
-    configureEach {
-      reportUndocumented.set(true)
-      failOnWarning.set(true)
-    }
-  }
+dependencies {
+  implementation(project(":sdk-base"))
+  implementation(libs.androidx.interpolators)
+  implementation(libs.kotlin)
+  implementation(libs.androidx.coreKtx)
+
+  testImplementation(libs.bundles.base.dependenciesTests)
+  androidTestImplementation(libs.bundles.base.dependenciesAndroidTests)
+  detektPlugins(libs.detektFormatting)
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> { kotlinOptions.jvmTarget = "1.8" }
@@ -51,8 +45,6 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> { kotlinOptions.
 project.apply {
   from("$rootDir/gradle/ktlint.gradle")
   from("$rootDir/gradle/lint.gradle")
-  from("$rootDir/gradle/jacoco.gradle")
-  from("$rootDir/gradle/sdk-registry.gradle")
   from("$rootDir/gradle/track-public-apis.gradle")
   from("$rootDir/gradle/detekt.gradle")
   from("$rootDir/gradle/dependency-updates.gradle")

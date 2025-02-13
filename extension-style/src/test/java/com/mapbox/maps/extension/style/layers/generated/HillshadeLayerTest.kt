@@ -6,11 +6,11 @@ import android.graphics.Color
 import com.mapbox.bindgen.Expected
 import com.mapbox.bindgen.None
 import com.mapbox.bindgen.Value
+import com.mapbox.maps.MapboxStyleManager
 import com.mapbox.maps.StyleManager
 import com.mapbox.maps.StylePropertyValue
 import com.mapbox.maps.StylePropertyValueKind
 import com.mapbox.maps.extension.style.ShadowStyleManager
-import com.mapbox.maps.extension.style.StyleInterface
 import com.mapbox.maps.extension.style.expressions.dsl.generated.*
 import com.mapbox.maps.extension.style.layers.getLayer
 import com.mapbox.maps.extension.style.layers.properties.generated.*
@@ -28,7 +28,7 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(shadows = [ShadowStyleManager::class])
 class HillshadeLayerTest {
-  private val style = mockk<StyleInterface>(relaxUnitFun = true, relaxed = true)
+  private val style = mockk<MapboxStyleManager>(relaxUnitFun = true, relaxed = true)
   private val expected = mockk<Expected<String, None>>(relaxUnitFun = true, relaxed = true)
   private val valueExpected = mockk<Expected<String, Value>>(relaxUnitFun = true, relaxed = true)
   private val styleProperty = mockk<StylePropertyValue>()
@@ -152,6 +152,37 @@ class HillshadeLayerTest {
     assertEquals(expectedValue.toString(), layer.hillshadeAccentColor?.toString())
     verify { style.getStyleLayerProperty("id", "hillshade-accent-color") }
   }
+
+  @Test
+  fun hillshadeAccentColorUseThemeSetAfterInitialization() {
+    val layer = hillshadeLayer("id", "source") {}
+    val theme = "none"
+    layer.bindTo(style)
+    layer.hillshadeAccentColorUseTheme(theme)
+    verify { style.setStyleLayerProperty("id", "hillshade-accent-color-use-theme", capture(valueSlot)) }
+    assertEquals(valueSlot.captured.toString(), theme)
+  }
+
+  @Test
+  fun hillshadeAccentColorUseThemeSet() {
+    val theme = "none"
+    val layer = hillshadeLayer("id", "source") {
+      hillshadeAccentColorUseTheme(theme)
+    }
+    layer.bindTo(style)
+    verify { style.addStyleLayer(capture(valueSlot), any()) }
+    assertTrue(valueSlot.captured.toString().contains("hillshade-accent-color-use-theme"))
+  }
+
+  @Test
+  fun hillshadeAccentColorUseThemeGet() {
+    val theme = "none"
+    every { styleProperty.value } returns TypeUtils.wrapToValue(theme)
+    val layer = hillshadeLayer("id", "source") {}
+    layer.bindTo(style)
+    assertEquals(theme.toString(), layer.hillshadeAccentColorUseTheme?.toString())
+    verify { style.getStyleLayerProperty("id", "hillshade-accent-color-use-theme") }
+  }
   // Expression Tests
 
   @Test
@@ -271,6 +302,113 @@ class HillshadeLayerTest {
       delay(200)
     }
     verify { style.setStyleLayerProperty("id", "hillshade-accent-color-transition", capture(valueSlot)) }
+    assertEquals(valueSlot.captured.toString(), "{duration=100, delay=200}")
+  }
+
+  @Test
+  fun hillshadeEmissiveStrengthSet() {
+    val layer = hillshadeLayer("id", "source") {}
+    val testValue = 1.0
+    layer.bindTo(style)
+    layer.hillshadeEmissiveStrength(testValue)
+    verify { style.setStyleLayerProperty("id", "hillshade-emissive-strength", capture(valueSlot)) }
+    assertEquals(valueSlot.captured.toString(), "1.0")
+  }
+
+  @Test
+  fun hillshadeEmissiveStrengthGet() {
+    val testValue = 1.0
+    every { styleProperty.value } returns TypeUtils.wrapToValue(testValue)
+    val layer = hillshadeLayer("id", "source") { }
+    layer.bindTo(style)
+    val expectedValue = 1.0
+    assertEquals(expectedValue.toString(), layer.hillshadeEmissiveStrength?.toString())
+    verify { style.getStyleLayerProperty("id", "hillshade-emissive-strength") }
+  }
+  // Expression Tests
+
+  @Test
+  fun hillshadeEmissiveStrengthAsExpressionSet() {
+    val expression = sum {
+      literal(2)
+      literal(3)
+    }
+    val layer = hillshadeLayer("id", "source") {}
+    layer.bindTo(style)
+    layer.hillshadeEmissiveStrength(expression)
+    verify { style.setStyleLayerProperty("id", "hillshade-emissive-strength", capture(valueSlot)) }
+    assertEquals(valueSlot.captured.toString(), "[+, 2, 3]")
+  }
+
+  @Test
+  fun hillshadeEmissiveStrengthAsExpressionGet() {
+    val expression = sum {
+      literal(2)
+      literal(3)
+    }
+    every { styleProperty.value } returns TypeUtils.wrapToValue(expression)
+    every { styleProperty.kind } returns StylePropertyValueKind.EXPRESSION
+    val layer = hillshadeLayer("id", "source") { }
+    layer.bindTo(style)
+    assertEquals(expression.toString(), layer.hillshadeEmissiveStrengthAsExpression?.toString())
+    verify { style.getStyleLayerProperty("id", "hillshade-emissive-strength") }
+  }
+
+  @Test
+  fun hillshadeEmissiveStrengthAsExpressionGetNull() {
+    val layer = hillshadeLayer("id", "source") { }
+    layer.bindTo(style)
+    assertEquals(null, layer.hillshadeEmissiveStrengthAsExpression)
+    verify { style.getStyleLayerProperty("id", "hillshade-emissive-strength") }
+  }
+
+  @Test
+  fun hillshadeEmissiveStrengthAsExpressionGetFromLiteral() {
+    every { styleProperty.value } returns TypeUtils.wrapToValue(1.0)
+    val layer = hillshadeLayer("id", "source") { }
+    layer.bindTo(style)
+    assertEquals(1.0, layer.hillshadeEmissiveStrengthAsExpression?.contents as Double, 1E-5)
+    assertEquals(1.0, layer.hillshadeEmissiveStrength!!, 1E-5)
+    verify { style.getStyleLayerProperty("id", "hillshade-emissive-strength") }
+  }
+
+  @Test
+  fun hillshadeEmissiveStrengthTransitionSet() {
+    val layer = hillshadeLayer("id", "source") {}
+    layer.bindTo(style)
+    layer.hillshadeEmissiveStrengthTransition(
+      transitionOptions {
+        duration(100)
+        delay(200)
+      }
+    )
+    verify { style.setStyleLayerProperty("id", "hillshade-emissive-strength-transition", capture(valueSlot)) }
+    assertEquals(valueSlot.captured.toString(), "{duration=100, delay=200}")
+  }
+
+  @Test
+  fun hillshadeEmissiveStrengthTransitionGet() {
+    val transition = transitionOptions {
+      duration(100)
+      delay(200)
+    }
+    every { styleProperty.value } returns TypeUtils.wrapToValue(transition)
+    every { styleProperty.kind } returns StylePropertyValueKind.TRANSITION
+    val layer = hillshadeLayer("id", "source") {}
+    layer.bindTo(style)
+    assertEquals(transition.toValue().toString(), layer.hillshadeEmissiveStrengthTransition?.toValue().toString())
+    verify { style.getStyleLayerProperty("id", "hillshade-emissive-strength-transition") }
+  }
+
+  @Test
+  fun hillshadeEmissiveStrengthTransitionSetDsl() {
+    val layer = hillshadeLayer("id", "source") {}
+    layer.bindTo(style)
+    layer.hillshadeEmissiveStrengthTransition {
+      duration(100)
+      delay(200)
+    }
+    verify { style.setStyleLayerProperty("id", "hillshade-emissive-strength-transition", capture(valueSlot)) }
     assertEquals(valueSlot.captured.toString(), "{duration=100, delay=200}")
   }
 
@@ -407,6 +545,37 @@ class HillshadeLayerTest {
     val expectedValue = "rgba(0, 0, 0, 1)"
     assertEquals(expectedValue.toString(), layer.hillshadeHighlightColor?.toString())
     verify { style.getStyleLayerProperty("id", "hillshade-highlight-color") }
+  }
+
+  @Test
+  fun hillshadeHighlightColorUseThemeSetAfterInitialization() {
+    val layer = hillshadeLayer("id", "source") {}
+    val theme = "none"
+    layer.bindTo(style)
+    layer.hillshadeHighlightColorUseTheme(theme)
+    verify { style.setStyleLayerProperty("id", "hillshade-highlight-color-use-theme", capture(valueSlot)) }
+    assertEquals(valueSlot.captured.toString(), theme)
+  }
+
+  @Test
+  fun hillshadeHighlightColorUseThemeSet() {
+    val theme = "none"
+    val layer = hillshadeLayer("id", "source") {
+      hillshadeHighlightColorUseTheme(theme)
+    }
+    layer.bindTo(style)
+    verify { style.addStyleLayer(capture(valueSlot), any()) }
+    assertTrue(valueSlot.captured.toString().contains("hillshade-highlight-color-use-theme"))
+  }
+
+  @Test
+  fun hillshadeHighlightColorUseThemeGet() {
+    val theme = "none"
+    every { styleProperty.value } returns TypeUtils.wrapToValue(theme)
+    val layer = hillshadeLayer("id", "source") {}
+    layer.bindTo(style)
+    assertEquals(theme.toString(), layer.hillshadeHighlightColorUseTheme?.toString())
+    verify { style.getStyleLayerProperty("id", "hillshade-highlight-color-use-theme") }
   }
   // Expression Tests
 
@@ -692,6 +861,37 @@ class HillshadeLayerTest {
     assertEquals(expectedValue.toString(), layer.hillshadeShadowColor?.toString())
     verify { style.getStyleLayerProperty("id", "hillshade-shadow-color") }
   }
+
+  @Test
+  fun hillshadeShadowColorUseThemeSetAfterInitialization() {
+    val layer = hillshadeLayer("id", "source") {}
+    val theme = "none"
+    layer.bindTo(style)
+    layer.hillshadeShadowColorUseTheme(theme)
+    verify { style.setStyleLayerProperty("id", "hillshade-shadow-color-use-theme", capture(valueSlot)) }
+    assertEquals(valueSlot.captured.toString(), theme)
+  }
+
+  @Test
+  fun hillshadeShadowColorUseThemeSet() {
+    val theme = "none"
+    val layer = hillshadeLayer("id", "source") {
+      hillshadeShadowColorUseTheme(theme)
+    }
+    layer.bindTo(style)
+    verify { style.addStyleLayer(capture(valueSlot), any()) }
+    assertTrue(valueSlot.captured.toString().contains("hillshade-shadow-color-use-theme"))
+  }
+
+  @Test
+  fun hillshadeShadowColorUseThemeGet() {
+    val theme = "none"
+    every { styleProperty.value } returns TypeUtils.wrapToValue(theme)
+    val layer = hillshadeLayer("id", "source") {}
+    layer.bindTo(style)
+    assertEquals(theme.toString(), layer.hillshadeShadowColorUseTheme?.toString())
+    verify { style.getStyleLayerProperty("id", "hillshade-shadow-color-use-theme") }
+  }
   // Expression Tests
 
   @Test
@@ -834,6 +1034,26 @@ class HillshadeLayerTest {
   }
 
   @Test
+  fun visibilityAsExpressionSet() {
+    val layer = hillshadeLayer("id", "source") {}
+    layer.bindTo(style)
+    layer.visibility(literal("none"))
+    verify { style.setStyleLayerProperty("id", "visibility", capture(valueSlot)) }
+    assertEquals(valueSlot.captured.toString(), "none")
+  }
+
+  @Test
+  fun visibilityAsExpressionGet() {
+    every { styleProperty.kind } returns StylePropertyValueKind.EXPRESSION
+    every { styleProperty.value } returns literal("none")
+
+    val layer = hillshadeLayer("id", "source") { }
+    layer.bindTo(style)
+    assertEquals(literal("none"), layer.visibilityAsExpression)
+    verify { style.getStyleLayerProperty("id", "visibility") }
+  }
+
+  @Test
   fun getType() {
     val layer = hillshadeLayer("id", "source") { }
     assertEquals("hillshade", layer.getType())
@@ -877,6 +1097,15 @@ class HillshadeLayerTest {
     assertEquals(expectedValue.toString(), HillshadeLayer.defaultHillshadeAccentColor?.toString())
     verify { StyleManager.getStyleLayerPropertyDefaultValue("hillshade", "hillshade-accent-color") }
   }
+
+  @Test
+  fun defaultHillshadeAccentColorUseThemeTest() {
+    val testValue = "default"
+    every { styleProperty.value } returns TypeUtils.wrapToValue(testValue)
+    assertEquals(testValue, HillshadeLayer.defaultHillshadeAccentColorUseTheme)
+    verify { StyleManager.getStyleLayerPropertyDefaultValue("hillshade", "hillshade-accent-color-use-theme") }
+  }
+
   // Expression Tests
 
   @Test
@@ -938,6 +1167,50 @@ class HillshadeLayerTest {
   }
 
   @Test
+  fun defaultHillshadeEmissiveStrengthTest() {
+    val testValue = 1.0
+    every { styleProperty.value } returns TypeUtils.wrapToValue(testValue)
+    val expectedValue = 1.0
+    assertEquals(expectedValue.toString(), HillshadeLayer.defaultHillshadeEmissiveStrength?.toString())
+    verify { StyleManager.getStyleLayerPropertyDefaultValue("hillshade", "hillshade-emissive-strength") }
+  }
+  // Expression Tests
+
+  @Test
+  fun defaultHillshadeEmissiveStrengthAsExpressionTest() {
+    val expression = sum {
+      literal(2)
+      literal(3)
+    }
+    every { styleProperty.value } returns TypeUtils.wrapToValue(expression)
+    every { styleProperty.kind } returns StylePropertyValueKind.EXPRESSION
+
+    assertEquals(expression.toString(), HillshadeLayer.defaultHillshadeEmissiveStrengthAsExpression?.toString())
+    verify { StyleManager.getStyleLayerPropertyDefaultValue("hillshade", "hillshade-emissive-strength") }
+  }
+
+  @Test
+  fun defaultHillshadeEmissiveStrengthAsExpressionGetFromLiteral() {
+    every { styleProperty.value } returns TypeUtils.wrapToValue(1.0)
+    assertEquals(1.0, HillshadeLayer.defaultHillshadeEmissiveStrengthAsExpression?.contents as Double, 1E-5)
+    assertEquals(1.0, HillshadeLayer.defaultHillshadeEmissiveStrength!!, 1E-5)
+    verify { StyleManager.getStyleLayerPropertyDefaultValue("hillshade", "hillshade-emissive-strength") }
+  }
+
+  @Test
+  fun defaultHillshadeEmissiveStrengthTransitionTest() {
+    val transition = transitionOptions {
+      duration(100)
+      delay(200)
+    }
+    every { styleProperty.value } returns TypeUtils.wrapToValue(transition)
+    every { styleProperty.kind } returns StylePropertyValueKind.TRANSITION
+
+    assertEquals(transition.toValue().toString(), HillshadeLayer.defaultHillshadeEmissiveStrengthTransition?.toValue().toString())
+    verify { StyleManager.getStyleLayerPropertyDefaultValue("hillshade", "hillshade-emissive-strength-transition") }
+  }
+
+  @Test
   fun defaultHillshadeExaggerationTest() {
     val testValue = 1.0
     every { styleProperty.value } returns TypeUtils.wrapToValue(testValue)
@@ -996,6 +1269,15 @@ class HillshadeLayerTest {
     assertEquals(expectedValue.toString(), HillshadeLayer.defaultHillshadeHighlightColor?.toString())
     verify { StyleManager.getStyleLayerPropertyDefaultValue("hillshade", "hillshade-highlight-color") }
   }
+
+  @Test
+  fun defaultHillshadeHighlightColorUseThemeTest() {
+    val testValue = "default"
+    every { styleProperty.value } returns TypeUtils.wrapToValue(testValue)
+    assertEquals(testValue, HillshadeLayer.defaultHillshadeHighlightColorUseTheme)
+    verify { StyleManager.getStyleLayerPropertyDefaultValue("hillshade", "hillshade-highlight-color-use-theme") }
+  }
+
   // Expression Tests
 
   @Test
@@ -1135,6 +1417,15 @@ class HillshadeLayerTest {
     assertEquals(expectedValue.toString(), HillshadeLayer.defaultHillshadeShadowColor?.toString())
     verify { StyleManager.getStyleLayerPropertyDefaultValue("hillshade", "hillshade-shadow-color") }
   }
+
+  @Test
+  fun defaultHillshadeShadowColorUseThemeTest() {
+    val testValue = "default"
+    every { styleProperty.value } returns TypeUtils.wrapToValue(testValue)
+    assertEquals(testValue, HillshadeLayer.defaultHillshadeShadowColorUseTheme)
+    verify { StyleManager.getStyleLayerPropertyDefaultValue("hillshade", "hillshade-shadow-color-use-theme") }
+  }
+
   // Expression Tests
 
   @Test

@@ -3,10 +3,11 @@ package com.mapbox.maps.plugin.viewport
 import android.animation.ValueAnimator
 import android.os.Handler
 import android.os.Looper
+import androidx.annotation.RestrictTo
+import com.mapbox.common.Cancelable
 import com.mapbox.maps.plugin.animation.CameraAnimationsLifecycleListener
 import com.mapbox.maps.plugin.animation.CameraAnimationsPlugin
 import com.mapbox.maps.plugin.animation.CameraAnimatorType
-import com.mapbox.maps.plugin.animation.Cancelable
 import com.mapbox.maps.plugin.animation.MapAnimationOwnerRegistry
 import com.mapbox.maps.plugin.animation.camera
 import com.mapbox.maps.plugin.delegates.MapDelegateProvider
@@ -24,6 +25,7 @@ import com.mapbox.maps.plugin.viewport.transition.DefaultViewportTransition
 import com.mapbox.maps.plugin.viewport.transition.DefaultViewportTransitionImpl
 import com.mapbox.maps.plugin.viewport.transition.ImmediateViewportTransition
 import com.mapbox.maps.plugin.viewport.transition.ViewportTransition
+import com.mapbox.maps.plugin.viewport.util.ViewportTelemetryEvents
 import java.util.concurrent.CopyOnWriteArraySet
 
 /**
@@ -38,7 +40,8 @@ import java.util.concurrent.CopyOnWriteArraySet
  *  - in a state (camera is being managed by a ViewportState)
  *  - transitioning (camera is being managed by a ViewportTransition)
  */
-class ViewportPluginImpl(private val handler: Handler = Handler(Looper.getMainLooper())) :
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+internal class ViewportPluginImpl(private val handler: Handler = Handler(Looper.getMainLooper())) :
   ViewportPlugin {
   private val registeredStatusObservers = CopyOnWriteArraySet<ViewportStatusObserver>()
   private var currentCancelable: Cancelable? = null
@@ -122,6 +125,7 @@ class ViewportPluginImpl(private val handler: Handler = Handler(Looper.getMainLo
    * @param completionListener The listener to observe the completion state.
    */
   override fun transitionTo(targetState: ViewportState, transition: ViewportTransition?, completionListener: CompletionListener?) {
+    ViewportTelemetryEvents.stateTransition.increment()
     with(status) {
       when (this) {
         is ViewportStatus.State -> {
@@ -236,6 +240,7 @@ class ViewportPluginImpl(private val handler: Handler = Handler(Looper.getMainLo
    * @param options The desired [FollowPuckViewportStateOptions]
    */
   override fun makeFollowPuckViewportState(options: FollowPuckViewportStateOptions): FollowPuckViewportState {
+    ViewportTelemetryEvents.stateFollowPuck.increment()
     return FollowPuckViewportStateImpl(delegateProvider, options)
   }
 
@@ -245,6 +250,7 @@ class ViewportPluginImpl(private val handler: Handler = Handler(Looper.getMainLo
    * @param options The desired [OverviewViewportStateOptions]
    */
   override fun makeOverviewViewportState(options: OverviewViewportStateOptions): OverviewViewportState {
+    ViewportTelemetryEvents.stateOverview.increment()
     return OverviewViewportStateImpl(delegateProvider, options)
   }
 

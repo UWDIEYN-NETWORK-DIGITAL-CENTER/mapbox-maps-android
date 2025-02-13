@@ -2,6 +2,7 @@ package com.mapbox.maps.testapp.examples.sky
 
 import android.os.Bundle
 import android.view.View
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.mapbox.geojson.Point
 import com.mapbox.maps.*
@@ -28,7 +29,7 @@ class SkyLayerSnapshotterActivity : AppCompatActivity() {
     setContentView(binding.root)
     binding.mapView.scalebar.enabled = false
     binding.mapView.compass.enabled = false
-    binding.mapView.getMapboxMap().setCamera(
+    binding.mapView.mapboxMap.setCamera(
       CameraOptions.Builder()
         .center(Point.fromLngLat(24.827187523937795, 60.55932732152849))
         .zoom(16.0)
@@ -36,7 +37,7 @@ class SkyLayerSnapshotterActivity : AppCompatActivity() {
         .bearing(330.1)
         .build()
     )
-    binding.mapView.getMapboxMap().loadStyle(
+    binding.mapView.mapboxMap.loadStyle(
       styleExtension = style(Style.OUTDOORS) {
         +skyLayer("sky") {
           skyType(SkyType.GRADIENT)
@@ -60,7 +61,6 @@ class SkyLayerSnapshotterActivity : AppCompatActivity() {
   private fun prepareSnapshotter() {
     val snapshotMapOptions = MapSnapshotOptions.Builder()
       .size(Size(512.0f, 512.0f))
-      .resourceOptions(MapInitOptions.getDefaultResourceOptions(this))
       .build()
 
     snapshotter = Snapshotter(this, snapshotMapOptions).apply {
@@ -82,11 +82,17 @@ class SkyLayerSnapshotterActivity : AppCompatActivity() {
           .bearing(330.1)
           .build()
       )
-      setStyleUri(Style.MAPBOX_STREETS)
-      start {
-        it?.let { snapshot ->
-          binding.maneuverView.setImageBitmap(snapshot.bitmap())
+      setStyleUri(Style.STANDARD)
+      start { bitmap, error ->
+        if (bitmap != null) {
+          binding.maneuverView.setImageBitmap(bitmap)
           binding.maneuverCaption.visibility = View.VISIBLE
+        } else {
+          Toast.makeText(
+            this@SkyLayerSnapshotterActivity,
+            "Snapshotter error: $error",
+            Toast.LENGTH_SHORT
+          ).show()
         }
       }
     }

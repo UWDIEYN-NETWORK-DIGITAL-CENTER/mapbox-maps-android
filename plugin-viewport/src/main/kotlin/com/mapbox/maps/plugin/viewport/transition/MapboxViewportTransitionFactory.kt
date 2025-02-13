@@ -3,6 +3,7 @@ package com.mapbox.maps.plugin.viewport.transition
 import android.animation.Animator
 import android.animation.AnimatorSet
 import android.view.animation.Interpolator
+import androidx.annotation.RestrictTo
 import androidx.core.view.animation.PathInterpolatorCompat
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
@@ -16,6 +17,7 @@ import kotlin.math.abs
 /**
  * Helper class that provides default implementation of [ViewportTransition] generators.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 internal class MapboxViewportTransitionFactory(
   mapDelegateProvider: MapDelegateProvider
 ) {
@@ -208,12 +210,16 @@ internal class MapboxViewportTransitionFactory(
     startDelay: Long = 0L,
     duration: Long,
     interpolator: Interpolator = SLOW_OUT_SLOW_IN_INTERPOLATOR
-  ): Animator = cameraPlugin.createCenterAnimator(
-    cameraAnimatorOptions(center) { owner(VIEWPORT_CAMERA_OWNER) }
-  ) {
-    this.startDelay = startDelay
-    this.duration = duration
-    this.interpolator = interpolator
+  ): Animator {
+
+    return cameraPlugin.createCenterAnimator(
+      useShortestPath = true,
+      options = cameraAnimatorOptions(center) { owner(VIEWPORT_CAMERA_OWNER) }
+    ) {
+      this.startDelay = startDelay
+      this.duration = duration
+      this.interpolator = interpolator
+    }
   }
 
   private fun createZoomAnimator(

@@ -7,6 +7,11 @@ import com.mapbox.maps.extension.observable.model.TileID
 /**
  * The data class for source-data-loaded event data in Observer
  */
+@Deprecated(
+  message = "This data class is deprecated, and will be removed in next major release.",
+  replaceWith = ReplaceWith("SourceDataLoaded"),
+  level = DeprecationLevel.WARNING
+)
 data class SourceDataLoadedEventData(
   /**
    * Representing timestamp taken at the time of an event creation, in microseconds, since the epoch.

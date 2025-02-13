@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="activity_simple_map">Display a map view</string>
+    <string name="activity_debug_mode">Debug mode</string>
+    <string name="activity_circle_annotation">Circle Annotation</string>
+    <string name="activity_point_annotation">Point Annotation</string>
+    <string name="activity_point_annotation_cluster">Point Annotation Clustering</string>
+    <string name="activity_polygon_annotation">Polygon Annotation</string>
+    <string name="activity_polyline_annotation">Polyline Annotation</string>
+    <string name="activity_view_annotation">View annotation</string>
+    <string name="activity_dynamic_view_annotation">Dynamic view annotation</string>
+    <string name="activity_map_viewport_animation">Map Viewport animation</string>
+    <string name="activity_multiple_display">Multi display</string>
+    <string name="activity_ornaments_customisation">Ornament customisation</string>
+    <string name="activity_location_location_component">Location Component</string>
+    <string name="activity_style_composition">Style composition</string>
+    <string name="activity_navigation_simulation">Simulate navigation</string>
+    <string name="activity_multi_map">Display multiple maps</string>
+    <string name="activity_style_states">Style States</string>
+    <string name="activity_style_positions">Position content using GenericStyle</string>
+    <string name="activity_model_layer">Display 3D model in a model layer</string>
+    <string name="activity_style_image_source_title">Use an image source</string>
+    <string name="activity_animated_image_source">Add animated weather data</string>
+    <string name="activity_terrain">Terrain</string>
+    <string name="activity_style_imports">Style imports</string>
+    <string name="activity_query_rendered_feature">Query rendered feature</string>
+    <string name="activity_standard_style">Standard style</string>
+    <string name="activity_clip_layer">Clip layer example</string>
+    <string name="activity_interactions">Interactions example</string>
+    <string name="activity_precipitations">Precipitations example</string>
+    <string name="activity_color_theme">Color theme example</string>
+</resources>

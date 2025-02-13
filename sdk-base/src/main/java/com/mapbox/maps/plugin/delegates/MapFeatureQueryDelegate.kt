@@ -7,65 +7,6 @@ import com.mapbox.maps.*
  * Definition of the feature query delegate. Provide interface to query map's features.
  */
 interface MapFeatureQueryDelegate {
-  /**
-   * Queries the map for rendered features.
-   *
-   * @param shape Screen pixel coordinates (point, line string or box) to query for rendered features.
-   * @param options Options for querying rendered features.
-   * @param callback Callback called when the query completes
-   */
-  @Deprecated(
-    "Should be replaced overloaded function taking RenderedQueryGeometry and returning cancelable",
-    replaceWith = ReplaceWith(
-      "queryRenderedFeatures(RenderedQueryGeometry(shape), options, callback)",
-      imports = arrayOf("com.mapbox.maps.RenderedQueryGeometry")
-    ),
-  )
-  fun queryRenderedFeatures(
-    shape: List<ScreenCoordinate?>,
-    options: RenderedQueryOptions,
-    callback: QueryFeaturesCallback
-  )
-
-  /**
-   * Queries the map for rendered features.
-   *
-   * @param box Screen box to query for rendered features.
-   * @param options Options for querying rendered features.
-   * @param callback Callback called when the query completes
-   */
-  @Deprecated(
-    "Should be replaced overloaded function taking RenderedQueryGeometry and returning cancelable",
-    replaceWith = ReplaceWith(
-      "queryRenderedFeatures(RenderedQueryGeometry(box), options, callback)",
-      imports = arrayOf("com.mapbox.maps.RenderedQueryGeometry")
-    ),
-  )
-  fun queryRenderedFeatures(
-    box: ScreenBox,
-    options: RenderedQueryOptions,
-    callback: QueryFeaturesCallback
-  )
-
-  /**
-   * Queries the map for rendered features.
-   *
-   * @param pixel Screen pixel coordinate to query for rendered features.
-   * @param options Options for querying rendered features.
-   * @param callback Callback called when the query completes
-   */
-  @Deprecated(
-    "Should be replaced overloaded function taking RenderedQueryGeometry and returning cancelable",
-    replaceWith = ReplaceWith(
-      "queryRenderedFeatures(RenderedQueryGeometry(pixel), options, callback)",
-      imports = arrayOf("com.mapbox.maps.RenderedQueryGeometry")
-    ),
-  )
-  fun queryRenderedFeatures(
-    pixel: ScreenCoordinate,
-    options: RenderedQueryOptions,
-    callback: QueryFeaturesCallback
-  )
 
   /**
    * Queries the map for rendered features.
@@ -78,7 +19,7 @@ interface MapFeatureQueryDelegate {
   fun queryRenderedFeatures(
     geometry: RenderedQueryGeometry,
     options: RenderedQueryOptions,
-    callback: QueryFeaturesCallback
+    callback: QueryRenderedFeaturesCallback
   ): Cancelable
 
   /**
@@ -91,8 +32,8 @@ interface MapFeatureQueryDelegate {
   fun querySourceFeatures(
     sourceId: String,
     options: SourceQueryOptions,
-    callback: QueryFeaturesCallback
-  )
+    callback: QuerySourceFeaturesCallback
+  ): Cancelable
 
   /**
    * In some cases querying source / render features is expected to be a blocking operation

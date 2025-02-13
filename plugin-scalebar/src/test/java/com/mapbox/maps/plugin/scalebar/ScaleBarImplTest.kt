@@ -27,12 +27,26 @@ import org.robolectric.annotation.LooperMode
 class ScaleBarImplTest {
   private lateinit var scaleBarView: ScaleBarImpl
   private val context: Context = mockk(relaxed = true)
-  private val scaleBarSettings = ScaleBarSettings(
-    true, Gravity.TOP or Gravity.START,
-    4f, 4f, 4f, 4f, Color.BLACK, Color.BLACK, Color.WHITE,
-    2f, 2f, 8f, 2f, 8f, true, 15,
-    true, 0.5f
-  )
+  private val scaleBarSettings = ScaleBarSettings {
+    enabled = true
+    position = Gravity.TOP or Gravity.START
+    marginLeft = 4f
+    marginTop = 4f
+    marginRight = 4f
+    marginBottom = 4f
+    textColor = Color.BLACK
+    primaryColor = Color.BLACK
+    secondaryColor = Color.WHITE
+    borderWidth = 2f
+    height = 2f
+    textBarMargin = 8f
+    textBorderWidth = 2f
+    textSize = 8f
+    isMetricUnits = true
+    refreshInterval = 15
+    showTextBorder = true
+    ratio = 0.5f
+  }
 
   @Before
   fun setUp() {
@@ -62,8 +76,7 @@ class ScaleBarImplTest {
   @Test
   fun scaleTable() {
     assertEquals(metricTable, scaleBarView.scaleTable)
-    scaleBarSettings.isMetricUnits = false
-    scaleBarView.settings = scaleBarSettings
+    scaleBarView.settings = scaleBarSettings.toBuilder().setIsMetricUnits(false).build()
     assertEquals(imperialTable, scaleBarView.scaleTable)
   }
 
@@ -101,13 +114,23 @@ class ScaleBarImplTest {
   }
 
   @Test
+  fun useContinuousRendering() {
+    assertEquals(false, scaleBarView.useContinuousRendering)
+    scaleBarView.useContinuousRendering = true
+    assertEquals(true, scaleBarView.useContinuousRendering)
+
+    scaleBarView.settings = ScaleBarSettings { useContinuousRendering = false }
+    assertEquals(false, scaleBarView.useContinuousRendering)
+  }
+
+  @Test
   @LooperMode(LooperMode.Mode.PAUSED)
   fun renderingOnDemandTest() {
     scaleBarView.useContinuousRendering = false
     Shadows.shadowOf(Looper.getMainLooper()).pause()
     scaleBarView.distancePerPixel = 1.0f
-    assertTrue(scaleBarView.refreshHandler.hasMessages(MSG_RENDER_ON_DEMAND))
-    assertFalse(scaleBarView.refreshHandler.hasMessages(MSG_RENDER_CONTINUOUS))
+    assertTrue(scaleBarView.refreshHandlerHasMessages(MSG_RENDER_ON_DEMAND))
+    assertFalse(scaleBarView.refreshHandlerHasMessages(MSG_RENDER_CONTINUOUS))
     Shadows.shadowOf(Looper.getMainLooper()).idle()
   }
 
@@ -117,8 +140,8 @@ class ScaleBarImplTest {
     scaleBarView.useContinuousRendering = true
     Shadows.shadowOf(Looper.getMainLooper()).pause()
     scaleBarView.distancePerPixel = 1.0f
-    assertFalse(scaleBarView.refreshHandler.hasMessages(MSG_RENDER_ON_DEMAND))
-    assertTrue(scaleBarView.refreshHandler.hasMessages(MSG_RENDER_CONTINUOUS))
+    assertFalse(scaleBarView.refreshHandlerHasMessages(MSG_RENDER_ON_DEMAND))
+    assertTrue(scaleBarView.refreshHandlerHasMessages(MSG_RENDER_CONTINUOUS))
     Shadows.shadowOf(Looper.getMainLooper()).idle()
   }
 }
@@ -199,7 +222,7 @@ class ScaleBarImplScaleBarSegmentsTest(
 
   @Test
   fun `verify below and above scale bar segments`() {
-    scaleBarView.settings = scaleBarView.settings.copy(isMetricUnits = isMetricUnits)
+    scaleBarView.settings = scaleBarView.settings.toBuilder().setIsMetricUnits(isMetricUnits).build()
     scaleBarView.distancePerPixel = 0.01F
     val unit = if (isMetricUnits) METER_UNIT else FEET_UNIT
     // Special case where max distance is smaller than the first entry segment in the table

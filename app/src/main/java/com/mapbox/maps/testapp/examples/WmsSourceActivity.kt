@@ -20,7 +20,7 @@ class WmsSourceActivity : AppCompatActivity() {
     super.onCreate(savedInstanceState)
     val binding = ActivityWmsSourceBinding.inflate(layoutInflater)
     setContentView(binding.root)
-    binding.mapView.getMapboxMap().loadStyleUri(
+    binding.mapView.mapboxMap.loadStyle(
       Style.LIGHT
     ) {
       it.addSource(
@@ -47,7 +47,7 @@ class WmsSourceActivity : AppCompatActivity() {
       "&transparent=true&width=256&height=256&layers=Natural2015"
     const val WMS_SOURCE_ID = "web-map-source"
     const val RASTER_LAYER_ID = "web-map-layer"
-    const val BELOW_LAYER_ID = "tunnel-street-minor-low"
+    const val BELOW_LAYER_ID = "tunnel-simple"
     const val TILESET_JSON = "tileset"
   }
 }

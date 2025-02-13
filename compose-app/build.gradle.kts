@@ -1,19 +1,15 @@
 plugins {
-  id("com.android.application")
-  kotlin("android")
-  kotlin("android.extensions")
-  id("com.mapbox.maps.token")
-  id("io.gitlab.arturbosch.detekt").version(Versions.detekt)
+  id("com.mapbox.gradle.application")
+  id("org.jetbrains.kotlin.plugin.parcelize")
 }
 
-val buildFromSource: String by project
 
 android {
-  compileSdk = AndroidVersions.Compose.compileSdkVersion
+  compileSdk = libs.versions.androidCompileSdkVersion.get().toInt()
   defaultConfig {
-    applicationId = "com.mapbox.maps.testapp.compose"
-    minSdk = AndroidVersions.Compose.minSdkVersion
-    targetSdk = AndroidVersions.Compose.targetSdkVersion
+    minSdk = libs.versions.androidMinSdkVersion.get().toInt()
+    targetSdk = libs.versions.androidTargetSdkVersion.get().toInt()
+    applicationId = "com.mapbox.maps.compose.testapp"
     versionCode = 1
     versionName = "0.1.0"
     multiDexEnabled = true
@@ -24,13 +20,31 @@ android {
     }
   }
 
+  buildTypes {
+    getByName("release") {
+      isMinifyEnabled = true
+      // For local testing only, should use a different keystore if used besides testing.
+      signingConfig = signingConfigs.getByName("debug")
+      proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
+    }
+    getByName("debug") {
+      isMinifyEnabled = false
+      signingConfig = signingConfigs.getByName("debug")
+      proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
+    }
+  }
+
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
   }
 
   composeOptions {
-    kotlinCompilerExtensionVersion = Versions.compose
+    kotlinCompilerExtensionVersion = libs.versions.compose.get()
+  }
+
+  kotlinOptions {
+    freeCompilerArgs += "-Xexplicit-api=strict"
   }
 
   testOptions {
@@ -39,41 +53,36 @@ android {
     }
   }
 
-  packagingOptions {
-    if (buildFromSource.toBoolean()) {
-      jniLibs.pickFirsts.add("**/libc++_shared.so")
-    }
-  }
-
   buildFeatures {
     compose = true
   }
 }
 
-androidExtensions {
-  isExperimental = true
-}
-
 dependencies {
-  implementation(project(":sdk"))
-  implementation(Dependencies.googleMaterialDesign)
-  implementation(Dependencies.composeUi)
-  implementation(Dependencies.composeMaterial)
-  implementation(Dependencies.composeUiToolingPreview)
-  implementation(Dependencies.androidxLifecycleKtx)
-  implementation(Dependencies.androidxActivityCompose)
-  implementation(Dependencies.androidxAppCompat)
-  implementation(Dependencies.androidxCoreKtx)
+  implementation(project(":maps-sdk"))
+  implementation(project(":extension-compose"))
+  implementation(platform(libs.compose.bom))
+  implementation(libs.compose.ui)
+  implementation(libs.compose.material)
+  implementation(libs.androidx.activityCompose)
+  implementation(libs.googleMaterialDesign)
+  implementation(libs.compose.uiToolingPreview)
+  implementation(libs.compose.uiTooling)
+  implementation(libs.mapbox.javaTurf)
+  implementation(libs.mapbox.services)
 
-  androidTestUtil(Dependencies.androidxOrchestrator)
-  androidTestImplementation(Dependencies.androidxTestRunner)
-  androidTestImplementation(Dependencies.androidxJUnitTestRules)
-  androidTestImplementation(Dependencies.androidxRules)
-  androidTestImplementation(Dependencies.androidxTestJUnit)
-  androidTestImplementation(Dependencies.androidxEspresso)
-  androidTestImplementation(Dependencies.androidxUiAutomator)
-  testImplementation(Dependencies.junit)
-  detektPlugins(Dependencies.detektFormatting)
+  implementation(libs.squareRetrofit)
+  implementation(libs.androidx.appCompat)
+  implementation(libs.androidx.coreKtx)
+  implementation(libs.androidx.multidex)
+  implementation(libs.googlePlayServicesLocation)
+  androidTestUtil(libs.androidx.orchestrator)
+  androidTestImplementation(libs.bundles.base.dependenciesAndroidTests)
+  androidTestImplementation(libs.androidx.testJUnit)
+  androidTestImplementation(libs.androidx.uiAutomator)
+  testImplementation(libs.junit)
+  detektPlugins(libs.detektFormatting)
+  debugImplementation(libs.squareLeakCanary)
 }
 
 project.apply {
@@ -82,6 +91,3 @@ project.apply {
   from("$rootDir/gradle/detekt.gradle")
   from("$rootDir/gradle/dependency-updates.gradle")
 }
-
-val localPath:String = org.apache.commons.io.FilenameUtils.getFullPathNoEndSeparator(project.buildscript.sourceFile.toString())
-the<com.mapbox.AccessTokenExtension>().file = "${localPath}/src/main/res/values/developer-config.xml"

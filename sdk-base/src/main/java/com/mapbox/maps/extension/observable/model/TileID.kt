@@ -5,6 +5,11 @@ import com.google.gson.annotations.SerializedName
 /**
  * Defines the tile id in a source-data-loaded event.
  */
+@Deprecated(
+  message = "This data class is deprecated, and will be removed in next major release.",
+  replaceWith = ReplaceWith("CanonicalTileID"),
+  level = DeprecationLevel.WARNING
+)
 data class TileID(
   /**
    * The zoom level.

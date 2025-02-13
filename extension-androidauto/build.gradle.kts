@@ -1,17 +1,12 @@
-import org.jetbrains.dokka.gradle.DokkaTask
-
 plugins {
-  id("com.android.library")
-  kotlin("android")
-  id("org.jetbrains.dokka")
-  id("io.gitlab.arturbosch.detekt").version(Versions.detekt)
+  id("com.mapbox.gradle.library")
 }
 
 android {
-  compileSdk = AndroidVersions.AndroidAuto.compileSdkVersion
+  compileSdk = libs.versions.autoCompileSdkVersion.get().toInt()
   defaultConfig {
-    minSdk = AndroidVersions.AndroidAuto.minSdkVersion
-    targetSdk = AndroidVersions.AndroidAuto.targetSdkVersion
+    minSdk = libs.versions.autoMinSdkVersion.get().toInt()
+    targetSdk = libs.versions.autoTargetSdkVersion.get().toInt()
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
 
@@ -22,39 +17,37 @@ android {
   }
 }
 
-dependencies {
-  api(Dependencies.androidAutoMapboxMapSdk)
-  testImplementation(Dependencies.androidAutoMapboxMapSdk)
-
-  api(Dependencies.googleCarAppLibrary)
-  implementation(Dependencies.kotlin)
-  implementation(Dependencies.androidxCoreKtx)
-  implementation(Dependencies.androidxAnnotations)
-
-  testImplementation(Dependencies.junit)
-  testImplementation(Dependencies.mockk)
-  testImplementation(Dependencies.androidxTestCore)
-  testImplementation(Dependencies.robolectric)
-  androidTestImplementation(Dependencies.androidxTestRunner)
-  androidTestImplementation(Dependencies.androidxJUnitTestRules)
-  androidTestImplementation(Dependencies.androidxEspresso)
-  detektPlugins(Dependencies.detektFormatting)
-}
-
-tasks.withType<DokkaTask>().configureEach {
-  dokkaSourceSets {
-    configureEach {
-      reportUndocumented.set(true)
-      failOnWarning.set(true)
+mapboxLibrary {
+  jApiCmp {
+    // The first release for extension-androidauto was 11.1.0 so we force it if the current one is "11.1.0-SNAPSHOT"
+    if (project.hasProperty("VERSION_NAME") && project.property("VERSION_NAME") == "11.1.0-SNAPSHOT") {
+      previousVersion = "11.1.0"
     }
   }
+  publish {
+    group = "com.mapbox.extension"
+    artifactId = "maps-androidauto"
+    artifactTitle = "The android auto extension for the Mapbox Maps SDK for Android"
+    artifactDescription = artifactTitle
+    sdkName = "mobile-maps-android-androidauto"
+  }
+}
+
+dependencies {
+  api(project(":maps-sdk"))
+  api(libs.googleCarAppLibrary)
+  implementation(libs.kotlin)
+  implementation(libs.androidx.coreKtx)
+  implementation(libs.androidx.annotations)
+
+  testImplementation(libs.bundles.base.dependenciesTests)
+  androidTestImplementation(libs.bundles.base.dependenciesAndroidTests)
+  detektPlugins(libs.detektFormatting)
 }
 
 project.apply {
   from("$rootDir/gradle/ktlint.gradle")
   from("$rootDir/gradle/lint.gradle")
-  from("$rootDir/gradle/jacoco.gradle")
-  from("$rootDir/gradle/sdk-registry.gradle")
   from("$rootDir/gradle/track-public-apis.gradle")
   from("$rootDir/gradle/detekt.gradle")
   from("$rootDir/gradle/dependency-updates.gradle")

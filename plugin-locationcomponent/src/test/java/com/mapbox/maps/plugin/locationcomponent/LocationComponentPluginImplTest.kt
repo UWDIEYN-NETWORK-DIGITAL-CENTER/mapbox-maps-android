@@ -8,33 +8,53 @@ import android.graphics.drawable.Drawable
 import android.hardware.SensorManager
 import android.util.AttributeSet
 import android.view.WindowManager
-import com.mapbox.android.core.location.LocationEngine
-import com.mapbox.android.core.location.LocationEngineProvider
 import com.mapbox.bindgen.ExpectedFactory
+import com.mapbox.common.location.DeviceLocationProvider
 import com.mapbox.geojson.Point
-import com.mapbox.maps.extension.style.StyleInterface
+import com.mapbox.maps.MapboxStyleManager
+import com.mapbox.maps.logE
 import com.mapbox.maps.logW
 import com.mapbox.maps.plugin.LocationPuck2D
+import com.mapbox.maps.plugin.delegates.MapCameraManagerDelegate
 import com.mapbox.maps.plugin.delegates.MapDelegateProvider
 import com.mapbox.maps.plugin.locationcomponent.generated.LocationComponentAttributeParser
-import com.mapbox.maps.plugin.locationcomponent.generated.LocationComponentAttributeParser2
 import com.mapbox.maps.plugin.locationcomponent.generated.LocationComponentSettings
-import io.mockk.*
+import io.mockk.Runs
+import io.mockk.every
+import io.mockk.just
+import io.mockk.mockk
+import io.mockk.mockkObject
+import io.mockk.mockkStatic
+import io.mockk.unmockkAll
+import io.mockk.verify
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runTest
 import org.junit.After
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
+@Config(
+  shadows = [
+    ShadowLocationServiceFactory::class
+  ]
+)
 class LocationComponentPluginImplTest {
 
-  private val delegateProvider = mockk<MapDelegateProvider>(relaxed = true)
+  private val delegateProvider = mockk<MapDelegateProvider>()
   private val locationPuckManager = mockk<LocationPuckManager>(relaxed = true)
   private val locationProvider = mockk<LocationProvider>(relaxed = true)
 
-  private val style = mockk<StyleInterface>(relaxed = true)
+  private val style = mockk<MapboxStyleManager>(relaxed = true)
+  private val cameraDelegate = mockk<MapCameraManagerDelegate>(relaxed = true)
 
   private val context = mockk<Context>(relaxed = true)
   private val attrs = mockk<AttributeSet>(relaxUnitFun = true)
@@ -43,19 +63,17 @@ class LocationComponentPluginImplTest {
   private val drawable = mockk<Drawable>(relaxed = true)
   private val windowManager = mockk<WindowManager>(relaxed = true)
   private val sensorManager = mockk<SensorManager>(relaxed = true)
-  private val locationEngine = mockk<LocationEngine>(relaxed = true)
-
-  private val styleCallbackSlot = slot<(StyleInterface) -> Unit>()
+  private val deviceLocationProvider = mockk<DeviceLocationProvider>(relaxed = true)
 
   private lateinit var locationComponentPlugin: LocationComponentPluginImpl
 
   @Before
   fun setup() {
     mockkObject(LocationComponentAttributeParser)
-    mockkObject(LocationComponentAttributeParser2)
-    mockkStatic(LocationEngineProvider::class)
     mockkStatic("com.mapbox.maps.MapboxLogger")
     every { logW(any(), any()) } just Runs
+
+    ShadowLocationServiceFactory.deviceLocationProvider = deviceLocationProvider
 
     every { context.obtainStyledAttributes(any(), any(), 0, 0) } returns typedArray
     every { context.packageName } returns pack
@@ -70,8 +88,8 @@ class LocationComponentPluginImplTest {
     every { typedArray.getFloat(any(), any()) } returns 10.0f
     every { typedArray.hasValue(any()) } returns true
     every { typedArray.recycle() } returns Unit
-
-    every { LocationEngineProvider.getBestLocationEngine(context.applicationContext.applicationContext) } returns locationEngine
+    every { delegateProvider.mapStyleManagerDelegate } returns style
+    every { delegateProvider.mapCameraManagerDelegate } returns cameraDelegate
 
     locationComponentPlugin = LocationComponentPluginImpl()
   }
@@ -89,15 +107,13 @@ class LocationComponentPluginImplTest {
         attrs,
         1f
       )
-    } returns LocationComponentSettings(enabled = true, locationPuck = LocationPuck2D())
+    } returns LocationComponentSettings(LocationPuck2D()) {
+      enabled = true
+    }
 
-    every { delegateProvider.getStyle(capture(styleCallbackSlot)) } returns Unit
     locationComponentPlugin.bind(context, attrs, 1f, locationProvider, locationPuckManager)
     locationComponentPlugin.onDelegateProvider(delegateProvider)
     locationComponentPlugin.onStart()
-    if (styleCallbackSlot.isCaptured) {
-      styleCallbackSlot.captured.invoke(style)
-    }
   }
 
   // Utility function to setup initialise the plugin.
@@ -108,15 +124,13 @@ class LocationComponentPluginImplTest {
         attrs,
         1f
       )
-    } returns LocationComponentSettings(enabled = false, locationPuck = LocationPuck2D())
+    } returns LocationComponentSettings(LocationPuck2D()) {
+      enabled = false
+    }
 
-    every { delegateProvider.getStyle(capture(styleCallbackSlot)) } returns Unit
     locationComponentPlugin.bind(context, attrs, 1f, locationProvider, locationPuckManager)
     locationComponentPlugin.onDelegateProvider(delegateProvider)
     locationComponentPlugin.onStart()
-    if (styleCallbackSlot.isCaptured) {
-      styleCallbackSlot.captured.invoke(style)
-    }
   }
 
   @Test
@@ -127,7 +141,9 @@ class LocationComponentPluginImplTest {
         attrs,
         1f
       )
-    } returns LocationComponentSettings(enabled = false, locationPuck = LocationPuck2D())
+    } returns LocationComponentSettings(LocationPuck2D()) {
+      enabled = false
+    }
     locationComponentPlugin.bind(context, attrs, 1f)
     assertNull(locationComponentPlugin.getLocationProvider())
   }
@@ -138,10 +154,12 @@ class LocationComponentPluginImplTest {
       LocationComponentAttributeParser.parseLocationComponentSettings(
         context,
         attrs,
-        1.0f
+        1f
       )
-    } returns LocationComponentSettings(enabled = true, locationPuck = LocationPuck2D())
-    locationComponentPlugin.bind(context, attrs, 1.0f)
+    } returns LocationComponentSettings(LocationPuck2D()) {
+      enabled = true
+    }
+    locationComponentPlugin.bind(context, attrs, 1f, locationProvider, locationPuckManager)
     assertNotNull(locationComponentPlugin.getLocationProvider())
   }
 
@@ -245,9 +263,10 @@ class LocationComponentPluginImplTest {
   }
 
   @Test
-  fun testOnStart() {
+  fun testOnStart() = runTest {
     every { locationPuckManager.isLayerInitialised() } returns false
     preparePluginInitialisationWithEnabled()
+    advanceUntilIdle()
     verify(exactly = 1) { locationPuckManager.initialize(style) }
     verify(exactly = 1) { locationPuckManager.onStart() }
     verify(exactly = 1) { locationProvider.registerLocationConsumer(any()) }
@@ -346,18 +365,16 @@ class LocationComponentPluginImplTest {
     verify(exactly = 1) { locationProvider.registerLocationConsumer(any()) }
     verify(exactly = 1) { locationProvider.unRegisterLocationConsumer(any()) }
 
-    every { delegateProvider.getStyle(capture(styleCallbackSlot)) } returns Unit
     locationComponentPlugin.onStart()
-    if (styleCallbackSlot.isCaptured) {
-      styleCallbackSlot.captured.invoke(style)
-    }
     verify(exactly = 2) { locationProvider.registerLocationConsumer(any()) }
     verify(exactly = 1) { locationProvider.unRegisterLocationConsumer(any()) }
   }
 
   @Test
   fun testLocationProviderRegisterDisableEnable() {
+    every { logE(any(), any()) } just Runs
     every { style.addPersistentStyleLayer(any(), any()) } returns ExpectedFactory.createNone()
+    every { style.setStyleLayerProperty(any(), any(), any()) } returns ExpectedFactory.createNone()
 
     preparePluginInitialisationWithEnabled()
 
@@ -366,20 +383,17 @@ class LocationComponentPluginImplTest {
     locationComponentPlugin.enabled = false
     verify(exactly = 1) { locationProvider.registerLocationConsumer(any()) }
     verify(exactly = 1) { locationProvider.unRegisterLocationConsumer(any()) }
+    verify(exactly = 1) { locationPuckManager.cleanUp() }
 
-    every { delegateProvider.getStyle(capture(styleCallbackSlot)) } returns Unit
     locationComponentPlugin.enabled = true
-    if (styleCallbackSlot.isCaptured) {
-      styleCallbackSlot.captured.invoke(style)
-    }
-    verify(exactly = 1) { style.addPersistentStyleLayer(any(), any()) }
+    verify(exactly = 2) { style.addPersistentStyleLayer(any(), any()) }
     verify(exactly = 2) { locationProvider.registerLocationConsumer(any()) }
     verify(exactly = 1) { locationProvider.unRegisterLocationConsumer(any()) }
   }
 
   @Test
   fun testOnStyleChanged() {
-    val style = mockk<StyleInterface>()
+    val style = mockk<MapboxStyleManager>()
     preparePluginInitialisationWithEnabled()
     locationComponentPlugin.onStyleChanged(style)
     verify { locationPuckManager.updateStyle(style) }

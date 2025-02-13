@@ -1,19 +1,15 @@
 plugins {
-  id("com.android.application")
-  kotlin("android")
-  kotlin("android.extensions")
+  id("com.mapbox.gradle.application")
   id("com.mapbox.maps.token")
-  id("io.gitlab.arturbosch.detekt").version(Versions.detekt)
 }
 
-val buildFromSource: String by project
 
 android {
-  compileSdk = AndroidVersions.compileSdkVersion
+  compileSdk = libs.versions.androidCompileSdkVersion.get().toInt()
   defaultConfig {
+    minSdk = libs.versions.androidMinSdkVersion.get().toInt()
+    targetSdk = libs.versions.androidTargetSdkVersion.get().toInt()
     applicationId = "com.mapbox.maps.testapp.style"
-    minSdk = AndroidVersions.minSdkVersion
-    targetSdk = AndroidVersions.targetSdkVersion
     versionCode = 1
     versionName = "0.1.0"
     multiDexEnabled = true
@@ -32,30 +28,20 @@ android {
     }
   }
 
-  packagingOptions {
-    if (buildFromSource.toBoolean()) {
-      jniLibs.pickFirsts.add("**/libc++_shared.so")
-    }
-  }
-}
-
-androidExtensions {
-  isExperimental = true
 }
 
 dependencies {
-  implementation(project(":sdk"))
-  implementation(Dependencies.kotlin)
-  implementation(Dependencies.androidxAppCompat)
-  androidTestUtil(Dependencies.androidxOrchestrator)
-  androidTestImplementation(Dependencies.androidxTestRunner)
-  androidTestImplementation(Dependencies.androidxJUnitTestRules)
-  androidTestImplementation(Dependencies.androidxRules)
-  androidTestImplementation(Dependencies.androidxTestJUnit)
-  androidTestImplementation(Dependencies.androidxEspresso)
-  androidTestImplementation(Dependencies.androidxUiAutomator)
-  testImplementation(Dependencies.junit)
-  detektPlugins(Dependencies.detektFormatting)
+  implementation(project(":maps-sdk"))
+  implementation(libs.kotlin)
+  implementation(libs.androidx.appCompat)
+  androidTestUtil(libs.androidx.orchestrator)
+
+  androidTestImplementation(libs.bundles.base.dependenciesAndroidTests)
+  androidTestImplementation(libs.androidx.jUnitTestRules)
+  androidTestImplementation(libs.androidx.testJUnit)
+  androidTestImplementation(libs.androidx.uiAutomator)
+  testImplementation(libs.junit)
+  detektPlugins(libs.detektFormatting)
 }
 
 project.apply {

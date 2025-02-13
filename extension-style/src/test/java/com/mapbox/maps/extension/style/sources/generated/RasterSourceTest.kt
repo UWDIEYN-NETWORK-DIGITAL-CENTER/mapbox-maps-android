@@ -5,11 +5,13 @@ package com.mapbox.maps.extension.style.sources.generated
 import com.mapbox.bindgen.Expected
 import com.mapbox.bindgen.None
 import com.mapbox.bindgen.Value
+import com.mapbox.maps.MapboxStyleManager
 import com.mapbox.maps.StyleManager
 import com.mapbox.maps.StylePropertyValue
 import com.mapbox.maps.StylePropertyValueKind
+import com.mapbox.maps.TileCacheBudget
+import com.mapbox.maps.TileCacheBudgetInMegabytes
 import com.mapbox.maps.extension.style.ShadowStyleManager
-import com.mapbox.maps.extension.style.StyleInterface
 import com.mapbox.maps.extension.style.sources.TileSet
 import com.mapbox.maps.extension.style.utils.TypeUtils
 import io.mockk.*
@@ -23,7 +25,7 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(shadows = [ShadowStyleManager::class])
 class RasterSourceTest {
-  private val style = mockk<StyleInterface>(relaxUnitFun = true, relaxed = true)
+  private val style = mockk<MapboxStyleManager>(relaxUnitFun = true, relaxed = true)
   private val valueSlot = slot<Value>()
   private val expected = mockk<Expected<String, None>>(relaxUnitFun = true, relaxed = true)
   private val expectedDelta = mockk<Expected<String, Byte>>(relaxUnitFun = true, relaxed = true)
@@ -31,16 +33,21 @@ class RasterSourceTest {
 
   @Before
   fun prepareTest() {
-    every { style.addStyleSource(any(), any()) } returns expected
-    every { style.setStyleSourceProperty(any(), any(), any()) } returns expected
-    every { style.getStyleSourceProperty(any(), any()) } returns styleProperty
     every { expected.error } returns null
     every { expectedDelta.error } returns null
     every { styleProperty.kind } returns StylePropertyValueKind.CONSTANT
 
+    mockkStyle(style)
+
     // For default property getters
     mockkStatic(StyleManager::class)
     every { StyleManager.getStyleSourcePropertyDefaultValue(any(), any()) } returns styleProperty
+  }
+
+  private fun mockkStyle(style: MapboxStyleManager) {
+    every { style.addStyleSource(any(), any()) } returns expected
+    every { style.setStyleSourceProperty(any(), any(), any()) } returns expected
+    every { style.getStyleSourceProperty(any(), any()) } returns styleProperty
   }
 
   @Test
@@ -317,6 +324,39 @@ class RasterSourceTest {
 
     assertEquals(1L.toString(), testSource.prefetchZoomDelta?.toString())
     verify { style.getStyleSourceProperty("testId", "prefetch-zoom-delta") }
+  }
+
+  @Test
+  fun tileCacheBudgetSet() {
+    val testSource = rasterSource("testId") {
+      tileCacheBudget(TileCacheBudget(TileCacheBudgetInMegabytes(100)))
+    }
+    testSource.bindTo(style)
+
+    verify { style.setStyleSourceProperty("testId", "tile-cache-budget", capture(valueSlot)) }
+    assertEquals("{megabytes=100}", valueSlot.captured.toString())
+  }
+
+  @Test
+  fun tileCacheBudgetSetAfterBind() {
+    val testSource = rasterSource("testId") {}
+    testSource.bindTo(style)
+    testSource.tileCacheBudget(TileCacheBudget(TileCacheBudgetInMegabytes(100)))
+
+    verify { style.setStyleSourceProperty("testId", "tile-cache-budget", capture(valueSlot)) }
+    assertEquals(valueSlot.captured.toString(), "{megabytes=100}")
+  }
+
+  @Test
+  fun tileCacheBudgetGet() {
+    every { styleProperty.value } returns TypeUtils.wrapToValue(TileCacheBudget(TileCacheBudgetInMegabytes(100)))
+    val testSource = rasterSource("testId") {}
+    testSource.bindTo(style)
+
+    val tileCacheBudget = testSource.tileCacheBudget!!
+    assertEquals(TileCacheBudget.Type.TILE_CACHE_BUDGET_IN_MEGABYTES, tileCacheBudget.typeInfo)
+    assertEquals(100L, tileCacheBudget.tileCacheBudgetInMegabytes.size)
+    verify { style.getStyleSourceProperty("testId", "tile-cache-budget") }
   }
 
   @Test

@@ -1,9 +1,12 @@
 package com.mapbox.maps.testapp.examples.annotation
 
 import android.content.Context
+import android.widget.Toast
 import com.mapbox.geojson.Point
 import com.mapbox.maps.Style
 import com.mapbox.maps.logE
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import okhttp3.Cache
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -16,8 +19,17 @@ import java.util.*
  */
 object AnnotationUtils {
   private const val TAG = "AnnotationUtils"
+
   val STYLES =
-    arrayOf(Style.MAPBOX_STREETS, Style.OUTDOORS, Style.LIGHT, Style.DARK, Style.SATELLITE_STREETS)
+    arrayOf(Style.STANDARD, Style.OUTDOORS, Style.LIGHT, Style.DARK, Style.SATELLITE_STREETS, Style.STANDARD_SATELLITE)
+  val SLOTS = arrayOf("top", "middle", "bottom")
+
+  /**
+   * Show short toast message.
+   */
+  internal fun Context.showShortToast(string: String) {
+    Toast.makeText(this, string, Toast.LENGTH_SHORT).show()
+  }
 
   /**
    * Utility for getting a list of random points.
@@ -77,25 +89,18 @@ object AnnotationUtils {
   }
 
   /**
-   * Load the string content from a assets file
+   * Load the string content from an assets file in the background
    *
    * @param context the context
    * @param fileName the file to load
+   * @return the contents of the file
+   *
+   * @throws IOException if the given [fileName] can't be read
    */
-  fun loadStringFromAssets(context: Context, fileName: String): String? {
-    return try {
-      val inputStream = context.assets.open(fileName)
-      val rd = BufferedReader(InputStreamReader(inputStream, Charset.forName("UTF-8")))
-      val sb = StringBuilder()
-      rd.forEachLine {
-        sb.append(it)
-      }
-      sb.toString()
-    } catch (e: IOException) {
-      logE(TAG, "Unable to parse $fileName")
-      null
+  suspend fun loadStringFromAssets(context: Context, fileName: String): String =
+    withContext(Dispatchers.IO) {
+        context.assets.open(fileName).bufferedReader().readText()
     }
-  }
 
   /**
    * Load the string content from net

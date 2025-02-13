@@ -1,7 +1,7 @@
 package com.mapbox.maps.plugin.attribution
 
+import android.annotation.SuppressLint
 import android.app.Activity
-import android.app.AlertDialog
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.DialogInterface
@@ -14,7 +14,13 @@ import android.widget.ArrayAdapter
 import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.VisibleForTesting
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.view.ContextThemeWrapper
 import androidx.core.content.ContextCompat
+import com.mapbox.common.geofencing.GeofencingUtilsUserConsentResponseCallback
+import com.mapbox.maps.MapboxExperimental
+import com.mapbox.maps.geofencing.MapGeofencingConsent
+import com.mapbox.maps.logW
 import com.mapbox.maps.module.MapTelemetry
 import com.mapbox.maps.plugin.delegates.MapAttributionDelegate
 
@@ -35,16 +41,23 @@ class AttributionDialogManagerImpl(
   internal var dialog: AlertDialog? = null
   @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
   internal var telemetryDialog: AlertDialog? = null
+  @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+  internal var geofencingDialog: AlertDialog? = null
   private var mapAttributionDelegate: MapAttributionDelegate? = null
   private var telemetry: MapTelemetry? = null
+  @OptIn(MapboxExperimental::class)
+  private var geofencingConsent: MapGeofencingConsent? = null
   /**
    * Invoked when the map attribution should be shown to the end user
    */
+  @OptIn(MapboxExperimental::class)
   override fun showAttribution(mapAttributionDelegate: MapAttributionDelegate) {
     this.mapAttributionDelegate = mapAttributionDelegate
     this.telemetry = mapAttributionDelegate.telemetry()
+    this.geofencingConsent = mapAttributionDelegate.geofencingConsent()
+    val withMapboxGeofencingConsent = geofencingConsent?.shouldShowConsent() ?: false
     this.attributionList =
-      mapAttributionDelegate.parseAttributions(context, AttributionParserConfig())
+      mapAttributionDelegate.parseAttributions(context, AttributionParserConfig(withMapboxGeofencingConsent = withMapboxGeofencingConsent))
     var isActivityFinishing = false
     if (context is Activity) {
       isActivityFinishing = context.isFinishing
@@ -58,10 +71,10 @@ class AttributionDialogManagerImpl(
   /**
    * Invoked when the map attribution dialog should be shown to the end user
    *
-   * @param attributionTitles an array of attribution titles
+   * @param attributions an array of attribution titles
    */
   private fun showAttributionDialog(attributions: List<Attribution>) {
-    val builder = AlertDialog.Builder(context)
+    val builder = prepareDialogBuilder()
     builder.setTitle(R.string.mapbox_attributionsDialogTitle)
     val adapter: ArrayAdapter<Attribution> = object : ArrayAdapter<Attribution>(
       context,
@@ -91,10 +104,11 @@ class AttributionDialogManagerImpl(
    * Called when someone selects an attribution or telemetry settings from the dialog
    */
   override fun onClick(dialog: DialogInterface, which: Int) {
-    if (attributionList[which].title.contains(TELEMETRY_KEY_WORLD)) {
-      showTelemetryDialog()
-    } else {
-      showMapAttributionWebPage(which)
+    val attribution = attributionList[which]
+    when (attribution.url) {
+        Attribution.ABOUT_TELEMETRY_URL -> showTelemetryDialog()
+        Attribution.GEOFENCING_URL_MARKER -> showGeofencingConsentDialog()
+        else -> showMapAttributionWebPage(attribution.url)
     }
   }
 
@@ -104,14 +118,15 @@ class AttributionDialogManagerImpl(
   override fun onStop() {
     dialog?.takeIf { it.isShowing }?.dismiss()
     telemetryDialog?.takeIf { it.isShowing }?.dismiss()
+    geofencingDialog?.takeIf { it.isShowing }?.dismiss()
   }
 
   private fun showTelemetryDialog() {
-    val builder = AlertDialog.Builder(context)
+    val builder = prepareDialogBuilder()
     builder.setTitle(R.string.mapbox_attributionTelemetryTitle)
     builder.setMessage(R.string.mapbox_attributionTelemetryMessage)
     builder.setPositiveButton(R.string.mapbox_attributionTelemetryPositive) { dialog, _ ->
-      telemetry?.setUserTelemetryRequestState(true)
+      telemetry?.userTelemetryRequestState = true
       dialog.cancel()
     }
     builder.setNeutralButton(R.string.mapbox_attributionTelemetryNeutral) { dialog, _ ->
@@ -119,16 +134,40 @@ class AttributionDialogManagerImpl(
       dialog.cancel()
     }
     builder.setNegativeButton(R.string.mapbox_attributionTelemetryNegative) { dialog, _ ->
-      telemetry?.setUserTelemetryRequestState(false)
+      telemetry?.userTelemetryRequestState = false
       dialog.cancel()
     }
     telemetryDialog = builder.show()
   }
 
-  private fun showMapAttributionWebPage(which: Int) {
-    var url = attributionList[which].url
+  @OptIn(MapboxExperimental::class, com.mapbox.annotation.MapboxExperimental::class)
+  private fun showGeofencingConsentDialog() {
+    val builder = prepareDialogBuilder()
+    builder.setTitle(R.string.mapbox_attributionGeofencingTitle)
+    builder.setMessage(R.string.mapbox_attributionGeofencingMessage)
+    val isUserConsentGiven = geofencingConsent?.getUserConsent() ?: false
+    val positiveTextRes = if (isUserConsentGiven) R.string.mapbox_attributionGeofencingConsentedPositive else R.string.mapbox_attributionGeofencingRevokedPositive
+    val negativeTextRes = if (isUserConsentGiven) R.string.mapbox_attributionGeofencingConsentedNegative else R.string.mapbox_attributionGeofencingRevokedNegative
+    val callback = GeofencingUtilsUserConsentResponseCallback { result ->
+        result.error?.let { error ->
+          logW("GeofencingConsent", "Unable to set user consent: ${error.type}")
+        }
+      }
+    builder.setPositiveButton(positiveTextRes) { dialog, _ ->
+      geofencingConsent?.setUserConsent(true, callback)
+      dialog.cancel()
+    }
+    builder.setNegativeButton(negativeTextRes) { dialog, _ ->
+      geofencingConsent?.setUserConsent(false, callback)
+      dialog.cancel()
+    }
+    geofencingDialog = builder.show()
+  }
+
+  private fun showMapAttributionWebPage(attributionUrl: String) {
+    var url = attributionUrl
     mapAttributionDelegate?.let {
-      if (url.contains(FEEDBACK_KEY_WORLD)) {
+      if (url.contains(FEEDBACK_KEY_WORD)) {
         url = it.buildMapBoxFeedbackUrl(context)
       }
     }
@@ -138,22 +177,41 @@ class AttributionDialogManagerImpl(
   }
 
   private fun showWebPage(url: String) {
-    if (context is Activity) {
-      try {
-        val intent = Intent(Intent.ACTION_VIEW)
-        intent.data = Uri.parse(url)
-        context.startActivity(intent)
-      } catch (exception: ActivityNotFoundException) { // explicitly handling if the device hasn't have a web browser installed. #8899
-        Toast.makeText(context, R.string.mapbox_attributionErrorNoBrowser, Toast.LENGTH_LONG).show()
-      }
+    try {
+      val intent = Intent(Intent.ACTION_VIEW)
+      intent.data = Uri.parse(url)
+      context.startActivity(intent)
+    } catch (exception: ActivityNotFoundException) {
+      Toast.makeText(context, R.string.mapbox_attributionErrorNoBrowser, Toast.LENGTH_LONG).show()
+    } catch (t: Throwable) {
+      Toast.makeText(context, t.localizedMessage, Toast.LENGTH_LONG).show()
     }
   }
 
-  /**
-   * Static variables and methods.
-   */
-  companion object {
-    private const val FEEDBACK_KEY_WORLD = "feedback"
-    private const val TELEMETRY_KEY_WORLD = "Telemetry"
+  @SuppressLint("PrivateResource")
+  private fun prepareDialogBuilder(): AlertDialog.Builder {
+    // using way from AOSP to determine if current theme used is AppCompat, see
+    // https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:appcompat/appcompat/src/main/java/androidx/appcompat/app/AppCompatDelegateImpl.java;l=908
+    val a = context.obtainStyledAttributes(R.styleable.AppCompatTheme)
+    val appCompatThemeUsed = try {
+      a.hasValue(R.styleable.AppCompatTheme_windowActionBar)
+    } catch (_: Throwable) {
+      false
+    }
+    val builder = if (appCompatThemeUsed) {
+      AlertDialog.Builder(context)
+    } else {
+      AlertDialog.Builder(
+        // explicitly use Day-Night AppCompat theme if non AppCompat theme is used in activity
+        // noting that using ContextThemeWrapper should make sure we apply our theme on top of base one
+        ContextThemeWrapper(context, R.style.Theme_AppCompat_DayNight_Dialog_Alert)
+      )
+    }
+    a.recycle()
+    return builder
+  }
+
+  private companion object {
+    private const val FEEDBACK_KEY_WORD = "feedback"
   }
 }

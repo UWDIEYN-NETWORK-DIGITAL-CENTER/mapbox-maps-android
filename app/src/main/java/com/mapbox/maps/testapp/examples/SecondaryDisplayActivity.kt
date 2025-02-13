@@ -1,8 +1,9 @@
 package com.mapbox.maps.testapp.examples
 
-import android.graphics.BitmapFactory
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmap
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.Style
@@ -26,10 +27,15 @@ class SecondaryDisplayActivity : AppCompatActivity() {
     super.onCreate(savedInstanceState)
     binding = ActivitySecondaryDisplayBinding.inflate(layoutInflater)
     setContentView(binding.root)
-    binding.mapView.getMapboxMap().loadStyle(
-      style(Style.MAPBOX_STREETS) {
-        +image(IMAGE_ID) {
-          bitmap(BitmapFactory.decodeResource(resources, R.drawable.red_marker))
+    binding.mapView.mapboxMap.loadStyle(
+      style(Style.STANDARD) {
+        +image(
+          IMAGE_ID,
+          ContextCompat.getDrawable(
+            this@SecondaryDisplayActivity,
+            R.drawable.ic_red_marker
+          )!!.toBitmap()
+        ) {
           // Note: The default scale doesn't work with secondary displays.
           // we need to manually set the scale to the pixel for the current context
           scale(this@SecondaryDisplayActivity.resources.displayMetrics.density)
@@ -54,7 +60,7 @@ class SecondaryDisplayActivity : AppCompatActivity() {
       .zoom(ZOOM)
       .build()
 
-    binding.mapView.getMapboxMap().flyTo(
+    binding.mapView.mapboxMap.flyTo(
       cameraOption,
       MapAnimationOptions.mapAnimationOptions {
         duration(DURATION)

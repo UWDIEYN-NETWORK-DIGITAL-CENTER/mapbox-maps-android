@@ -29,8 +29,6 @@ import com.mapbox.maps.MapboxExperimental
  * The internals of this class use [AppManager.setSurfaceCallback], which assumes there is a single
  * surface callback. Do not use setSurfaceCallback, and do not create multiple instances of
  * [MapboxCarMap].
- *
- * @since 1.0.0
  */
 class MapboxCarMap {
   private val carMapSurfaceOwner = CarMapSurfaceOwner()
@@ -69,6 +67,7 @@ class MapboxCarMap {
    * @param carContext Android Auto CarContext
    * @param mapInitOptions parameter to initialize the head unit map
    */
+  @OptIn(MapboxExperimental::class)
   fun setup(
     carContext: CarContext,
     mapInitOptions: MapInitOptions,
@@ -94,6 +93,7 @@ class MapboxCarMap {
     check(mapInitOptions.context is CarContext) {
       "You must set up the MapboxCarMap MapInitOptions with a CarContext"
     }
+    MapboxCarTelemetryEvents.map.increment()
     carMapSurfaceOwner.setup(carContext, mapInitOptions)
     return carMapSurfaceOwner
   }

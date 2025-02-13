@@ -2,7 +2,6 @@ package com.mapbox.maps.testapp.examples
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import com.mapbox.maps.Image
 import com.mapbox.maps.Style
 import com.mapbox.maps.extension.style.layers.generated.rasterLayer
 import com.mapbox.maps.extension.style.sources.generated.ImageSource
@@ -13,7 +12,6 @@ import com.mapbox.maps.extension.style.style
 import com.mapbox.maps.testapp.R
 import com.mapbox.maps.testapp.databinding.ActivityImageSourceBinding
 import com.mapbox.maps.testapp.utils.BitmapUtils.bitmapFromDrawableRes
-import java.nio.ByteBuffer
 
 class ImageSourceActivity : AppCompatActivity() {
 
@@ -21,10 +19,10 @@ class ImageSourceActivity : AppCompatActivity() {
     super.onCreate(savedInstanceState)
     val binding = ActivityImageSourceBinding.inflate(layoutInflater)
     setContentView(binding.root)
-    val map = binding.mapView.getMapboxMap()
+    val map = binding.mapView.mapboxMap
 
     map.loadStyle(
-      style(styleUri = Style.DARK) {
+      style(style = Style.DARK) {
         +imageSource(ID_IMAGE_SOURCE) {
           coordinates(
             listOf(
@@ -38,12 +36,8 @@ class ImageSourceActivity : AppCompatActivity() {
         +rasterLayer(ID_IMAGE_LAYER, ID_IMAGE_SOURCE) {}
       }
     ) {
-      bitmapFromDrawableRes(this, R.drawable.miami_beach)?.let { bitmap ->
-        val imageSource: ImageSource = it.getSourceAs(ID_IMAGE_SOURCE)!!
-        val byteBuffer = ByteBuffer.allocate(bitmap.byteCount)
-        bitmap.copyPixelsToBuffer(byteBuffer)
-        imageSource.updateImage(Image(bitmap.width, bitmap.height, byteBuffer.array()))
-      }
+      val imageSource: ImageSource = it.getSourceAs(ID_IMAGE_SOURCE)!!
+      imageSource.updateImage(bitmapFromDrawableRes(R.drawable.miami_beach))
     }
   }
 

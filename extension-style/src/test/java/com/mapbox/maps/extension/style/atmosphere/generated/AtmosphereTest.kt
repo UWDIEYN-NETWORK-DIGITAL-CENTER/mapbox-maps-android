@@ -5,9 +5,9 @@ import android.graphics.Color
 import com.mapbox.bindgen.Expected
 import com.mapbox.bindgen.None
 import com.mapbox.bindgen.Value
+import com.mapbox.maps.MapboxStyleManager
 import com.mapbox.maps.StylePropertyValue
 import com.mapbox.maps.StylePropertyValueKind
-import com.mapbox.maps.extension.style.StyleInterface
 import com.mapbox.maps.extension.style.expressions.dsl.generated.rgba
 import com.mapbox.maps.extension.style.types.transitionOptions
 import com.mapbox.maps.extension.style.utils.TypeUtils
@@ -21,7 +21,7 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class AtmosphereTest {
-  private val style = mockk<StyleInterface>(relaxUnitFun = true, relaxed = true)
+  private val style = mockk<MapboxStyleManager>(relaxUnitFun = true, relaxed = true)
   private val styleProperty = mockk<StylePropertyValue>()
   private val expected = mockk<Expected<String, None>>(relaxUnitFun = true, relaxed = true)
   private val valueSlot = slot<Value>()
@@ -141,6 +141,26 @@ class AtmosphereTest {
     assertEquals("rgba(0, 0, 0, 1)", atmosphere.color)
     assertEquals(Color.BLACK, atmosphere.colorAsColorInt)
     verify { style.getStyleAtmosphereProperty("color") }
+  }
+
+  @Test
+  fun colorUseThemeSet() {
+    val atmosphere = atmosphere { }
+    val theme = "none"
+    atmosphere.bindTo(style)
+    atmosphere.colorUseTheme(theme)
+    verify { style.setStyleAtmosphereProperty("color-use-theme", capture(valueSlot)) }
+    assertEquals(valueSlot.captured.toString(), theme)
+  }
+
+  @Test
+  fun colorUseThemeGet() {
+    val theme = "none"
+    every { styleProperty.value } returns TypeUtils.wrapToValue(theme)
+    val atmosphere = atmosphere { }
+    atmosphere.bindTo(style)
+    assertEquals(theme.toString(), atmosphere.colorUseTheme?.toString())
+    verify { style.getStyleAtmosphereProperty("color-use-theme") }
   }
 
   @Test
@@ -314,6 +334,26 @@ class AtmosphereTest {
     assertEquals("rgba(0, 0, 0, 1)", atmosphere.highColor)
     assertEquals(Color.BLACK, atmosphere.highColorAsColorInt)
     verify { style.getStyleAtmosphereProperty("high-color") }
+  }
+
+  @Test
+  fun highColorUseThemeSet() {
+    val atmosphere = atmosphere { }
+    val theme = "none"
+    atmosphere.bindTo(style)
+    atmosphere.highColorUseTheme(theme)
+    verify { style.setStyleAtmosphereProperty("high-color-use-theme", capture(valueSlot)) }
+    assertEquals(valueSlot.captured.toString(), theme)
+  }
+
+  @Test
+  fun highColorUseThemeGet() {
+    val theme = "none"
+    every { styleProperty.value } returns TypeUtils.wrapToValue(theme)
+    val atmosphere = atmosphere { }
+    atmosphere.bindTo(style)
+    assertEquals(theme.toString(), atmosphere.highColorUseTheme?.toString())
+    verify { style.getStyleAtmosphereProperty("high-color-use-theme") }
   }
 
   @Test
@@ -730,6 +770,26 @@ class AtmosphereTest {
   }
 
   @Test
+  fun spaceColorUseThemeSet() {
+    val atmosphere = atmosphere { }
+    val theme = "none"
+    atmosphere.bindTo(style)
+    atmosphere.spaceColorUseTheme(theme)
+    verify { style.setStyleAtmosphereProperty("space-color-use-theme", capture(valueSlot)) }
+    assertEquals(valueSlot.captured.toString(), theme)
+  }
+
+  @Test
+  fun spaceColorUseThemeGet() {
+    val theme = "none"
+    every { styleProperty.value } returns TypeUtils.wrapToValue(theme)
+    val atmosphere = atmosphere { }
+    atmosphere.bindTo(style)
+    assertEquals(theme.toString(), atmosphere.spaceColorUseTheme?.toString())
+    verify { style.getStyleAtmosphereProperty("space-color-use-theme") }
+  }
+
+  @Test
   fun spaceColorTransitionSet() {
     val atmosphere = atmosphere {
       spaceColorTransition(
@@ -918,6 +978,126 @@ class AtmosphereTest {
     atmosphere.bindTo(style)
     verify { style.setStyleAtmosphere(capture(valueSlot)) }
     assertTrue(valueSlot.captured.toString().contains("star-intensity-transition={duration=100, delay=200}"))
+  }
+
+  @Test
+  fun verticalRangeSet() {
+    val atmosphere = atmosphere {
+      verticalRange(listOf(0.0, 1.0))
+    }
+    atmosphere.bindTo(style)
+    verify { style.setStyleAtmosphere(capture(valueSlot)) }
+    assertTrue(valueSlot.captured.toString().contains("vertical-range=[0.0, 1.0]"))
+  }
+
+  @Test
+  fun verticalRangeSetAfterInitialization() {
+    val atmosphere = atmosphere { }
+    atmosphere.bindTo(style)
+    atmosphere.verticalRange(listOf(0.0, 1.0))
+    verify { style.setStyleAtmosphereProperty("vertical-range", capture(valueSlot)) }
+    assertTrue(valueSlot.captured.toString().contains("[0.0, 1.0]"))
+  }
+
+  @Test
+  fun verticalRangeGet() {
+    every { styleProperty.value } returns TypeUtils.wrapToValue(listOf(0.0, 1.0))
+
+    val atmosphere = atmosphere { }
+    atmosphere.bindTo(style)
+    assertEquals(listOf(0.0, 1.0).toString(), atmosphere.verticalRange!!.toString())
+    verify { style.getStyleAtmosphereProperty("vertical-range") }
+  }
+
+  // Expression Tests
+
+  @Test
+  fun verticalRangeAsExpressionGetNull() {
+    val atmosphere = atmosphere { }
+    atmosphere.bindTo(style)
+    assertEquals(null, atmosphere.verticalRangeAsExpression)
+    verify { style.getStyleAtmosphereProperty("vertical-range") }
+  }
+
+  @Test
+  fun verticalRangeAsExpressionGetFromLiteral() {
+    every { styleProperty.value } returns TypeUtils.wrapToValue(listOf(0.0, 1.0))
+    val atmosphere = atmosphere { }
+    atmosphere.bindTo(style)
+    assertEquals("[literal, [0.0, 1.0]]", atmosphere.verticalRangeAsExpression.toString())
+    assertEquals(listOf(0.0, 1.0), atmosphere.verticalRange)
+    verify { style.getStyleAtmosphereProperty("vertical-range") }
+  }
+
+  @Test
+  fun verticalRangeTransitionSet() {
+    val atmosphere = atmosphere {
+      verticalRangeTransition(
+        transitionOptions {
+          duration(100)
+          delay(200)
+        }
+      )
+    }
+    atmosphere.bindTo(style)
+    verify { style.setStyleAtmosphere(capture(valueSlot)) }
+    assertTrue(valueSlot.captured.toString().contains("vertical-range-transition={duration=100, delay=200}"))
+  }
+
+  @Test
+  fun verticalRangeTransitionSetAfterInitialization() {
+    val atmosphere = atmosphere { }
+    atmosphere.bindTo(style)
+    atmosphere.verticalRangeTransition(
+      transitionOptions {
+        duration(100)
+        delay(200)
+      }
+    )
+    verify { style.setStyleAtmosphereProperty("vertical-range-transition", capture(valueSlot)) }
+    assertTrue(valueSlot.captured.toString().contains("{duration=100, delay=200}"))
+  }
+
+  @Test
+  fun verticalRangeTransitionGet() {
+    val transition = transitionOptions {
+      duration(100)
+      delay(200)
+    }
+    every { styleProperty.value } returns TypeUtils.wrapToValue(transition)
+    val atmosphere = atmosphere {}
+    atmosphere.bindTo(style)
+    assertEquals(transition.toValue().toString(), atmosphere.verticalRangeTransition!!.toValue().toString())
+    verify { style.getStyleAtmosphereProperty("vertical-range-transition") }
+  }
+
+  @Test
+  fun verticalRangeTransitionGetNull() {
+    val transition = "wrong type"
+    every { styleProperty.value } returns TypeUtils.wrapToValue(transition)
+    val atmosphere = atmosphere {}
+    atmosphere.bindTo(style)
+    assertEquals(null, atmosphere.verticalRangeTransition)
+    verify { style.getStyleAtmosphereProperty("vertical-range-transition") }
+  }
+
+  @Test(expected = RuntimeException::class)
+  fun verticalRangeTransitionGetException() {
+    val atmosphere = atmosphere {}
+    atmosphere.verticalRangeTransition
+  }
+
+  @Test
+  fun verticalRangeTransitionSetDsl() {
+    val atmosphere = atmosphere {
+      verticalRangeTransition {
+        duration(100)
+        delay(200)
+      }
+    }
+    atmosphere.bindTo(style)
+    verify { style.setStyleAtmosphere(capture(valueSlot)) }
+    assertTrue(valueSlot.captured.toString().contains("vertical-range-transition={duration=100, delay=200}"))
   }
 
   @Test

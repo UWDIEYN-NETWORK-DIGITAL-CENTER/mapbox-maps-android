@@ -15,13 +15,12 @@ import com.mapbox.maps.extension.style.layers.generated.fillExtrusionLayer
 import com.mapbox.maps.extension.style.layers.generated.rasterLayer
 import com.mapbox.maps.extension.style.layers.generated.symbolLayer
 import com.mapbox.maps.extension.style.layers.properties.generated.*
-import com.mapbox.maps.extension.style.light.generated.light
-import com.mapbox.maps.extension.style.light.generated.setLight
+import com.mapbox.maps.extension.style.light.generated.flatLight
+import com.mapbox.maps.extension.style.light.setLight
 import com.mapbox.maps.extension.style.sources.addSource
 import com.mapbox.maps.extension.style.sources.generated.*
 import com.mapbox.maps.extension.style.sources.getSource
 import com.mapbox.maps.testapp.R
-import java.nio.ByteBuffer
 
 /**
  * Example showcasing usage of style extension.
@@ -32,13 +31,11 @@ class RuntimeStylingActivity : AppCompatActivity() {
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-    val mapView = MapView(this)
+    val mapView = MapView(this, MapInitOptions(context = this, styleUri = Style.MAPBOX_STREETS))
     setContentView(mapView)
 
-    mapboxMap = mapView.getMapboxMap()
-    mapboxMap.loadStyleUri(
-      Style.MAPBOX_STREETS
-    ) { setupStyle(it) }
+    mapboxMap = mapView.mapboxMap
+    mapboxMap.getStyle { setupStyle(it) }
   }
 
   private fun setupStyle(style: Style) {
@@ -300,7 +297,7 @@ class RuntimeStylingActivity : AppCompatActivity() {
   }
 
   private fun addFillExtrusionLight(style: Style) {
-    val light = light {
+    val light = flatLight {
       anchor(Anchor.MAP)
       color(Color.YELLOW)
       position(
@@ -332,14 +329,13 @@ class RuntimeStylingActivity : AppCompatActivity() {
     style.addLayer(raster)
   }
 
+  @OptIn(MapboxDelicateApi::class)
   private fun addLayerWithoutStyleExtension(style: Style) {
-    val bitmap = ContextCompat.getDrawable(this, R.drawable.android_symbol)?.toBitmap(64, 64)
-    val byteBuffer = ByteBuffer.allocate(bitmap!!.byteCount)
-    bitmap.copyPixelsToBuffer(byteBuffer)
+    val bitmap = ContextCompat.getDrawable(this, R.drawable.android_symbol)!!.toBitmap(64, 64)
     val expected = style.addStyleImage(
       "myImage",
       1f,
-      Image(64, 64, byteBuffer.array()),
+      bitmap.toMapboxImage(),
       false,
       mutableListOf(),
       mutableListOf(),
